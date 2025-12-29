@@ -29,8 +29,8 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class ArmorGasMask extends ItemArmor implements IGasMask {
@@ -194,13 +194,13 @@ public class ArmorGasMask extends ItemArmor implements IGasMask {
 	}
 
 	@Override
-	public ArrayList<HazardClass> getBlacklist(ItemStack stack) {
+	public List<HazardClass> getBlacklist(ItemStack stack) {
 		if(stack.getItem() == ModItems.gas_mask_mono) {
-			return new ArrayList<>(Arrays.asList(HazardClass.GAS_CHLORINE, HazardClass.GAS_CORROSIVE, HazardClass.NERVE_AGENT, HazardClass.BACTERIA));
+			return Arrays.asList(HazardClass.GAS_CHLORINE, HazardClass.GAS_CORROSIVE, HazardClass.NERVE_AGENT, HazardClass.BACTERIA);
 		} else if(stack.getItem() == ModItems.gas_mask || stack.getItem() == ModItems.gas_mask_m65 || stack.getItem() == ModItems.gas_mask_olde){
-			return new ArrayList<>(Arrays.asList(HazardClass.GAS_CORROSIVE, HazardClass.NERVE_AGENT));
+			return Arrays.asList(HazardClass.GAS_CORROSIVE, HazardClass.NERVE_AGENT);
 		} else {
-			return new ArrayList<>();
+			return Collections.emptyList();
 		}
 	}
 

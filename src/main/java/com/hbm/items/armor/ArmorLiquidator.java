@@ -1,8 +1,8 @@
 package com.hbm.items.armor;
 
+import com.google.common.collect.Multimap;
 import com.hbm.Tags;
 import com.hbm.api.item.IGasMask;
-import com.google.common.collect.Multimap;
 import com.hbm.handler.ArmorModHandler;
 import com.hbm.handler.ArmorUtil;
 import com.hbm.items.ModItems;
@@ -33,7 +33,7 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import org.lwjgl.opengl.GL11;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class ArmorLiquidator extends ArmorFSB implements IGasMask {
@@ -101,8 +101,8 @@ public class ArmorLiquidator extends ArmorFSB implements IGasMask {
 	}
 
 	@Override
-	public ArrayList<HazardClass> getBlacklist(ItemStack stack) {
-		return new ArrayList(); // full hood has no restrictions
+	public List<HazardClass> getBlacklist(ItemStack stack) {
+		return Collections.emptyList(); // full hood has no restrictions
 	}
 
 	@Override

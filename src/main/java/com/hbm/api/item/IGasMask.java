@@ -3,7 +3,7 @@ package com.hbm.api.item;
 import com.hbm.util.ArmorRegistry.HazardClass;
 import net.minecraft.item.ItemStack;
 
-import java.util.ArrayList;
+import java.util.List;
 
 public interface IGasMask {
 	/**
@@ -12,7 +12,7 @@ public interface IGasMask {
 	 * @param entity
 	 * @return an empty list if there's no blacklist
 	 */
-	public ArrayList<HazardClass> getBlacklist(ItemStack stack);
+	public List<HazardClass> getBlacklist(ItemStack stack);
 	
 	/**
 	 * Returns the loaded filter, if there is any

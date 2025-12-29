@@ -58,9 +58,6 @@ public class HbmCorePlugin implements IFMLLoadingPlugin {
                 ContainerTransformer.class.getName(),
                 InventoryPlayerTransformer.class.getName(),
                 ForgeHooksTransformer.class.getName(),
-                ChunkTransformer.class.getName(),
-                WorldTransformer.class.getName(),
-                WorldServerTransformer.class.getName(),
                 PlayerInteractionManagerTransformer.class.getName(),
                 FMLNetworkTransformer.class.getName(),
                 EntityItemHazardTransformer.class.getName()
