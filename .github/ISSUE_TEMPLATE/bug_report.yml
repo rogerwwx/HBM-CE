@@ -1,38 +1,16 @@
 name: Bug report
-description: File a bug report.
+description: Report a reproducible bug.
 type: Bug
 body:
   - type: textarea
     id: bug-description
     attributes:
       label: Describe the bug
-      description: A clear and concise description of what the bug is. If it's a compatibility issue, specify the other mod(s) involved.
+      description: |
+        A clear and concise description of what the bug is.
+        If it's a compatibility issue, specify the other mod(s) involved.
     validations:
       required: true
-
-  - type: dropdown
-    id: severity
-    attributes:
-      label: Severity
-      options:
-        - Game-breaking (crash on startup/world load)
-        - Major (causes crashes during gameplay)
-        - Substantial (progression breaking / game affecting, non-crashing)
-        - Minor (visual/UI issue, non-crashing)
-        - Compatibility (conflict with other mods)
-    validations:
-      required: true
-
-  - type: checkboxes
-    id: game-context
-    attributes:
-      label: Game Context
-      description: Check all that apply.
-      options:
-        - label: Singleplayer
-        - label: Multiplayer (dedicated server)
-        - label: Creative
-        - label: Survival
 
   - type: markdown
     attributes:
@@ -45,6 +23,14 @@ body:
         2) On the run page, download the artifact (Summary → Artifacts), extract it, and put the `.jar` (no `-dev` / `-sources`) in your mods folder.  
         3) Reproduce the issue and paste the run URL below. If updating fixes it, please close the report.
 
+        ### Mod conflict check
+        If you're not sure whether this is a mod conflict, **remove all other mods** (keep only NTM:CE) and retry.  
+        If it stops happening, add mods back until you find the offending mod.
+
+        ### Platform notes
+        If the issue only happens on a specific platform (singleplayer vs dedicated server vs hybrid server vs Cleanroom), please say so.  
+        If this affects **dedicated server**, make sure the **server and client are on the same NTM:CE version/build**.
+
   - type: input
     id: actions-run-url
     attributes:
@@ -54,13 +40,31 @@ body:
     validations:
       required: true
 
-  - type: checkboxes
-    id: confirmed-latest
+  - type: dropdown
+    id: platform
     attributes:
-      label: Confirmation
+      label: Where does it happen?
       options:
-        - label: I reproduced this on the latest successful GitHub Actions build.
-          required: true
+        - Singleplayer (Forge)
+        - Dedicated server (Forge)
+        - Both singleplayer and dedicated server (Forge)
+        - Hybrid server (Mohist/CatServer/...)
+        - Singleplayer (Cleanroom / modern Java)
+        - Dedicated server (Cleanroom / modern Java)
+        - Both singleplayer and dedicated server (Cleanroom / modern Java)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: conflict-check
+    attributes:
+      label: Mod conflict check
+      description: Did you try reproducing with only NTM:CE + required dependencies?
+      options:
+        - Yes — reproduces with only NTM:CE
+        - No — only reproduces with other mods (compatibility issue)
+    validations:
+      required: true
 
   - type: textarea
     id: steps-to-reproduce
@@ -68,10 +72,9 @@ body:
       label: To Reproduce
       description: Steps to reproduce the behavior. A minimal, reliable repro helps a lot.
       value: |
-        1. 
-        2. 
-        3. 
-        4.
+        1.
+        2.
+        3.
     validations:
       required: true
 
@@ -88,12 +91,6 @@ body:
       description: If applicable, add screenshots/videos and crash reports. For logs, please use https://mclo.gs/ and paste the link here.
 
   - type: textarea
-    id: other-mods
-    attributes:
-      label: Are other mods present and is it a compatibility issue?
-      description: List any mods involved and describe the interaction if known.
-
-  - type: textarea
     id: modlist
     attributes:
       label: Modlist
@@ -103,4 +100,10 @@ body:
     id: additional-context
     attributes:
       label: Additional context
-      description: Any other context—OS, Java version, Forge version, config changes, server type, etc.
+      description: Any other context—OS, Java version, Forge/Cleanroom version, server type, config changes, etc.
+      value: |
+        - OS:
+        - Java:
+        - Forge/Cleanroom:
+        - Server software (if any):
+        - Notes:

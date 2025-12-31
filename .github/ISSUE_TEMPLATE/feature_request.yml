@@ -2,18 +2,6 @@ name: Feature request
 description: Suggest an idea
 type: Feature
 body:
-  - type: dropdown
-    id: request-type
-    attributes:
-      label: Request type
-      description: Helps with triage.
-      options:
-        - General feature
-        - Compatibility
-        - Quality of life
-        - Balance
-        - Performance / optimization
-      default: 0
 
   - type: textarea
     id: problem
@@ -40,18 +28,6 @@ body:
     attributes:
       label: Upstream status (original mod)
       description: If applicable, link to the upstream issue/PR and note the outcome. If this is a compatibility request for another mod, you can skip this.
-
-  - type: checkboxes
-    id: impact
-    attributes:
-      label: Impact & considerations
-      description: Check any that apply, then add details below if needed.
-      options:
-        - label: Performance implications
-        - label: Balance concerns
-        - label: Needs a config option
-        - label: Save/world compatibility impact
-        - label: Migration required
 
   - type: textarea
     id: impact-notes
