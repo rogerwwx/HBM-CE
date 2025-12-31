@@ -1,21 +1,24 @@
 package com.hbm.blocks.machine.rbmk;
 
+import com.hbm.api.block.IToolable;
 import com.hbm.blocks.BlockDummyable;
 import com.hbm.handler.MultiblockHandlerXR;
 import com.hbm.lib.ForgeDirection;
 import com.hbm.tileentity.machine.rbmk.TileEntityRBMKCraneConsole;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumBlockRenderType;
 import net.minecraft.util.EnumFacing;
+import net.minecraft.util.EnumHand;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.NotNull;
 
 
-public class RBMKCraneConsole extends BlockDummyable {
+public class RBMKCraneConsole extends BlockDummyable implements IToolable {
 
 	public RBMKCraneConsole(String s) {
 		super(Material.IRON, s);
@@ -83,4 +86,17 @@ public class RBMKCraneConsole extends BlockDummyable {
 		
 		return super.checkRequirement(world, x, y, z, dir, o);
 	}
+
+    @Override
+    public boolean onScrew(World world, EntityPlayer player, int x, int y, int z, EnumFacing side, float fX, float fY, float fZ, EnumHand hand, ToolType tool) {
+        if(tool == ToolType.SCREWDRIVER) {
+            if(world.isRemote) return true;
+            TileEntityRBMKCraneConsole tile = (TileEntityRBMKCraneConsole) findCoreTE(world, x, y, z);
+            if(tile == null) return false;
+            tile.cycleCraneRotation();
+            tile.markDirty();
+            return true;
+        }
+        return false;
+    }
 }

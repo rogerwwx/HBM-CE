@@ -137,6 +137,14 @@ public abstract class TileEntityRBMKBase extends TileEntityLoadedBase implements
         }
     }
 
+    // mlbv: the side effect of TileEntity#markDirty() is to update the block metadata and update comparator outputs,
+    // which we don't really need for rbmk columns
+    @Override
+    public void markDirty() {
+        if (world == null) return;
+        markChanged();
+    }
+
 	private void jump(){
 		if(this.heat <= MachineConfig.rbmkJumpTemp && !falling)
 			return;
@@ -661,9 +669,14 @@ public abstract class TileEntityRBMKBase extends TileEntityLoadedBase implements
 		return null;
 	}
 
+    private AxisAlignedBB renderBoundingBox;
+
 	@Override
 	public AxisAlignedBB getRenderBoundingBox() {
-		return new AxisAlignedBB(pos.getX(), pos.getY(), pos.getZ(), pos.getX() + 1, pos.getY() + 17, pos.getZ() + 1);
+        if (renderBoundingBox == null) {
+            renderBoundingBox = new AxisAlignedBB(pos.getX(), pos.getY(), pos.getZ(), pos.getX() + 1, pos.getY() + 17, pos.getZ() + 1);
+        }
+		return renderBoundingBox;
 	}
 
 	@Override
@@ -694,13 +707,13 @@ public abstract class TileEntityRBMKBase extends TileEntityLoadedBase implements
 	public void invalidate() {
 		super.invalidate();
 		ControlEventSystem.get(world).removeControllable(this);
-		NeutronNodeWorld.removeNode(world, this.getPos()); // woo-fucking-hoo!!!
+		NeutronNodeWorld.removeNode(world, pos); // woo-fucking-hoo!!!
 	}
 
 	@Override
 	public void onChunkUnload() {
 		super.onChunkUnload();
-		NeutronNodeWorld.removeNode(world, this.getPos()); // woo-fucking-hoo!!!
+		NeutronNodeWorld.removeNode(world, pos); // woo-fucking-hoo!!!
 	}
 
 	@Override

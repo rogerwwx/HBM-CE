@@ -131,6 +131,15 @@ public abstract class BlockDummyable extends BlockContainer implements ICustomBl
         return world.getTileEntity(scratch);
     }
 
+    @Nullable
+    public TileEntity findCoreTE(IBlockAccess world, int x, int y, int z) {
+        BlockPos.MutableBlockPos scratch = new BlockPos.MutableBlockPos();
+        long core = findCoreSerialized(world, x, y, z, scratch);
+        if (core == NO_CORE) return null;
+        Library.fromLong(scratch, core);
+        return world.getTileEntity(scratch);
+    }
+
     public int @Nullable [] findCore(IBlockAccess world, int x, int y, int z) {
         BlockPos.MutableBlockPos scratch = new BlockPos.MutableBlockPos();
         long core = findCoreSerialized(world, x, y, z, scratch);
