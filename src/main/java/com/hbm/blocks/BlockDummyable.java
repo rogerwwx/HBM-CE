@@ -80,7 +80,7 @@ public abstract class BlockDummyable extends BlockContainer implements ICustomBl
         IDynamicModels.INSTANCES.add(this);
     }
 
-    public BlockDummyable(Material materialIn, String s, boolean useBakedModel) {
+    public BlockDummyable(Material materialIn, String s, boolean ignoredDontUseIDynamicModel) {
         super(materialIn);
         this.setTranslationKey(s);
         this.setRegistryName(s);

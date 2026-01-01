@@ -131,7 +131,7 @@ public class ModItems {
         }
     }).setCreativeTab(MainRegistry.consumableTab);
     public static final Item pill_herbal = new ItemPill(0, "pill_herbal").setCreativeTab(MainRegistry.consumableTab);
-    public static final Item xanax = new ItemPill(0, "xanax").setCreativeTab(MainRegistry.consumableTab);
+    public static final Item xanax = new ItemPill(0, "xanax", "xanax_2").setCreativeTab(MainRegistry.consumableTab);
     public static final Item iv_xp = new ItemSimpleConsumable("iv_xp").setUseActionServer((stack, user) -> {
         ItemSimpleConsumable.giveSoundAndDecrement(stack, user, SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, new ItemStack(ModItems.iv_xp_empty));
         user.addExperience(100);

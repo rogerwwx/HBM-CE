@@ -50,6 +50,17 @@ public class ItemPill extends ItemFood implements IDynamicModels {
 		
 		ModItems.ALL_ITEMS.add(this);
 	}
+
+    public ItemPill(int hunger, String s, String texturePath) {
+        super(hunger, false);
+        this.setTranslationKey(s);
+        this.setRegistryName(s);
+        this.setAlwaysEdible();
+        this.texturePath = texturePath;
+        INSTANCES.add(this);
+
+        ModItems.ALL_ITEMS.add(this);
+    }
 	
 	@Override
 	protected void onFoodEaten(@NotNull ItemStack stack, World worldIn, @NotNull EntityPlayer player) {

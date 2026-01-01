@@ -36,7 +36,7 @@ import java.util.List;
 public class BlockSlidingBlastDoor extends BlockDummyable implements IRadResistantBlock, IPartialSealableBlock {
 
 	public BlockSlidingBlastDoor(Material materialIn, String s) {
-		super(materialIn, s);
+		super(materialIn, s, true);
 	}
 
 	public boolean isSealed(World world, BlockPos blockPos, EnumFacing direction){
