@@ -36,32 +36,8 @@ public class ContainerToolBox extends Container {
     }
 
     @Override
-    public ItemStack transferStackInSlot(EntityPlayer player, int par2) {
-        ItemStack stack = ItemStack.EMPTY;
-        Slot slot = this.inventorySlots.get(par2);
-
-        if(slot != null && slot.getHasStack()) {
-            ItemStack stackInSlot = slot.getStack();
-            stack = stackInSlot.copy();
-
-            if(par2 <= box.getSlots() - 1) {
-                if(!InventoryUtil.mergeItemStack(this.inventorySlots, stackInSlot, box.getSlots(), this.inventorySlots.size(), true)) {
-                    return ItemStack.EMPTY;
-                }
-            } else if(!InventoryUtil.mergeItemStack(this.inventorySlots, stackInSlot, 0, box.getSlots(), false)) {
-                return ItemStack.EMPTY;
-            }
-
-            if(stackInSlot.getCount() == 0) {
-                slot.putStack(ItemStack.EMPTY);
-            } else {
-                slot.onSlotChanged();
-            }
-
-            slot.onTake(player, stackInSlot);
-        }
-
-        return stack;
+    public ItemStack transferStackInSlot(EntityPlayer player, int index) {
+        return InventoryUtil.transferStack(this.inventorySlots, index, box.getSlots());
     }
 
     @Override

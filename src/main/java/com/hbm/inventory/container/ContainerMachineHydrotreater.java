@@ -6,6 +6,7 @@ import com.hbm.items.ModItems;
 import com.hbm.items.machine.IItemFluidIdentifier;
 import com.hbm.lib.Library;
 import com.hbm.tileentity.machine.oil.TileEntityMachineHydrotreater;
+import com.hbm.util.InventoryUtil;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.Container;
@@ -56,50 +57,17 @@ public class ContainerMachineHydrotreater extends Container {
         }
     }
 
+    private static boolean isNormal(ItemStack stack) {
+        return !(stack.getItem() instanceof IItemFluidIdentifier) && stack.getItem() != ModItems.catalytic_converter;
+    }
+
     @Override
-    public ItemStack transferStackInSlot(EntityPlayer p_82846_1_, int par2) {
-        ItemStack var3 = ItemStack.EMPTY;
-        Slot var4 = (Slot) this.inventorySlots.get(par2);
-
-        if(var4 != null && var4.getHasStack()) {
-            ItemStack var5 = var4.getStack();
-            var3 = var5.copy();
-
-            if(par2 <= 10) {
-                if(!this.mergeItemStack(var5, 11, this.inventorySlots.size(), true)) {
-                    return ItemStack.EMPTY;
-                }
-            } else {
-
-                if(Library.isBattery(var3)) {
-                    if(!this.mergeItemStack(var5, 0, 1, false)) {
-                        return ItemStack.EMPTY;
-                    }
-                } else if(var3.getItem() instanceof IItemFluidIdentifier) {
-                    if(!this.mergeItemStack(var5, 9, 10, false)) {
-                        return ItemStack.EMPTY;
-                    }
-                } else if(var3.getItem() == ModItems.catalytic_converter) {
-                    if(!this.mergeItemStack(var5, 10, 11, false)) {
-                        return ItemStack.EMPTY;
-                    }
-                } else {
-                    if(!this.mergeItemStack(var5, 1, 2, false))
-                        if(!this.mergeItemStack(var5, 3, 4, false))
-                            if(!this.mergeItemStack(var5, 5, 6, false))
-                                if(!this.mergeItemStack(var5, 7, 8, false))
-                                    return ItemStack.EMPTY;
-                }
-            }
-
-            if(var5.getCount() == 0) {
-                var4.putStack(ItemStack.EMPTY);
-            } else {
-                var4.onSlotChanged();
-            }
-        }
-
-        return var3;
+    public ItemStack transferStackInSlot(EntityPlayer player, int index) {
+         return InventoryUtil.transferStack(this.inventorySlots, index, 9,
+                 Library::isBattery, 1,
+                 ContainerMachineHydrotreater::isNormal, 7,
+                 s -> s.getItem() instanceof IItemFluidIdentifier, 8,
+                 s -> s.getItem() == ModItems.catalytic_converter, 9);
     }
 
     @Override

@@ -1,6 +1,7 @@
 package com.hbm.inventory;
 
 import com.hbm.items.machine.ItemMachineUpgrade;
+import com.hbm.lib.Library;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.SlotItemHandler;
@@ -14,7 +15,7 @@ public class SlotUpgrade extends SlotItemHandler {
 
 	@Override
 	public boolean isItemValid(@NotNull ItemStack stack) {
-        return !stack.isEmpty() && stack.getItem() instanceof ItemMachineUpgrade;
+        return Library.isMachineUpgrade(stack);
     }
 
 	@Override

@@ -35,29 +35,29 @@ public class ContainerCoreInjector extends Container {
     @NotNull
     @Override
     public ItemStack transferStackInSlot(@NotNull EntityPlayer player, int index) {
-        ItemStack stack = ItemStack.EMPTY;
+        ItemStack result = ItemStack.EMPTY;
         Slot slot = this.inventorySlots.get(index);
 		
         if (slot != null && slot.getHasStack()) {
-            ItemStack var5 = slot.getStack();
-            stack = var5.copy();
+            ItemStack stack = slot.getStack();
+            result = stack.copy();
 
             if (index <= 3) {
-                if (!this.mergeItemStack(var5, 4, this.inventorySlots.size(), true)) {
+                if (!this.mergeItemStack(stack, 4, this.inventorySlots.size(), true)) {
                     return ItemStack.EMPTY;
                 }
             } else {
                 return ItemStack.EMPTY;
             }
 
-            if (var5.isEmpty()) {
+            if (stack.isEmpty()) {
                 slot.putStack(ItemStack.EMPTY);
             } else {
                 slot.onSlotChanged();
             }
         }
 
-        return stack;
+        return result;
     }
 
     @Override

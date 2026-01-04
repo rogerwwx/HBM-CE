@@ -1,6 +1,7 @@
 package com.hbm.world.gen;
 
 import com.hbm.blocks.ModBlocks;
+import com.hbm.config.CompatibilityConfig;
 import com.hbm.config.StructureConfig;
 import com.hbm.main.StructureManager;
 import com.hbm.world.gen.component.BunkerComponents;
@@ -248,6 +249,7 @@ public class NTMWorldGenerator implements IWorldGenerator {
 			sizeLimit = 128;
 			canSpawn = biome -> biome.getBaseHeight() >= 0.0F;
 			startPool = "start";
+            spawnWeight = StructureConfig.meteorDungeonSpawnWeight;
 			pools = new HashMap<>() {{
                 put("start", new JigsawPool() {{
                     add(new JigsawPiece("meteor_core", StructureManager.meteor_core) {{

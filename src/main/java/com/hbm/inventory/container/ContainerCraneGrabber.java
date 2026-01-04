@@ -32,54 +32,54 @@ public class ContainerCraneGrabber extends ContainerBase {
     }
 
     @Override
-    public ItemStack transferStackInSlot(EntityPlayer player, int slot) {
-        ItemStack var3 = ItemStack.EMPTY;
-        Slot var4 = this.inventorySlots.get(slot);
+    public ItemStack transferStackInSlot(EntityPlayer player, int index) {
+        ItemStack result = ItemStack.EMPTY;
+        Slot slot = this.inventorySlots.get(index);
 
-        if(var4 != null && var4.getHasStack()) {
-            ItemStack var5 = var4.getStack();
-            var3 = var5.copy();
+        if(slot != null && slot.getHasStack()) {
+            ItemStack stack = slot.getStack();
+            result = stack.copy();
 
-            if(slot < 9) { //filters
+            if(index < 9) { //filters
                 return ItemStack.EMPTY;
             }
 
             int size = grabber.inventory.getSlots();
-            if(slot <= size - 1) {
-                if(!this.mergeItemStack(var5, size, this.inventorySlots.size(), true)) {
+            if(index <= size - 1) {
+                if(!this.mergeItemStack(stack, size, this.inventorySlots.size(), true)) {
                     return ItemStack.EMPTY;
                 }
             } else {
 
-                if(isUpgradeStack(var3.getItem())) {
-                    if(!this.mergeItemStack(var5, 9, 10, false))
+                if(isUpgradeStack(result)) {
+                    if(!this.mergeItemStack(stack, 9, 10, false))
                         return ItemStack.EMPTY;
-                } else if(isUpgradeEjector(var3.getItem())) {
-                    if(!this.mergeItemStack(var5, 10, 11, false))
+                } else if(isUpgradeEjector(result)) {
+                    if(!this.mergeItemStack(stack, 10, 11, false))
                         return ItemStack.EMPTY;
                 }
 
                 return ItemStack.EMPTY;
             }
 
-            if(var5.getCount() == 0) {
-                var4.putStack(ItemStack.EMPTY);
+            if(stack.getCount() == 0) {
+                slot.putStack(ItemStack.EMPTY);
             } else {
-                var4.onSlotChanged();
+                slot.onSlotChanged();
             }
 
-            var4.onTake(player, var5);
+            slot.onTake(player, stack);
         }
 
-        return var3;
+        return result;
     }
 
-    private static boolean isUpgradeStack(Item item) {
-        return item == ModItems.upgrade_stack_1 || item == ModItems.upgrade_stack_2 || item == ModItems.upgrade_stack_3;
+    private static boolean isUpgradeStack(ItemStack item) {
+        return item.getItem() == ModItems.upgrade_stack_1 || item.getItem() == ModItems.upgrade_stack_2 || item.getItem() == ModItems.upgrade_stack_3;
     }
 
-    private static boolean isUpgradeEjector(Item item) {
-        return item == ModItems.upgrade_ejector_1 ||  item == ModItems.upgrade_ejector_2 ||  item == ModItems.upgrade_ejector_3;
+    private static boolean isUpgradeEjector(ItemStack item) {
+        return item.getItem() == ModItems.upgrade_ejector_1 ||  item.getItem() == ModItems.upgrade_ejector_2 ||  item.getItem() == ModItems.upgrade_ejector_3;
     }
 
     @Override

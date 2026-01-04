@@ -1,8 +1,10 @@
 package com.hbm.inventory.container;
 
 import com.hbm.inventory.SlotTakeOnly;
+import com.hbm.items.machine.IItemFluidIdentifier;
 import com.hbm.lib.Library;
 import com.hbm.tileentity.machine.TileEntityMachineFluidTank;
+import com.hbm.util.InventoryUtil;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.Container;
@@ -38,35 +40,10 @@ public class ContainerMachineFluidTank extends Container {
 
   @Override
   public @NotNull ItemStack transferStackInSlot(@NotNull EntityPlayer player, int index) {
-    ItemStack rStack = ItemStack.EMPTY;
-    Slot slot = this.inventorySlots.get(index);
-
-    if (slot != null && slot.getHasStack()) {
-      ItemStack stack = slot.getStack();
-      rStack = stack.copy();
-
-      if (index <= 5) {
-        if (!this.mergeItemStack(stack, 6, this.inventorySlots.size(), true)) {
-          return ItemStack.EMPTY;
-        }
-      } else {
-        if (Library.isStackDrainableForTank(stack, fluidTank.tank)) {
-          if (!this.mergeItemStack(stack, 2, 3, false)) {
-            return ItemStack.EMPTY;
-          }
-        } else if (!this.mergeItemStack(stack, 0, 5, false)) {
-          return ItemStack.EMPTY;
-        }
-      }
-
-      if (stack.isEmpty()) {
-        slot.putStack(ItemStack.EMPTY);
-      } else {
-        slot.onSlotChanged();
-      }
-    }
-
-    return rStack;
+      return InventoryUtil.transferStack(this.inventorySlots, index, 6,
+              s -> s.getItem() instanceof IItemFluidIdentifier, 2,
+              s -> Library.isStackDrainableForTank(s, fluidTank.tank), 4,
+              s -> Library.isStackFillableForTank(s, fluidTank.tank), 6);
   }
 
   @Override

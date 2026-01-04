@@ -2,8 +2,10 @@ package com.hbm.inventory.container;
 
 import com.hbm.inventory.SlotTakeOnly;
 import com.hbm.items.machine.IItemFluidIdentifier;
+import com.hbm.lib.Library;
 import com.hbm.tileentity.machine.TileEntityPWRController;
 
+import com.hbm.util.InventoryUtil;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.Container;
@@ -35,39 +37,11 @@ public class ContainerPWR extends Container {
     }
 
     @Override
-    public ItemStack transferStackInSlot(@NotNull EntityPlayer player, int par2) {
-        ItemStack var3 = ItemStack.EMPTY;
-        Slot var4 = this.inventorySlots.get(par2);
-
-        if(var4 != null && var4.getHasStack()) {
-            ItemStack var5 = var4.getStack();
-            var3 = var5.copy();
-
-            if(par2 <= 2) {
-                if(!this.mergeItemStack(var5, 3, this.inventorySlots.size(), true)) {
-                    return ItemStack.EMPTY;
-                }
-            } else {
-
-                if(var3.getItem() instanceof IItemFluidIdentifier) {
-                    if(!this.mergeItemStack(var5, 2, 3, false)) {
-                        return ItemStack.EMPTY;
-                    }
-                } else {
-                    if(!this.mergeItemStack(var5, 0, 1, false)) {
-                        return ItemStack.EMPTY;
-                    }
-                }
-            }
-
-            if(var5.getCount() == 0) {
-                var4.putStack(ItemStack.EMPTY);
-            } else {
-                var4.onSlotChanged();
-            }
-        }
-
-        return var3;
+    public ItemStack transferStackInSlot(@NotNull EntityPlayer player, int index) {
+        return InventoryUtil.transferStack(this.inventorySlots, index, 3,
+                s -> !(s.getItem() instanceof IItemFluidIdentifier), 2,
+                s -> s.getItem() instanceof IItemFluidIdentifier, 3
+        );
     }
 
     @Override

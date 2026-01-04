@@ -46,7 +46,7 @@ public class ContainerMachineChemicalPlant extends ContainerBase {
     @Override
     public ItemStack transferStackInSlot(EntityPlayer player, int index) {
         ItemStack slotOriginal = ItemStack.EMPTY;
-        Slot slot = (Slot) this.inventorySlots.get(index);
+        Slot slot = this.inventorySlots.get(index);
 
         if(slot != null && slot.getHasStack()) {
             ItemStack slotStack = slot.getStack();

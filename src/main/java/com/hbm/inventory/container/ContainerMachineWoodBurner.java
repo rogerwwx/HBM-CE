@@ -5,6 +5,7 @@ import com.hbm.inventory.SlotTakeOnly;
 import com.hbm.items.machine.IItemFluidIdentifier;
 import com.hbm.lib.Library;
 import com.hbm.tileentity.machine.TileEntityMachineWoodBurner;
+import com.hbm.util.InventoryUtil;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.Container;
@@ -46,49 +47,11 @@ public class ContainerMachineWoodBurner extends Container {
 
 	@Override
 	public ItemStack transferStackInSlot(EntityPlayer player, int index) {
-		ItemStack stack = ItemStack.EMPTY;
-		Slot slot = (Slot) this.inventorySlots.get(index);
-
-		if(slot != null && slot.getHasStack()) {
-			ItemStack originalStack = slot.getStack();
-			stack = originalStack.copy();
-
-			if(index <= 5) {
-				if(!this.mergeItemStack(originalStack, 6, this.inventorySlots.size(), true)) {
-					return ItemStack.EMPTY;
-				}
-				
-				slot.onSlotChange(originalStack, stack);
-				
-			} else {
-				
-				if(Library.isBattery(stack)) {
-					if(!this.mergeItemStack(originalStack, 5, 6, false)) {
-						return ItemStack.EMPTY;
-					}
-				} else if(stack.getItem() instanceof IItemFluidIdentifier) {
-					if(!this.mergeItemStack(originalStack, 2, 3, false)) {
-						return ItemStack.EMPTY;
-					}
-				} else if(TileEntityFurnace.isItemFuel(stack)) {
-					if(!this.mergeItemStack(originalStack, 0, 1, false)) {
-						return ItemStack.EMPTY;
-					}
-				} else {
-					if(!this.mergeItemStack(originalStack, 3, 4, false)) {
-						return ItemStack.EMPTY;
-					}
-				}
-			}
-
-			if(stack.isEmpty()) {
-				slot.putStack((ItemStack.EMPTY));
-			} else {
-				slot.onSlotChanged();
-			}
-		}
-
-		return stack;
+		return InventoryUtil.transferStack(this.inventorySlots, index, 6,
+                TileEntityFurnace::isItemFuel, 2,
+                s -> s.getItem() instanceof IItemFluidIdentifier, 3,
+                s -> Library.isStackDrainableForTank(s, burner.tank), 5,
+                Library::isChargeableBattery, 6);
 	}
 
 	@Override

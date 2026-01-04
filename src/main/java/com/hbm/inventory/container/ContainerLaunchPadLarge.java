@@ -49,15 +49,15 @@ public class ContainerLaunchPadLarge extends Container {
 	}
 
 	@Override
-	public ItemStack transferStackInSlot(EntityPlayer player, int par2) {
+	public ItemStack transferStackInSlot(EntityPlayer player, int index) {
 		ItemStack stackCopy = ItemStack.EMPTY;
-		Slot slot = this.inventorySlots.get(par2);
+		Slot slot = this.inventorySlots.get(index);
 
 		if(slot != null && slot.getHasStack()) {
 			ItemStack stack = slot.getStack();
 			stackCopy = stack.copy();
 
-			if(par2 <= 6) {
+			if(index <= 6) {
 				if(!this.mergeItemStack(stack, 7, this.inventorySlots.size(), true)) {
 					return ItemStack.EMPTY;
 				}

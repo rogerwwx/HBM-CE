@@ -7,6 +7,7 @@ import com.hbm.inventory.SlotUpgrade;
 import com.hbm.inventory.recipes.ArcFurnaceRecipes;
 import com.hbm.items.ModItems;
 import com.hbm.items.machine.ItemMachineUpgrade;
+import com.hbm.lib.Library;
 import com.hbm.tileentity.machine.TileEntityMachineArcFurnaceLarge;
 import com.hbm.util.InventoryUtil;
 import net.minecraft.entity.player.EntityPlayer;
@@ -45,38 +46,10 @@ public class ContainerMachineArcFurnaceLarge extends Container {
 
     @Override
     public ItemStack transferStackInSlot(EntityPlayer player, int index) {
-        ItemStack rStack = ItemStack.EMPTY;
-        Slot slot = this.inventorySlots.get(index);
-
-        if(slot != null && slot.getHasStack()) {
-            ItemStack stack = slot.getStack();
-            rStack = stack.copy();
-
-            if(index <= 24) {
-                if(!this.mergeItemStack(stack, 25, this.inventorySlots.size(), true)) {
-                    return ItemStack.EMPTY;
-                }
-            } else {
-
-                if(rStack.getItem() instanceof IBatteryItem || rStack.getItem() == ModItems.battery_creative) {
-                    if(!InventoryUtil.mergeItemStack(this.inventorySlots, stack, 3, 4, false)) return ItemStack.EMPTY;
-                } else if(rStack.getItem() == ModItems.arc_electrode) {
-                    if(!InventoryUtil.mergeItemStack(this.inventorySlots, stack, 0, 3, false)) return ItemStack.EMPTY;
-                } else if(rStack.getItem() instanceof ItemMachineUpgrade) {
-                    if(!InventoryUtil.mergeItemStack(this.inventorySlots, stack, 4, 5, false)) return ItemStack.EMPTY;
-                } else {
-                    if(!InventoryUtil.mergeItemStack(this.inventorySlots, stack, 5, 25, false)) return ItemStack.EMPTY;
-                }
-            }
-
-            if(stack.getCount() == 0) {
-                slot.putStack(ItemStack.EMPTY);
-            } else {
-                slot.onSlotChanged();
-            }
-        }
-
-        return rStack;
+        return InventoryUtil.transferStack(this.inventorySlots, index, 25,
+                s -> s.getItem() == ModItems.arc_electrode, 3,
+                Library::isBattery, 4,
+                Library::isMachineUpgrade, 5);
     }
 
     @Override

@@ -2,6 +2,7 @@ package com.hbm.inventory.container;
 
 import com.hbm.inventory.SlotTakeOnly;
 import com.hbm.tileentity.machine.storage.TileEntityMassStorage;
+import com.hbm.util.InventoryUtil;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.ClickType;
@@ -33,32 +34,8 @@ public class ContainerMassStorage extends Container {
 	}
 
 	@Override
-	public ItemStack transferStackInSlot(EntityPlayer playerIn, int par2) {
-		ItemStack var3 = ItemStack.EMPTY;
-		Slot var4 = (Slot) this.inventorySlots.get(par2);
-
-		if(var4 != null && var4.getHasStack()) {
-			ItemStack var5 = var4.getStack();
-			var3 = var5.copy();
-
-			if (par2 <= 2) {
-				if (!this.mergeItemStack(var5, 2, this.inventorySlots.size(), true)) {
-					return ItemStack.EMPTY;
-				}
-			} else {
-				if (!this.mergeItemStack(var5, 0, 1, true))
-					if (!this.mergeItemStack(var5, 2, 3, true))
-						return ItemStack.EMPTY;
-			}
-
-			if (var5.isEmpty()) {
-				var4.putStack(ItemStack.EMPTY);
-			} else {
-				var4.onSlotChanged();
-			}
-		}
-
-		return var3;
+	public ItemStack transferStackInSlot(EntityPlayer playerIn, int index) {
+		return InventoryUtil.transferStack(this.inventorySlots, index, 3, _ -> true, 1, _ -> false, 3);
 	}
 
 	@Override

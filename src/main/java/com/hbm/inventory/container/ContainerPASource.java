@@ -44,33 +44,8 @@ public class ContainerPASource extends Container {
 
     @Override
     public ItemStack transferStackInSlot(EntityPlayer player, int index) {
-        ItemStack rStack = ItemStack.EMPTY;
-        Slot slot = this.inventorySlots.get(index);
-
-        if(slot != null && slot.getHasStack()) {
-            ItemStack stack = slot.getStack();
-            rStack = stack.copy();
-
-            if(index <= 5) {
-                if(!this.mergeItemStack(stack, 6, this.inventorySlots.size(), true)) {
-                    return ItemStack.EMPTY;
-                }
-            } else {
-
-                if(Library.isBattery(rStack)) {
-                    if(!InventoryUtil.mergeItemStack(this.inventorySlots, stack, 0, 1, false)) return ItemStack.EMPTY;
-                } else {
-                    if(!InventoryUtil.mergeItemStack(this.inventorySlots, stack, 1, 3, false)) return ItemStack.EMPTY;
-                }
-            }
-
-            if(stack.getCount() == 0) {
-                slot.putStack(ItemStack.EMPTY);
-            } else {
-                slot.onSlotChanged();
-            }
-        }
-
-        return rStack;
+        return InventoryUtil.transferStack(this.inventorySlots, index, 5,
+                Library::isBattery, 1
+        );
     }
 }

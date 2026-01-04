@@ -6,6 +6,7 @@ import com.hbm.items.ModItems;
 import com.hbm.items.machine.ItemAssemblyTemplate;
 import com.hbm.lib.Library;
 import com.hbm.tileentity.machine.TileEntityMachineAssembler;
+import com.hbm.util.InventoryUtil;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.Container;
@@ -71,32 +72,11 @@ public class ContainerMachineAssembler extends Container {
 	}
 
 	@Override
-    public ItemStack transferStackInSlot(EntityPlayer p_82846_1_, int par2) {
-		ItemStack var3 = ItemStack.EMPTY;
-		Slot var4 = (Slot) this.inventorySlots.get(par2);
-
-		if (var4 != null && var4.getHasStack()) {
-			ItemStack var5 = var4.getStack();
-			var3 = var5.copy();
-
-			if (par2 <= 17) {
-				if (!this.mergeItemStack(var5, 18, this.inventorySlots.size(), true)) {
-					return ItemStack.EMPTY;
-				}
-			} else {
-				if (!this.mergeItemStack(var5, 6, 18, false))
-					if (!this.mergeItemStack(var5, 0, 4, false))
-						return ItemStack.EMPTY;
-
-				if (var5.getCount() == 0) {
-					var4.putStack(ItemStack.EMPTY);
-				} else {
-					var4.onSlotChanged();
-				}
-			}
-		}
-
-			return var3;
+    public ItemStack transferStackInSlot(EntityPlayer player, int index) {
+		return InventoryUtil.transferStack(this.inventorySlots, index, 18,
+                Library::isBattery, 1,
+                Library::isMachineUpgrade, 4,
+                s -> s.getItem() instanceof ItemAssemblyTemplate, 5);
 	}
 
 	@Override

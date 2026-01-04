@@ -1,13 +1,12 @@
 package com.hbm.inventory.container;
 
-import com.hbm.api.energymk2.IBatteryItem;
 import com.hbm.inventory.SlotBattery;
 import com.hbm.inventory.SlotTakeOnly;
 import com.hbm.inventory.SlotUpgrade;
-import com.hbm.items.ModItems;
 import com.hbm.items.machine.IItemFluidIdentifier;
-import com.hbm.items.machine.ItemMachineUpgrade;
+import com.hbm.lib.Library;
 import com.hbm.tileentity.machine.TileEntityElectrolyser;
+import com.hbm.util.InventoryUtil;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.Container;
@@ -55,45 +54,11 @@ public class ContainerElectrolyserFluid extends Container {
     }
 
     @Override
-    public ItemStack transferStackInSlot(EntityPlayer p_82846_1_, int par2) {
-        ItemStack var3 = ItemStack.EMPTY;
-        Slot var4 = this.inventorySlots.get(par2);
-
-        if(var4 != null && var4.getHasStack()) {
-            ItemStack var5 = var4.getStack();
-            var3 = var5.copy();
-
-            if(par2 <= 13) {
-                if(!this.mergeItemStack(var5, 14, this.inventorySlots.size(), true)) {
-                    return ItemStack.EMPTY;
-                }
-            } else {
-
-                if(var3.getItem() instanceof IBatteryItem || var3.getItem() == ModItems.battery_creative) {
-                    if(!this.mergeItemStack(var5, 0, 1, false)) {
-                        return ItemStack.EMPTY;
-                    }
-                } else if(var3.getItem() instanceof ItemMachineUpgrade) {
-                    if(!this.mergeItemStack(var5, 1, 3, false)) {
-                        return ItemStack.EMPTY;
-                    }
-                } else if(var3.getItem() instanceof IItemFluidIdentifier) {
-                    if(!this.mergeItemStack(var5, 3, 4, false)) {
-                        return ItemStack.EMPTY;
-                    }
-                } else {
-                    return ItemStack.EMPTY;
-                }
-            }
-
-            if(var5.getCount() == 0) {
-                var4.putStack(ItemStack.EMPTY);
-            } else {
-                var4.onSlotChanged();
-            }
-        }
-
-        return var3;
+    public ItemStack transferStackInSlot(EntityPlayer player, int index) {
+        return InventoryUtil.transferStack(this.inventorySlots, index, 14,
+                Library::isBattery, 1,
+                Library::isMachineUpgrade, 3,
+                s -> s.getItem() instanceof IItemFluidIdentifier, 5);
     }
 
     @Override

@@ -3,7 +3,9 @@ package com.hbm.inventory.container;
 import com.hbm.inventory.SlotBattery;
 import com.hbm.inventory.SlotTakeOnly;
 import com.hbm.inventory.SlotUpgrade;
+import com.hbm.lib.Library;
 import com.hbm.tileentity.machine.oil.TileEntityOilDrillBase;
+import com.hbm.util.InventoryUtil;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.Container;
@@ -13,10 +15,10 @@ import net.minecraftforge.items.SlotItemHandler;
 
 public class ContainerMachineOilWell extends Container {
 
-	private TileEntityOilDrillBase testNuke;
+	private TileEntityOilDrillBase oilDrill;
 	
 	public ContainerMachineOilWell(InventoryPlayer invPlayer, TileEntityOilDrillBase tedf) {
-		testNuke = tedf;
+		oilDrill = tedf;
 
 		// Battery
 		this.addSlotToContainer(new SlotBattery(tedf.inventory, 0, 8, 53));
@@ -48,44 +50,17 @@ public class ContainerMachineOilWell extends Container {
 	}
 	
 	@Override
-    public ItemStack transferStackInSlot(EntityPlayer p_82846_1_, int par2)
+    public ItemStack transferStackInSlot(EntityPlayer player, int index)
     {
-		ItemStack var3 = ItemStack.EMPTY;
-		Slot var4 = (Slot) this.inventorySlots.get(par2);
-		
-		if (var4 != null && var4.getHasStack())
-		{
-			ItemStack var5 = var4.getStack();
-			var3 = var5.copy();
-			
-            if (par2 <= 5) {
-				if (!this.mergeItemStack(var5, 6, this.inventorySlots.size(), true))
-				{
-					return ItemStack.EMPTY;
-				}
-			}
-			else if (!this.mergeItemStack(var5, 0, 2, false))
-			{
-				if (!this.mergeItemStack(var5, 3, 4, false))
-					if (!this.mergeItemStack(var5, 5, 6, false))
-					return ItemStack.EMPTY;
-			}
-			
-			if (var5.isEmpty())
-			{
-				var4.putStack(ItemStack.EMPTY);
-			}
-			else
-			{
-				var4.onSlotChanged();
-			}
-		}
-		
-		return var3;
+		return InventoryUtil.transferStack(this.inventorySlots, index, 8,
+                Library::isBattery, 1,
+                s -> Library.isStackFillableForTank(s, oilDrill.tanks[0]), 3,
+                s -> Library.isStackFillableForTank(s, oilDrill.tanks[1]), 5,
+                Library::isMachineUpgrade, 8);
     }
 
 	@Override
 	public boolean canInteractWith(EntityPlayer player) {
-		return testNuke.isUseableByPlayer(player);
+		return oilDrill.isUseableByPlayer(player);
 	}
 }

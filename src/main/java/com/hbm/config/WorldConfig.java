@@ -71,7 +71,6 @@ public class WorldConfig {
 	public static int geyserWater = 3000;
 	public static int geyserChlorine = 3000;
 	public static int geyserVapor = 500;
-	public static int meteorStructure = 15000;
 	public static int capsuleStructure = 100;
 	public static int broadcaster = 5000;
 	public static int minefreq = 64;

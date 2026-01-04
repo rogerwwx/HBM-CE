@@ -2,7 +2,10 @@ package com.hbm.inventory.container;
 
 import com.hbm.inventory.SlotBattery;
 import com.hbm.inventory.SlotUpgrade;
+import com.hbm.items.machine.IItemFluidIdentifier;
+import com.hbm.lib.Library;
 import com.hbm.tileentity.machine.oil.TileEntityMachineGasFlare;
+import com.hbm.util.InventoryUtil;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.Container;
@@ -14,11 +17,11 @@ import javax.annotation.Nonnull;
 
 public class ContainerMachineGasFlare extends Container {
 
-	private TileEntityMachineGasFlare testNuke;
+	private TileEntityMachineGasFlare gasFlare;
 	
 	public ContainerMachineGasFlare(InventoryPlayer invPlayer, TileEntityMachineGasFlare tedf) {
 		
-		testNuke = tedf;
+		gasFlare = tedf;
 
 		//Battery
 		this.addSlotToContainer(new SlotBattery(tedf.inventory, 0, 143, 71));
@@ -53,42 +56,17 @@ public class ContainerMachineGasFlare extends Container {
 	}
 	
 	@Override
-    public ItemStack transferStackInSlot(EntityPlayer p_82846_1_, int par2)
+    public ItemStack transferStackInSlot(EntityPlayer player, int index)
     {
-		ItemStack var3 = ItemStack.EMPTY;
-		Slot var4 = (Slot) this.inventorySlots.get(par2);
-		
-		if (var4 != null && var4.getHasStack())
-		{
-			ItemStack var5 = var4.getStack();
-			var3 = var5.copy();
-			
-            if (par2 <= 1) {
-				if (!this.mergeItemStack(var5, 3, this.inventorySlots.size(), true))
-				{
-					return ItemStack.EMPTY;
-				}
-			}
-			else if (!this.mergeItemStack(var5, 0, 3, false))
-			{
-					return ItemStack.EMPTY;
-			}
-			
-			if (var5.isEmpty())
-			{
-				var4.putStack(ItemStack.EMPTY);
-			}
-			else
-			{
-				var4.onSlotChanged();
-			}
-		}
-		
-		return var3;
+		return InventoryUtil.transferStack(this.inventorySlots, index, 6,
+                Library::isBattery, 1,
+                s -> Library.isStackFillableForTank(s, gasFlare.tank), 3,
+                s -> s.getItem() instanceof IItemFluidIdentifier, 4,
+                Library::isMachineUpgrade, 6);
     }
 
 	@Override
 	public boolean canInteractWith(EntityPlayer player) {
-		return testNuke.isUseableByPlayer(player);
+		return gasFlare.isUseableByPlayer(player);
 	}
 }

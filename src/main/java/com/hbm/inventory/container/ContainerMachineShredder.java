@@ -5,6 +5,7 @@ import com.hbm.inventory.SlotTakeOnly;
 import com.hbm.items.machine.ItemBlades;
 import com.hbm.lib.Library;
 import com.hbm.tileentity.machine.TileEntityMachineShredder;
+import com.hbm.util.InventoryUtil;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.Container;
@@ -73,45 +74,17 @@ public class ContainerMachineShredder extends Container {
 		super.addListener(listener);
 		listener.sendWindowProperty(this, 1, shredder.progress);
 	}
-	
+
+    private static boolean isNormal(ItemStack stack) {
+        return !(stack.getItem() instanceof ItemBlades) && !Library.isBattery(stack);
+    }
+
 	@Override
     public @NotNull ItemStack transferStackInSlot(@NotNull EntityPlayer player, int index)
     {
-		ItemStack rStack = ItemStack.EMPTY;
-		Slot slot = this.inventorySlots.get(index);
-		
-		if (slot != null && slot.getHasStack())
-		{
-			ItemStack stack = slot.getStack();
-			rStack = stack.copy();
-			
-            if (index <= 29) {
-				if (!this.mergeItemStack(stack, 30, this.inventorySlots.size(), true))
-				{
-					return ItemStack.EMPTY;
-				}
-			}
-			else {
-                if(Library.isBattery(rStack)) {
-                    if(!this.mergeItemStack(stack, 29, 30, false)) return ItemStack.EMPTY;
-                } else if(rStack.getItem() instanceof ItemBlades) {
-                    if(!this.mergeItemStack(stack, 27, 29, false)) return ItemStack.EMPTY;
-                } else {
-                    if(!this.mergeItemStack(stack, 0, 9, false)) return ItemStack.EMPTY;
-                }
-			}
-			
-			if (stack.isEmpty())
-			{
-				slot.putStack(ItemStack.EMPTY);
-			}
-			else
-			{
-				slot.onSlotChanged();
-			}
-		}
-		
-		return rStack;
+		return InventoryUtil.transferStack(this.inventorySlots, index, 30,
+                ContainerMachineShredder::isNormal, 27,
+                s -> s.getItem() instanceof ItemBlades, 29);
     }
 
 	@Override

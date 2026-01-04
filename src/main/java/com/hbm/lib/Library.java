@@ -25,11 +25,11 @@ import com.hbm.inventory.fluid.FluidType;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTankNTM;
 import com.hbm.items.ModItems;
+import com.hbm.items.machine.ItemMachineUpgrade;
 import com.hbm.main.MainRegistry;
 import com.hbm.tileentity.TileEntityMachineBase;
 import com.hbm.util.BobMathUtil;
 import io.netty.buffer.ByteBuf;
-import io.netty.util.ByteProcessor;
 import it.unimi.dsi.fastutil.HashCommon;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockDoor;
@@ -1248,6 +1248,10 @@ public static boolean canConnect(IBlockAccess world, BlockPos pos, ForgeDirectio
             IFluidHandlerItem handler = stack.getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY, null);
             return handler.fill(new FluidStack(tank.getTankTypeFF(), Integer.MAX_VALUE), false) > 0;
         } else return false;
+    }
+
+    public static boolean isMachineUpgrade(ItemStack stack) {
+        return !stack.isEmpty() && stack.getItem() instanceof ItemMachineUpgrade;
     }
 
     private static int clampFeRequest(long feLong) {

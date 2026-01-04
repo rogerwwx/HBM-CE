@@ -1,9 +1,10 @@
 package com.hbm.inventory.container;
 
 import com.hbm.api.energymk2.IBatteryItem;
-import com.hbm.inventory.SlotNonRetarded;
+import com.hbm.inventory.SlotBattery;
 import com.hbm.items.ModItems;
 import com.hbm.tileentity.machine.fusion.TileEntityFusionKlystron;
+import com.hbm.util.InventoryUtil;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.Container;
@@ -18,7 +19,7 @@ public class ContainerFusionKlystron extends Container {
     public ContainerFusionKlystron(InventoryPlayer invPlayer, TileEntityFusionKlystron tedf) {
         this.klystron = tedf;
 
-        this.addSlotToContainer(new SlotNonRetarded(klystron.inventory, 0, 8, 72));
+        this.addSlotToContainer(new SlotBattery(klystron.inventory, 0, 8, 72));
 
         for(int i = 0; i < 3; i++) {
             for(int j = 0; j < 9; j++) {
@@ -33,32 +34,7 @@ public class ContainerFusionKlystron extends Container {
 
     @Override
     public @NotNull ItemStack transferStackInSlot(@NotNull EntityPlayer player, int index) {
-        ItemStack copy = ItemStack.EMPTY;
-        Slot slot = this.inventorySlots.get(index);
-
-        if(slot != null && slot.getHasStack()) {
-            ItemStack stack = slot.getStack();
-            copy = stack.copy();
-
-            if(index == 0) {
-                if(!this.mergeItemStack(stack, 1, this.inventorySlots.size(), true)) return ItemStack.EMPTY;
-            } else {
-
-                if(copy.getItem() instanceof IBatteryItem || copy.getItem() == ModItems.battery_creative) {
-                    if(!this.mergeItemStack(stack, 0, 1, false)) return ItemStack.EMPTY;
-                } else {
-                    return ItemStack.EMPTY;
-                }
-            }
-
-            if(stack.getCount() == 0) {
-                slot.putStack(ItemStack.EMPTY);
-            } else {
-                slot.onSlotChanged();
-            }
-        }
-
-        return copy;
+        return InventoryUtil.transferStack(this.inventorySlots, index, 1);
     }
 
     @Override

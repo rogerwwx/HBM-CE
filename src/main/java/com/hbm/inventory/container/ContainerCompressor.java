@@ -5,6 +5,7 @@ import com.hbm.inventory.SlotUpgrade;
 import com.hbm.items.machine.IItemFluidIdentifier;
 import com.hbm.lib.Library;
 import com.hbm.tileentity.machine.TileEntityMachineCompressorBase;
+import com.hbm.util.InventoryUtil;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.Container;
@@ -45,41 +46,8 @@ public class ContainerCompressor extends Container {
 
     @Override
     public @NotNull ItemStack transferStackInSlot(EntityPlayer player, int index) {
-        ItemStack var3 = ItemStack.EMPTY;
-        Slot var4 = this.inventorySlots.get(index);
-
-        if(var4 != null && var4.getHasStack()) {
-            ItemStack var5 = var4.getStack();
-            var3 = var5.copy();
-
-            if(index < 4) {
-                if(!this.mergeItemStack(var5, 4, this.inventorySlots.size(), true)) {
-                    return ItemStack.EMPTY;
-                }
-            } else {
-
-                if(Library.isBattery(var3)) {
-                    if(!this.mergeItemStack(var5, 1, 2, false)) {
-                        return ItemStack.EMPTY;
-                    }
-                } else if(var3.getItem() instanceof IItemFluidIdentifier) {
-                    if(!this.mergeItemStack(var5, 0, 1, false)) {
-                        return ItemStack.EMPTY;
-                    }
-                } else {
-                    if(!this.mergeItemStack(var5, 2, 4, false)) {
-                        return ItemStack.EMPTY;
-                    }
-                }
-            }
-
-            if(var5.getCount() == 0) {
-                var4.putStack(ItemStack.EMPTY);
-            } else {
-                var4.onSlotChanged();
-            }
-        }
-
-        return var3;
+        return InventoryUtil.transferStack(this.inventorySlots, index, 4,
+                s -> s.getItem() instanceof IItemFluidIdentifier, 1,
+                Library::isBattery, 2);
     }
 }

@@ -2,7 +2,10 @@ package com.hbm.inventory.container;
 
 import com.hbm.inventory.SlotBattery;
 import com.hbm.inventory.SlotTakeOnly;
+import com.hbm.items.machine.IItemFluidIdentifier;
+import com.hbm.lib.Library;
 import com.hbm.tileentity.machine.TileEntityMachineTurbine;
+import com.hbm.util.InventoryUtil;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.Container;
@@ -12,11 +15,11 @@ import net.minecraftforge.items.SlotItemHandler;
 
 public class ContainerMachineTurbine extends Container {
 
-private TileEntityMachineTurbine diFurnace;
+private TileEntityMachineTurbine turbine;
 	
 	public ContainerMachineTurbine(InventoryPlayer invPlayer, TileEntityMachineTurbine tedf) {
 		
-		diFurnace = tedf;
+		turbine = tedf;
 
 		//Fluid ID
 		//Drillgon200: don't need these
@@ -47,45 +50,17 @@ private TileEntityMachineTurbine diFurnace;
 	}
 	
 	@Override
-    public ItemStack transferStackInSlot(EntityPlayer p_82846_1_, int par2)
+    public ItemStack transferStackInSlot(EntityPlayer player, int index)
     {
-		ItemStack var3 = ItemStack.EMPTY;
-		Slot var4 = (Slot) this.inventorySlots.get(par2);
-		
-		if (var4 != null && var4.getHasStack())
-		{
-			ItemStack var5 = var4.getStack();
-			var3 = var5.copy();
-			
-            if (par2 <= 6) {
-				if (!this.mergeItemStack(var5, 7, this.inventorySlots.size(), true))
-				{
-					return ItemStack.EMPTY;
-				}
-			}
-			else if (!this.mergeItemStack(var5, 4, 5, false))
-			{
-				if (!this.mergeItemStack(var5, 2, 3, false))
-					if (!this.mergeItemStack(var5, 5, 6, false))
-						if (!this.mergeItemStack(var5, 0, 1, false))
-							return ItemStack.EMPTY;
-			}
-			
-			if (var5.getCount() == 0)
-			{
-				var4.putStack(ItemStack.EMPTY);
-			}
-			else
-			{
-				var4.onSlotChanged();
-			}
-		}
-		
-		return var3;
+		return InventoryUtil.transferStack(this.inventorySlots, index, 7,
+                s -> s.getItem() instanceof IItemFluidIdentifier, 2,
+                s -> Library.isStackDrainableForTank(s, turbine.tanksNew[0]), 4,
+                Library::isChargeableBattery, 5,
+                s -> Library.isStackFillableForTank(s, turbine.tanksNew[1]), 6);
     }
 
 	@Override
 	public boolean canInteractWith(EntityPlayer player) {
-		return diFurnace.isUseableByPlayer(player);
+		return turbine.isUseableByPlayer(player);
 	}
 }

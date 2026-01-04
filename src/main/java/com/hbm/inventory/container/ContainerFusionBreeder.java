@@ -4,6 +4,7 @@ import com.hbm.inventory.SlotCraftingOutput;
 import com.hbm.inventory.SlotNonRetarded;
 import com.hbm.items.machine.IItemFluidIdentifier;
 import com.hbm.tileentity.machine.fusion.TileEntityFusionBreeder;
+import com.hbm.util.InventoryUtil;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.Container;
@@ -35,32 +36,8 @@ public class ContainerFusionBreeder extends Container {
 
     @Override
     public @NotNull ItemStack transferStackInSlot(@NotNull EntityPlayer player, int index) {
-        ItemStack copy = ItemStack.EMPTY;
-        Slot slot = this.inventorySlots.get(index);
-
-        if(slot != null && slot.getHasStack()) {
-            ItemStack stack = slot.getStack();
-            copy = stack.copy();
-
-            if(index <= 2) {
-                if(!this.mergeItemStack(stack, 3, this.inventorySlots.size(), true)) return ItemStack.EMPTY;
-            } else {
-
-                if(copy.getItem() instanceof IItemFluidIdentifier) {
-                    if(!this.mergeItemStack(stack, 0, 1, false)) return ItemStack.EMPTY;
-                } else {
-                    if(!this.mergeItemStack(stack, 1, 2, false)) return ItemStack.EMPTY;
-                }
-            }
-
-            if(stack.getCount() == 0) {
-                slot.putStack(ItemStack.EMPTY);
-            } else {
-                slot.onSlotChanged();
-            }
-        }
-
-        return copy;
+        return InventoryUtil.transferStack(this.inventorySlots, index, 3,
+                s -> s.getItem() instanceof IItemFluidIdentifier, 1);
     }
 
     @Override

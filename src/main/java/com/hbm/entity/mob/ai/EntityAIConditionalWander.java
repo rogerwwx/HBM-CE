@@ -18,7 +18,7 @@ public class EntityAIConditionalWander<T extends EntityCreature> extends EntityA
     @Override
     public boolean shouldExecute() {
         if (wanderPredicate.test(entity)) {
-            super.shouldExecute();
+            return super.shouldExecute();
         }
         return false;
     }
@@ -26,7 +26,7 @@ public class EntityAIConditionalWander<T extends EntityCreature> extends EntityA
     @Override
     public boolean shouldContinueExecuting() {
         if (wanderPredicate.test(entity)) {
-            super.shouldContinueExecuting();
+            return super.shouldContinueExecuting();
         }
         return false;
     }

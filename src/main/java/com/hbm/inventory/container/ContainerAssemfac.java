@@ -4,6 +4,7 @@ import com.hbm.inventory.SlotBattery;
 import com.hbm.inventory.SlotTakeOnly;
 import com.hbm.inventory.SlotUpgrade;
 import com.hbm.tileentity.machine.TileEntityMachineAssemfac;
+import com.hbm.util.InventoryUtil;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.Container;
@@ -62,34 +63,6 @@ public class ContainerAssemfac extends Container {
 
     @Override
     public ItemStack transferStackInSlot(EntityPlayer player, int index) {
-        ItemStack var3 = ItemStack.EMPTY;
-        Slot var4 = (Slot) this.inventorySlots.get(index);
-
-        if (var4 != null && var4.getHasStack())
-        {
-            ItemStack var5 = var4.getStack();
-            var3 = var5.copy();
-
-            if (index <= 3) {
-                if (!this.mergeItemStack(var5, 4, this.inventorySlots.size(), true))
-                {
-                    return ItemStack.EMPTY;
-                }
-            }
-            else if (!this.mergeItemStack(var5, 0, 3, false))
-            {
-                return ItemStack.EMPTY;
-            }
-
-            if (var5.getCount() == 0)
-            {
-                var4.putStack(ItemStack.EMPTY);
-            }
-            else
-            {
-                var4.onSlotChanged();
-            }
-        }
-        return var3;
+        return InventoryUtil.transferStack(this.inventorySlots, index, 5);
     }
 }

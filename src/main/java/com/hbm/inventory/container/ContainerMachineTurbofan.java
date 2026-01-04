@@ -8,6 +8,7 @@ import com.hbm.items.machine.IItemFluidIdentifier;
 import com.hbm.items.machine.ItemMachineUpgrade;
 import com.hbm.lib.Library;
 import com.hbm.tileentity.machine.TileEntityMachineTurbofan;
+import com.hbm.util.InventoryUtil;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.Container;
@@ -55,43 +56,23 @@ public class ContainerMachineTurbofan extends Container {
     }
 
     @Override
-    public void addListener(IContainerListener crafting) {
-        super.addListener(crafting);
-        crafting.sendWindowProperty(this, 1, this.turbofan.afterburner);
+    public void addListener(IContainerListener listener) {
+        super.addListener(listener);
+        listener.sendWindowProperty(this, 1, this.turbofan.afterburner);
+    }
+
+    private static boolean isNormal(ItemStack stack) {
+        return !Library.isBattery(stack) && !Library.isMachineUpgrade(stack) && !(stack.getItem() instanceof IItemFluidIdentifier);
     }
 
     @NotNull
     @Override
     public ItemStack transferStackInSlot(@NotNull EntityPlayer player, int index) {
-        ItemStack rStack = ItemStack.EMPTY;
-        Slot slot = this.inventorySlots.get(index);
-
-        if (slot != null && slot.getHasStack()) {
-            ItemStack stack = slot.getStack();
-            rStack = stack.copy();
-            if (index <= 4) {
-                if (!this.mergeItemStack(stack, 5, this.inventorySlots.size(), true)) {
-                    return ItemStack.EMPTY;
-                }
-            } else {
-                if (Library.isChargeableBattery(rStack)) {
-                    if (!this.mergeItemStack(stack, 3, 4, false)) return ItemStack.EMPTY;
-                } else if (rStack.getItem() instanceof IItemFluidIdentifier) {
-                    if (!this.mergeItemStack(stack, 4, 5, false)) return ItemStack.EMPTY;
-                } else if (rStack.getItem() instanceof ItemMachineUpgrade) {
-                    if (!this.mergeItemStack(stack, 2, 3, false)) return ItemStack.EMPTY;
-                } else {
-                    if (!this.mergeItemStack(stack, 0, 1, false)) return ItemStack.EMPTY;
-                }
-            }
-            if (stack.isEmpty()) {
-                slot.putStack(ItemStack.EMPTY);
-            } else {
-                slot.onSlotChanged();
-            }
-        }
-
-        return rStack;
+        return InventoryUtil.transferStack(this.inventorySlots, index, 5,
+                ContainerMachineTurbofan::isNormal, 2,
+                s -> Library.isMachineUpgrade(s) || s.getItem() == ModItems.flame_pony, 3,
+                Library::isChargeableBattery, 4,
+                s -> s.getItem() instanceof IItemFluidIdentifier, 5);
     }
 
     @Override
@@ -103,9 +84,9 @@ public class ContainerMachineTurbofan extends Container {
     public void detectAndSendChanges() {
         super.detectAndSendChanges();
 
-        for (IContainerListener par1 : this.listeners) {
+        for (IContainerListener listener : this.listeners) {
             if (this.afterburner != this.turbofan.afterburner) {
-                par1.sendWindowProperty(this, 1, this.turbofan.afterburner);
+                listener.sendWindowProperty(this, 1, this.turbofan.afterburner);
             }
         }
 

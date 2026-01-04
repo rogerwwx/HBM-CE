@@ -3,9 +3,9 @@ package com.hbm.inventory.container;
 import com.hbm.inventory.SlotBattery;
 import com.hbm.inventory.SlotTakeOnly;
 import com.hbm.inventory.SlotUpgrade;
-import com.hbm.items.machine.ItemMachineUpgrade;
 import com.hbm.lib.Library;
 import com.hbm.tileentity.machine.TileEntityMachineExposureChamber;
+import com.hbm.util.InventoryUtil;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.Container;
@@ -39,44 +39,16 @@ public class ContainerMachineExposureChamber extends Container {
         }
     }
 
+    private static boolean isNormal(ItemStack stack) {
+        return !Library.isBattery(stack) && !Library.isMachineUpgrade(stack);
+    }
+
     @Override
-    public ItemStack transferStackInSlot(EntityPlayer p_82846_1_, int par2) {
-        ItemStack var3 = ItemStack.EMPTY;
-        Slot var4 = this.inventorySlots.get(par2);
-
-        if (var4 != null && var4.getHasStack()) {
-            ItemStack var5 = var4.getStack();
-            var3 = var5.copy();
-
-            if (par2 <= 6) {
-                if (!this.mergeItemStack(var5, 7, this.inventorySlots.size(), true)) {
-                    return ItemStack.EMPTY;
-                }
-            } else {
-
-                if (var3.getItem() instanceof ItemMachineUpgrade) {
-                    if (!this.mergeItemStack(var5, 5, 7, false)) {
-                        return ItemStack.EMPTY;
-                    }
-                } else if (Library.isBattery(var3)) {
-                    if (!this.mergeItemStack(var5, 4, 5, false)) {
-                        return ItemStack.EMPTY;
-                    }
-                } else {
-                    if (!this.mergeItemStack(var5, 0, 3, false)) {
-                        return ItemStack.EMPTY;
-                    }
-                }
-            }
-
-            if (var5.getCount() == 0) {
-                var4.putStack(ItemStack.EMPTY);
-            } else {
-                var4.onSlotChanged();
-            }
-        }
-
-        return var3;
+    public ItemStack transferStackInSlot(EntityPlayer player, int index) {
+        return InventoryUtil.transferStack(this.inventorySlots, index, 7,
+                ContainerMachineExposureChamber::isNormal, 4,
+                Library::isBattery, 5,
+                Library::isMachineUpgrade, 7);
     }
 
     @Override

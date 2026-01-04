@@ -2,7 +2,9 @@ package com.hbm.inventory.container;
 
 import com.hbm.inventory.SlotBattery;
 import com.hbm.inventory.SlotTakeOnly;
+import com.hbm.lib.Library;
 import com.hbm.tileentity.machine.oil.TileEntityMachineRefinery;
+import com.hbm.util.InventoryUtil;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.Container;
@@ -13,10 +15,10 @@ import org.jetbrains.annotations.NotNull;
 
 public class ContainerMachineRefinery extends Container {
 
-    private TileEntityMachineRefinery testNuke;
+    private TileEntityMachineRefinery refinery;
 	
 	public ContainerMachineRefinery(InventoryPlayer invPlayer, TileEntityMachineRefinery tedf) {
-		testNuke = tedf;
+		refinery = tedf;
 
 		//Battery
 		this.addSlotToContainer(new SlotBattery(tedf.inventory, 0, 186, 72));
@@ -57,41 +59,18 @@ public class ContainerMachineRefinery extends Container {
 	}
 	
 	@Override
-    public @NotNull ItemStack transferStackInSlot(@NotNull EntityPlayer p_82846_1_, int par2) {
-		ItemStack var3 = ItemStack.EMPTY;
-		Slot var4 = this.inventorySlots.get(par2);
-		
-		if (var4 != null && var4.getHasStack()) {
-			ItemStack var5 = var4.getStack();
-			var3 = var5.copy();
-			
-            if (par2 <= 11) {
-				if (!this.mergeItemStack(var5, 12, this.inventorySlots.size(), true)) {
-					return ItemStack.EMPTY;
-				}
-			}
-			else if (!this.mergeItemStack(var5, 0, 1, false))
-				if (!this.mergeItemStack(var5, 1, 2, false))
-					if (!this.mergeItemStack(var5, 3, 4, false))
-						if (!this.mergeItemStack(var5, 5, 6, false))
-							if (!this.mergeItemStack(var5, 7, 8, false))
-								if (!this.mergeItemStack(var5, 9, 10, false)) {
-					return ItemStack.EMPTY;
-			}
-			
-			if (var5.isEmpty()) {
-				var4.putStack(ItemStack.EMPTY);
-			}
-			else {
-				var4.onSlotChanged();
-			}
-		}
-		
-		return var3;
+    public @NotNull ItemStack transferStackInSlot(@NotNull EntityPlayer player, int index) {
+		return InventoryUtil.transferStack(this.inventorySlots, index, 13,
+                Library::isBattery, 1,
+                s -> Library.isStackDrainableForTank(s, refinery.tanks[0]), 3,
+                s -> Library.isStackFillableForTank(s, refinery.tanks[1]), 5,
+                s -> Library.isStackFillableForTank(s, refinery.tanks[2]), 7,
+                s -> Library.isStackFillableForTank(s, refinery.tanks[3]), 9,
+                s -> Library.isStackFillableForTank(s, refinery.tanks[4]), 11);
     }
 
 	@Override
 	public boolean canInteractWith(@NotNull EntityPlayer player) {
-		return testNuke.isUseableByPlayer(player);
+		return refinery.isUseableByPlayer(player);
 	}
 }
