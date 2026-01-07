@@ -1,6 +1,7 @@
 package com.hbm.packet;
 
 import com.hbm.Tags;
+import com.hbm.api.network.IPacketRegisterListener;
 import com.hbm.main.NetworkHandler;
 import com.hbm.packet.toclient.*;
 import com.hbm.packet.toserver.*;
@@ -8,9 +9,13 @@ import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.relauncher.Side;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class PacketDispatcher {
 	
 	public static final NetworkHandler wrapper = new NetworkHandler(Tags.MODID);
+	public static final List<IPacketRegisterListener> LISTENERS = new ArrayList<>();
 	
 	public static void registerPackets(){
 		int i = 0;
@@ -113,6 +118,10 @@ public class PacketDispatcher {
 		wrapper.registerMessage(ModFXCollidePacket.Handler.class, ModFXCollidePacket.class, i++, Side.SERVER);
 		wrapper.registerMessage(BiomeSyncPacket.Handler.class, BiomeSyncPacket.class, i++, Side.CLIENT);
         wrapper.registerMessage(PermaSyncPacket.Handler.class, PermaSyncPacket.class, i++, Side.CLIENT);
+
+		for (IPacketRegisterListener listener : LISTENERS) {
+			i = listener.registerPackets(i);
+		}
 	}
 	
 	public static void sendTo(IMessage message, EntityPlayerMP player){

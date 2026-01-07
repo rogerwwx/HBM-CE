@@ -296,8 +296,6 @@ public class MainRegistry {
             MinecraftForge.EVENT_BUS.register(keyHandler);
         }
 
-        PacketDispatcher.registerPackets();
-
         HbmPotion.init();
 
         CapabilityManager.INSTANCE.register(HbmLivingCapability.IEntityHbmProps.class, new HbmLivingCapability.EntityHbmPropsStorage(), HbmLivingCapability.EntityHbmProps.FACTORY);
@@ -398,6 +396,7 @@ public class MainRegistry {
         if(RadiationConfig.enableContaminationOnGround)
             HazardRegistry.registerContaminatingDrops();
         Fluids.initForgeFluidCompat();
+        PacketDispatcher.registerPackets();
         PacketThreading.init();
         IMCHandler.init();
     }

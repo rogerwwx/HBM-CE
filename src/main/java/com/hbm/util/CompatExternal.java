@@ -3,11 +3,13 @@ package com.hbm.util;
 import com.hbm.api.energymk2.IEnergyHandlerMK2;
 import com.hbm.api.energymk2.IEnergyReceiverMK2;
 import com.hbm.api.fluidmk2.IFluidUserMK2;
+import com.hbm.api.network.IPacketRegisterListener;
 import com.hbm.api.recipe.IRecipeRegisterListener;
 import com.hbm.blocks.BlockDummyable;
 import com.hbm.inventory.fluid.FluidType;
 import com.hbm.inventory.fluid.tank.FluidTankNTM;
 import com.hbm.inventory.recipes.loader.SerializableRecipe;
+import com.hbm.packet.PacketDispatcher;
 import com.hbm.tileentity.machine.TileEntityDummy;
 import net.minecraft.block.Block;
 import net.minecraft.entity.Entity;
@@ -183,5 +185,14 @@ public class CompatExternal {
      */
     public static void registerRecipeRegisterListener(IRecipeRegisterListener listener) {
         SerializableRecipe.additionalListeners.add(listener);
+    }
+
+    /**
+     * Registers an IPacketRegisterListener to the PacketDispatcher. The listener is called at the tail of
+     * {@link PacketDispatcher#registerPackets()} with the next id available. This method must be called
+     * before init, i.e. in preinit or earlier.
+     */
+    public static void registerPacketRegisterListener(IPacketRegisterListener listener) {
+        PacketDispatcher.LISTENERS.add(listener);
     }
 }
