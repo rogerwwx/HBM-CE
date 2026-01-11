@@ -1,7 +1,6 @@
-package com.hbm.crafting.recipe;
+package com.hbm.crafting.handlers;
 
 import com.hbm.blocks.ModBlocks;
-import com.hbm.inventory.fluid.Fluids;
 import com.hbm.items.ModItems;
 import com.hbm.items.machine.ItemFluidIDMulti;
 import net.minecraft.init.Items;
@@ -15,7 +14,7 @@ import net.minecraft.world.World;
 import net.minecraftforge.oredict.OreDictionary;
 import net.minecraftforge.registries.IForgeRegistryEntry;
 
-public final class RecipeFluidDuctRetype extends IForgeRegistryEntry.Impl<IRecipe> implements IRecipe {
+public final class FluidDuctRetypeHandler extends IForgeRegistryEntry.Impl<IRecipe> implements IRecipe {
     private static final Item fluid_duct_neo;
 
     static {

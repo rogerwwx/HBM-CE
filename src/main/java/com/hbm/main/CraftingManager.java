@@ -9,7 +9,7 @@ import com.hbm.blocks.generic.BlockConcreteColoredExt.EnumConcreteType;
 import com.hbm.config.GeneralConfig;
 import com.hbm.crafting.*;
 import com.hbm.crafting.handlers.*;
-import com.hbm.crafting.recipe.RecipeFluidDuctRetype;
+import com.hbm.crafting.handlers.FluidDuctRetypeHandler;
 import com.hbm.inventory.OreDictManager;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.material.MaterialShapes;
@@ -691,7 +691,7 @@ public class CraftingManager {
 //					new ItemStack(ModItems.fluid_duct, 1, OreDictionary.WILDCARD_VALUE), new ItemStack(ModItems.fluid_duct, 1, OreDictionary.WILDCARD_VALUE), new ItemStack(ModItems.fluid_duct, 1, OreDictionary.WILDCARD_VALUE), id);
 //		}
         // mlbv: used a dynamic recipe to replace the boilerplate above
-        hack.getRegistry().register(new RecipeFluidDuctRetype().setRegistryName(Tags.MODID, "duct_retype"));
+        hack.getRegistry().register(new FluidDuctRetypeHandler().setRegistryName(Tags.MODID, "duct_retype"));
 		addShapelessAuto(new ItemStack(ModBlocks.fluid_duct_neo, 1), new ItemStack(ModItems.fluid_duct, 1, OreDictionary.WILDCARD_VALUE) );
 
 		addRecipeAuto(new ItemStack(Blocks.TORCH, 3), "L", "S", 'L', LIGNITE.gem(), 'S', KEY_STICK );
