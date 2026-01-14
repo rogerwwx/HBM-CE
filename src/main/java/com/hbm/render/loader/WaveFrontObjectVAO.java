@@ -16,7 +16,7 @@ import static org.lwjgl.opengl.GL15.*;
 
 public class WaveFrontObjectVAO implements IModelCustomNamed {
 
-    public static final List<WaveFrontObjectVAO> allVBOs = new CopyOnWriteArrayList<>();
+    public static final List<WaveFrontObjectVAO> allVBOs = new ArrayList<>();
     public static final boolean GL30Support = GLContext.getCapabilities().OpenGL30;
     public static final boolean AppleVAOSupport = GLContext.getCapabilities().GL_APPLE_vertex_array_object;
 
