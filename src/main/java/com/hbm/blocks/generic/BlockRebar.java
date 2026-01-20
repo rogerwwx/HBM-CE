@@ -77,7 +77,7 @@ public class BlockRebar extends BlockContainer implements IDynamicModels {
     @SideOnly(Side.CLIENT)
     private static final int FILL_MAX = 1000;
     @SideOnly(Side.CLIENT)
-    private static final IBakedModel[] FILL_MODELS = new IBakedModel[FILL_MAX + 1];
+    private static IBakedModel[] FILL_MODELS;
     @SideOnly(Side.CLIENT)
     private TextureAtlasSprite rebarSprite;
     @SideOnly(Side.CLIENT)
@@ -97,23 +97,21 @@ public class BlockRebar extends BlockContainer implements IDynamicModels {
 
     @SideOnly(Side.CLIENT)
     public static void renderRebar(float partialTicks) {
-        // upstream iterated the entire list of loaded TEs, code quality == -1
-        if (TileEntityRebar.ACTIVE == null || TileEntityRebar.ACTIVE.isEmpty()) {
-            return;
-        }
-        int limit = ClientConfig.RENDER_REBAR_LIMIT.get();
-
         Minecraft mc = Minecraft.getMinecraft();
         EntityPlayer player = mc.player;
         World world = mc.world;
         if (player == null || world == null) {
             return;
         }
-
         double dx = player.prevPosX + (player.posX - player.prevPosX) * partialTicks;
         double dy = player.prevPosY + (player.posY - player.prevPosY) * partialTicks;
         double dz = player.prevPosZ + (player.posZ - player.prevPosZ) * partialTicks;
+        renderWorldModels(mc, dx, dy, dz, world);
+        renderPreview(player, mc, dx, dy, dz);
+    }
 
+    private static void renderWorldModels(Minecraft mc, double dx, double dy, double dz, World world) {
+        if (TileEntityRebar.ACTIVE.isEmpty()) return;
         TextureAtlasSprite sprite = ((BlockRebar) ModBlocks.rebar).concreteSprite;
         GlStateManager.pushMatrix();
         GlStateManager.shadeModel(GL11.GL_SMOOTH);
@@ -127,7 +125,9 @@ public class BlockRebar extends BlockContainer implements IDynamicModels {
 
         IBlockState state = ModBlocks.rebar.getDefaultState();
         BlockModelRenderer renderer = mc.getBlockRendererDispatcher().getBlockModelRenderer();
+        int limit = ClientConfig.RENDER_REBAR_LIMIT.get();
         int drawn = 0;
+        // upstream iterated the entire list of loaded TEs, code quality == -1
         for (TileEntityRebar rebar : TileEntityRebar.ACTIVE) {
             int progress = MathHelper.clamp(rebar.progress, 0, FILL_MAX);
             if (progress <= 0) continue;
@@ -142,7 +142,9 @@ public class BlockRebar extends BlockContainer implements IDynamicModels {
         mc.entityRenderer.disableLightmap();
         GlStateManager.shadeModel(GL11.GL_FLAT);
         GlStateManager.popMatrix();
+    }
 
+    private static void renderPreview(EntityPlayer player, Minecraft mc, double dx, double dy, double dz) {
         ItemStack held = player.getHeldItemMainhand();
         if (!held.isEmpty() && held.getItem() == ModItems.rebar_placer && held.hasTagCompound() && held.getTagCompound().hasKey("pos")) {
             RayTraceResult mop = mc.objectMouseOver;
@@ -175,7 +177,7 @@ public class BlockRebar extends BlockContainer implements IDynamicModels {
                 GlStateManager.enableLighting();
                 GlStateManager.popMatrix();
 
-                int rebarLeft = InventoryUtil.countAStackMatches(player, new ComparableStack(ModBlocks.rebar), true);
+                int rebarLeft = player.isCreative() ? Integer.MAX_VALUE : InventoryUtil.countAStackMatches(player, new ComparableStack(ModBlocks.rebar), true);
                 int rebarRequired = (maxX - minX + 1) * (maxY - minY + 1) * (maxZ - minZ + 1);
                 TextFormatting color = rebarRequired > rebarLeft ? TextFormatting.RED : TextFormatting.GREEN;
                 MainRegistry.proxy.displayTooltip(color + (rebarLeft + " / " + rebarRequired));
@@ -265,8 +267,7 @@ public class BlockRebar extends BlockContainer implements IDynamicModels {
     @Override
     @SideOnly(Side.CLIENT)
     public void bakeModel(ModelBakeEvent event) {
-        if (rebarSprite == null) return;
-        Arrays.fill(FILL_MODELS, null); // for resource reload
+        FILL_MODELS = new IBakedModel[FILL_MAX + 1];
         ModelResourceLocation worldLoc = new ModelResourceLocation(getRegistryName(), "normal");
         ModelResourceLocation invLoc = new ModelResourceLocation(getRegistryName(), "inventory");
 
