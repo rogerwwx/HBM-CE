@@ -14,34 +14,35 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.Optional;
 import org.jetbrains.annotations.Nullable;
 
 public class Compat {
-	private static final boolean MOD_EIDS = Loader.isModLoaded("jeid") || Loader.isModLoaded("neid");
+    private static final boolean MOD_EIDS = Loader.isModLoaded("jeid") || Loader.isModLoaded("neid");
     private static final boolean MOD_OC = Loader.isModLoaded(ModIds.OPEN_COMPUTERS);
 
-	public static boolean isIDExtensionModLoaded() {
-		return MOD_EIDS;
-	}
+    public static boolean isIDExtensionModLoaded() {
+        return MOD_EIDS;
+    }
 
     public static boolean isOpenComputersLoaded() {
         return MOD_OC;
     }
 
-	public static Item tryLoadItem(String domain, String name) {
-		return Item.REGISTRY.getObject(new ResourceLocation(domain, name));
-	}
-	
-	public static Block tryLoadBlock(String domain, String name){
-		return Block.REGISTRY.getObject(new ResourceLocation(domain, name));
-	}
+    public static Item tryLoadItem(String domain, String name) {
+        return Item.REGISTRY.getObject(new ResourceLocation(domain, name));
+    }
 
-	public static TileEntity getTileStandard(World world, int x, int y, int z) {
-		if(!world.getChunkProvider().isChunkGeneratedAt(x >> 4, z >> 4)) return null;
-		return world.getTileEntity(new BlockPos(x, y, z));
-	}
+    public static Block tryLoadBlock(String domain, String name) {
+        return Block.REGISTRY.getObject(new ResourceLocation(domain, name));
+    }
+
+    public static TileEntity getTileStandard(World world, int x, int y, int z) {
+        if (!world.getChunkProvider().isChunkGeneratedAt(x >> 4, z >> 4)) return null;
+        return world.getTileEntity(new BlockPos(x, y, z));
+    }
 
     @Nullable
     @Optional.Method(modid = ModIds.AE2)
@@ -55,11 +56,25 @@ public class Compat {
         return list;
     }
 
+    public static void exitOnIncompatible() {
+        for (String mod : ModIds.INCOMPATIBLE_MODS) {
+            if (Loader.isModLoaded(mod)) {
+                throw new RuntimeException("Mod:" + mod + " is an NTM:EE addon, not compatible with NTM:CE. Please contact the addon developer");
+            }
+        }
+    }
+
     public static final class ModIds {
         public static final String GROOVY_SCRIPT = "groovyscript";
         public static final String OPEN_COMPUTERS = "opencomputers";
         public static final String CTM = "ctm";
         public static final String AE2 = "appliedenergistics2";
         public static final String MODERN_SPLASH = "modernsplash";
+        public static final String HBM_NTM_STRUCTURE = "ntmdopolnenie"; //Yes, this is the modid. Idk what this means
+        public static final String POTATOO_STRUCTURE = "potatooscustomstructureforhbm"; //Can we just block all mccreator mods?
+        public static final String HBM_NTM_LUCKY_BLOCKS = "luckynuke"; //It's all fucking garbage;
+        public static final String[] INCOMPATIBLE_MODS = {HBM_NTM_LUCKY_BLOCKS, POTATOO_STRUCTURE, HBM_NTM_STRUCTURE};
+
+
     }
 }

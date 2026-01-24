@@ -29,7 +29,6 @@ import com.hbm.handler.threading.PacketThreading;
 import com.hbm.hazard.HazardData;
 import com.hbm.hazard.HazardRegistry;
 import com.hbm.hazard.HazardSystem;
-import com.hbm.interfaces.Spaghetti;
 import com.hbm.inventory.BedrockOreRegistry;
 import com.hbm.inventory.FluidContainerRegistry;
 import com.hbm.inventory.OreDictManager;
@@ -46,7 +45,6 @@ import com.hbm.items.weapon.GrenadeDispenserRegistry;
 import com.hbm.items.weapon.sedna.mods.WeaponModManager;
 import com.hbm.lib.HBMSoundHandler;
 import com.hbm.lib.HbmWorld;
-import com.hbm.lib.Library;
 import com.hbm.packet.PacketDispatcher;
 import com.hbm.potion.HbmDetox;
 import com.hbm.potion.HbmPotion;
@@ -55,10 +53,7 @@ import com.hbm.tileentity.bomb.TileEntityLaunchPadBase;
 import com.hbm.tileentity.bomb.TileEntityNukeCustom;
 import com.hbm.tileentity.machine.TileEntityMachineRadarNT;
 import com.hbm.tileentity.machine.rbmk.RBMKDials;
-import com.hbm.util.ChunkUtil;
-import com.hbm.util.CrashHelper;
-import com.hbm.util.DamageResistanceHandler;
-import com.hbm.util.MobUtil;
+import com.hbm.util.*;
 import com.hbm.world.feature.OreCave;
 import com.hbm.world.feature.OreLayer3D;
 import com.hbm.world.feature.SchistStratum;
@@ -73,7 +68,6 @@ import net.minecraft.util.Tuple;
 import net.minecraft.util.text.TextComponentTranslation;
 import net.minecraft.world.World;
 import net.minecraftforge.common.ForgeChunkManager;
-import net.minecraftforge.common.ForgeChunkManager.LoadingCallback;
 import net.minecraftforge.common.ForgeChunkManager.Ticket;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.capabilities.CapabilityManager;
@@ -88,11 +82,10 @@ import net.minecraftforge.fml.relauncher.Side;
 import org.apache.logging.log4j.Logger;
 
 import java.io.File;
-import java.util.List;
 import java.util.Random;
 
 @Mod(modid = Tags.MODID, version = Tags.VERSION, name = Tags.MODNAME,
-        dependencies = "required-client:ctm"
+        dependencies = "required-client:ctm;"
 )
 public class MainRegistry {
 
@@ -191,6 +184,7 @@ public class MainRegistry {
     public void preInit(FMLPreInitializationEvent event) {
         startupTime = System.currentTimeMillis();
         CrashHelper.init();
+        Compat.exitOnIncompatible();
 
         if (logger == null)
             logger = event.getModLog();
