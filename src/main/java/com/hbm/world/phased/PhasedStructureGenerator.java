@@ -64,21 +64,8 @@ public class PhasedStructureGenerator implements IWorldGenerator {
     }
 
     static void forceGenerateStructure(World world, Random rand, long originSerialized, IPhasedStructure structure, Long2ObjectOpenHashMap<Long2ObjectOpenHashMap<Object>> layout) {
-        int originChunkX = Library.getBlockPosX(originSerialized) >> 4;
-        int originChunkZ = Library.getBlockPosZ(originSerialized) >> 4;
-
-        var iterator = layout.long2ObjectEntrySet().fastIterator();
-        while (iterator.hasNext()) {
-            Long2ObjectMap.Entry<Long2ObjectOpenHashMap<Object>> entry = iterator.next();
-            long relKey = entry.getLongKey();
-            Long2ObjectOpenHashMap<Object> blocksForThisChunk = entry.getValue();
-
-            int relChunkX = Library.getChunkPosX(relKey);
-            int relChunkZ = Library.getChunkPosZ(relKey);
-            int absChunkX = originChunkX + relChunkX;
-            int absChunkZ = originChunkZ + relChunkZ;
-
-            structure.generateForChunk(world, rand, originSerialized, blocksForThisChunk);
+        for (var blocks : layout.values()) {
+            structure.generateForChunk(world, rand, originSerialized, blocks);
         }
         structure.postGenerate(world, rand, originSerialized);
     }
