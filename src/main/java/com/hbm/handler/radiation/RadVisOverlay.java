@@ -2,6 +2,9 @@ package com.hbm.handler.radiation;
 
 import com.hbm.lib.Library;
 import com.hbm.util.RenderUtil;
+import com.hbm.util.SectionKeyHash;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.longs.Long2ReferenceOpenCustomHashMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.renderer.BufferBuilder;
@@ -23,10 +26,7 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.opengl.GL11;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 
 import static com.hbm.handler.radiation.RadiationSystemNT.*;
 
@@ -49,7 +49,26 @@ public final class RadVisOverlay {
     private static final float[][] POCKET_COLORS = new float[16][3];
     private static final String[] FACE_NAMES = {"DOWN", "UP", "NORTH", "SOUTH", "WEST", "EAST"};
 
-    private static final List<ErrorRecord> ERROR_CACHE = new ArrayList<>();
+    private static final List<ErrorRecord> ERROR_CACHE = new ArrayList<>(32);
+    private static final int PLANES = 17;                    // boundary planes 0..16
+    private static final int PLANE_ROWS = 16;                // rows per plane
+    private static final int FACE_STRIDE = PLANES * PLANE_ROWS;   // 272
+    private static final int POCKET_STRIDE = 6 * FACE_STRIDE;     // 1632
+    private static final int[] FACE_ROWS_TEMP = new int[NO_POCKET * POCKET_STRIDE];
+    private static final int[] FACE_PLANE_AXIS = {1, 1, 2, 2, 0, 0};
+    private static final int[] FACE_PLANE_ADD = {0, 1, 0, 1, 0, 1};
+    private static final int[] FACE_U_AXIS = {0, 0, 0, 0, 2, 2};
+    private static final int[] FACE_V_AXIS = {2, 2, 1, 1, 1, 1};
+    private static final int[] FACE_BOUNDARY_COORD = {0, 15, 0, 15, 0, 15};
+    private static final IntArrayList QUADS_TEMP = new IntArrayList(512);
+    private static final int[] OUTER_ROWS_TEMP = new int[NO_POCKET * 6 * 16];  // per pocket/face boundary masks
+    private static final int[] PLANE16_TEMP = new int[16];
+    private static final int[] PLANE16_COPY_TEMP = new int[16];
+    private static final IntArrayList QUADS_TEMP2 = new IntArrayList(256);
+    private static final WeakHashMap<MultiSectionRef, PocketMesh> POCKET_MESH_CACHE = new WeakHashMap<>(32);
+    private static final WeakHashMap<MultiSectionRef, MultiOuterMeshes> MULTI_OUTER_CACHE = new WeakHashMap<>(32);
+    private static final WeakHashMap<SingleMaskedSectionRef, SingleOuterMeshes> SINGLE_OUTER_CACHE = new WeakHashMap<>(32);
+    private static final Long2ReferenceOpenCustomHashMap<int[]> ERROR_MASK = new Long2ReferenceOpenCustomHashMap<>(32, SectionKeyHash.STRATEGY);
     private static long lastVerifyTick = Long.MIN_VALUE;
 
     static {
@@ -63,6 +82,340 @@ public final class RadVisOverlay {
     }
 
     private RadVisOverlay() {
+    }
+
+    // quad packing: pocket:4 | face:3 | plane:5 | u0:5 | v0:5 | u1:5 | v1:5
+    private static int packQuad(int pocket, int face, int plane, int u0, int v0, int u1, int v1) {
+        return (pocket & 15) | ((face & 7) << 4) | ((plane & 31) << 7) | ((u0 & 31) << 12) | ((v0 & 31) << 17) | ((u1 & 31) << 22) | ((v1 & 31) << 27);
+    }
+
+    private static int coordAxis(int axis, int lx, int ly, int lz) {
+        return switch (axis) {
+            case 0 -> lx;
+            case 1 -> ly;
+            default -> lz;
+        };
+    }
+
+    private static int boundaryPlaneForFace(int face) {
+        // DOWN/NORTH/WEST => 0, UP/SOUTH/EAST => 16
+        return (face & 1) == 0 ? 0 : 16;
+    }
+
+    // Face-local (u,v) -> blockIndex on boundary plane for that face:
+    // faces 0/1: u=x, v=z (y fixed)
+    // faces 2/3: u=x, v=y (z fixed)
+    // faces 4/5: u=z, v=y (x fixed)
+    private static int faceUVToBlockIndex(int face, int u, int v) {
+        return switch (face) {
+            case 0 -> (0 << 8) | (v << 4) | u;
+            case 1 -> (15 << 8) | (v << 4) | u;
+            case 2 -> (v << 8) | (0 << 4) | u;
+            case 3 -> (v << 8) | (15 << 4) | u;
+            case 4 -> (v << 8) | (u << 4) | 0;
+            case 5 -> (v << 8) | (u << 4) | 15;
+            default -> 0;
+        };
+    }
+
+    private static void drawPackedQuads(BufferBuilder buf, int baseX, int baseY, int baseZ, int[] quads, float r, float g, float b, float a, float inset) {
+        for (int q : quads) {
+            emitPackedPocketQuad(buf, baseX, baseY, baseZ, r, g, b, a, inset, q);
+        }
+    }
+
+    private static void drawPackedQuads(BufferBuilder buf, int baseX, int baseY, int baseZ, IntArrayList quads, float r, float g, float b, float a, float inset) {
+        int[] arr = quads.elements();
+        for (int i = 0, n = quads.size(); i < n; i++) {
+            int q = arr[i];
+            emitPackedPocketQuad(buf, baseX, baseY, baseZ, r, g, b, a, inset, q);
+        }
+    }
+
+    private static void emitPackedPocketQuad(BufferBuilder buf, int baseX, int baseY, int baseZ, float r, float g, float b, float a, float inset, int q) {
+        int face = (q >>> 4) & 7;
+        int plane = (q >>> 7) & 31;
+        int u0 = (q >>> 12) & 31;
+        int v0 = (q >>> 17) & 31;
+        int u1 = (q >>> 22) & 31;
+        int v1 = (q >>> 27) & 31;
+        emitPocketQuad(buf, baseX, baseY, baseZ, face, plane, u0, v0, u1, v1, r, g, b, a, inset);
+    }
+
+    // Emit one rectangle quad on a given face/plane.
+    // (u,v) are in-plane axes, per-face mapping:
+    // - DOWN/UP:     u=x, v=z, plane=y
+    // - NORTH/SOUTH: u=x, v=y, plane=z
+    // - WEST/EAST:   u=z, v=y, plane=x
+    private static void emitPocketQuad(BufferBuilder buf, int baseX, int baseY, int baseZ, int face, int plane, int u0, int v0, int u1, int v1, float r, float g, float b, float a, float inset) {
+        switch (face) {
+            case 0 ->
+                    emitQuadY(buf, (double) baseY + plane + inset, baseX + u0, baseZ + v0, baseX + u1, baseZ + v1, false, r, g, b, a);
+            case 1 ->
+                    emitQuadY(buf, (double) baseY + plane - inset, baseX + u0, baseZ + v0, baseX + u1, baseZ + v1, true, r, g, b, a);
+            case 2 ->
+                    emitQuadZ(buf, (double) baseZ + plane + inset, baseX + u0, baseY + v0, baseX + u1, baseY + v1, false, r, g, b, a);
+            case 3 ->
+                    emitQuadZ(buf, (double) baseZ + plane - inset, baseX + u0, baseY + v0, baseX + u1, baseY + v1, true, r, g, b, a);
+            case 4 ->
+                    emitQuadX(buf, (double) baseX + plane + inset, baseY + v0, baseZ + u0, baseY + v1, baseZ + u1, true, r, g, b, a);
+            case 5 ->
+                    emitQuadX(buf, (double) baseX + plane - inset, baseY + v0, baseZ + u0, baseY + v1, baseZ + u1, false, r, g, b, a);
+        }
+    }
+
+    // Destructively consumes rows[planeBase...planeBase+15] by clearing bits as it emits rectangles.
+    private static void greedyMeshPlane(int[] rows, int planeBase, int pocket, int face, int plane, IntArrayList out) {
+        for (int v0 = 0; v0 < 16; v0++) {
+            while (true) {
+                int rowMask = rows[planeBase + v0] & 0xFFFF;
+                if (rowMask == 0) break;
+
+                int u0 = Integer.numberOfTrailingZeros(rowMask);
+
+                int shifted = (rowMask >>> u0) & 0xFFFF;
+                int inv = (~shifted) & 0xFFFF;
+                int w = Integer.numberOfTrailingZeros(inv);
+                if (w == 32) w = 16 - u0;
+                if (w <= 0) break;
+
+                int rectMask = ((1 << w) - 1) << u0;
+
+                int h = 1;
+                while (v0 + h < 16) {
+                    int m = rows[planeBase + v0 + h] & 0xFFFF;
+                    if ((m & rectMask) != rectMask) break;
+                    h++;
+                }
+
+                for (int vv = 0; vv < h; vv++) {
+                    rows[planeBase + v0 + vv] &= ~rectMask;
+                }
+
+                int u1 = u0 + w;
+                int v1 = v0 + h;
+                out.add(packQuad(pocket, face, plane, u0, v0, u1, v1));
+            }
+        }
+    }
+
+    private static int[] meshFaceRowsToPackedQuads(int face, int plane, int[] rows16) {
+        int[] tmp = PLANE16_COPY_TEMP;
+        System.arraycopy(rows16, 0, tmp, 0, 16);
+        IntArrayList out = QUADS_TEMP2;
+        out.clear();
+        greedyMeshPlane(tmp, 0, 0, face, plane, out);
+        int n = out.size();
+        if (n == 0) return new int[0];
+        int[] q = new int[n];
+        System.arraycopy(out.elements(), 0, q, 0, n);
+        return q;
+    }
+
+    private static PocketMesh getOrBuildPocketMesh(MultiSectionRef ms, int pocketCount) {
+        byte[] pd = ms.pocketData;
+        if (pd == null || pocketCount <= 0) return null;
+
+        PocketMesh cached = POCKET_MESH_CACHE.get(ms);
+        if (cached != null && cached.pocketDataRef == pd && cached.pocketCount == pocketCount) {
+            return cached;
+        }
+
+        PocketMesh built = buildPocketMesh(pd, pocketCount);
+        POCKET_MESH_CACHE.put(ms, built);
+        return built;
+    }
+
+    private static PocketMesh buildPocketMesh(byte[] pocketData, int pocketCount) {
+        int pc = Math.min(pocketCount, NO_POCKET);
+        int len = pc * POCKET_STRIDE;
+
+        int[] rows = FACE_ROWS_TEMP;
+        Arrays.fill(rows, 0, len, 0);
+
+        // Fill per-(pocket, face, plane) 16-row bitmasks. Each row is 16-bit columns.
+        for (int idx = 0; idx < 4096; idx++) {
+            int pi = readNibble(pocketData, idx);
+            if (pi == NO_POCKET || pi < 0 || pi >= pc) continue;
+
+            int lx = idx & 15;
+            int lz = (idx >>> 4) & 15;
+            int ly = (idx >>> 8) & 15;
+
+            for (int face = 0; face < 6; face++) {
+                int axis = FACE_PLANE_AXIS[face];
+                int c = coordAxis(axis, lx, ly, lz);
+                boolean boundary = (c == FACE_BOUNDARY_COORD[face]);
+                if (!boundary) {
+                    int nIdx = idx + LINEAR_OFFSETS[face];
+                    if (readNibble(pocketData, nIdx) != NO_POCKET) continue;
+                }
+
+                int plane = c + FACE_PLANE_ADD[face];
+                int u = coordAxis(FACE_U_AXIS[face], lx, ly, lz);
+                int v = coordAxis(FACE_V_AXIS[face], lx, ly, lz);
+
+                int off = pi * POCKET_STRIDE + face * FACE_STRIDE + plane * PLANE_ROWS + v;
+                rows[off] |= (1 << u);
+            }
+        }
+
+        IntArrayList quads = QUADS_TEMP;
+        quads.clear();
+
+        for (int pi = 0; pi < pc; pi++) {
+            int pocketBase = pi * POCKET_STRIDE;
+            for (int face = 0; face < 6; face++) {
+                int faceBase = pocketBase + face * FACE_STRIDE;
+                for (int plane = 0; plane < PLANES; plane++) {
+                    int planeBase = faceBase + plane * PLANE_ROWS;
+                    greedyMeshPlane(rows, planeBase, pi, face, plane, quads);
+                }
+            }
+        }
+
+        int n = quads.size();
+        int[] q = new int[n];
+        System.arraycopy(quads.elements(), 0, q, 0, n);
+
+        return new PocketMesh(pocketData, pc, q);
+    }
+
+    private static MultiOuterMeshes getOrBuildOuterMeshes(MultiSectionRef ms, int pocketCount) {
+        byte[] pd = ms.pocketData;
+        if (pd == null || pocketCount <= 0) return null;
+
+        MultiOuterMeshes cached = MULTI_OUTER_CACHE.get(ms);
+        if (cached != null && cached.pocketDataRef == pd && cached.pocketCount == pocketCount) return cached;
+
+        MultiOuterMeshes built = buildMultiOuterMeshes(pd, pocketCount);
+        MULTI_OUTER_CACHE.put(ms, built);
+        return built;
+    }
+
+    private static SingleOuterMeshes getOrBuildOuterMeshes(SingleMaskedSectionRef s) {
+        byte[] pd = s.pocketData;
+        if (pd == null) return null;
+
+        SingleOuterMeshes cached = SINGLE_OUTER_CACHE.get(s);
+        if (cached != null && cached.pocketDataRef == pd) return cached;
+
+        SingleOuterMeshes built = buildSingleOuterMeshes(pd);
+        SINGLE_OUTER_CACHE.put(s, built);
+        return built;
+    }
+
+    // Fill OUTER_ROWS_TEMP for a given face for MULTI pockets, and record first sample u/v per pocket.
+    private static void scanOuterFaceRowsMulti(byte[] pocketData, int pc, int face, int[] rows, byte[] sampleU, byte[] sampleV, int[] sampleSetMask) {
+        int faceRowBase = face * 16;
+        for (int v = 0; v < 16; v++) {
+            for (int u = 0; u < 16; u++) {
+                int idx = faceUVToBlockIndex(face, u, v);
+                int pi = readNibble(pocketData, idx);
+                if (pi == NO_POCKET || pi < 0 || pi >= pc) continue;
+
+                int off = (pi * 96) + faceRowBase + v;
+                rows[off] |= (1 << u);
+
+                int bit = 1 << pi;
+                if ((sampleSetMask[face] & bit) == 0) {
+                    sampleSetMask[face] |= bit;
+                    int sOff = face * NO_POCKET + pi;
+                    sampleU[sOff] = (byte) u;
+                    sampleV[sOff] = (byte) v;
+                }
+            }
+        }
+    }
+
+    // Fill PLANE16_TEMP for a given face for SINGLE (open == nibble 0).
+    private static void buildSingleOuterFacePlane(byte[] pocketData, int face, int[] plane16Out) {
+        Arrays.fill(plane16Out, 0);
+        for (int v = 0; v < 16; v++) {
+            int mask = 0;
+            for (int u = 0; u < 16; u++) {
+                int idx = faceUVToBlockIndex(face, u, v);
+                if (readNibble(pocketData, idx) == 0) mask |= (1 << u);
+            }
+            plane16Out[v] = mask;
+        }
+    }
+
+    private static MultiOuterMeshes buildMultiOuterMeshes(byte[] pocketData, int pocketCount) {
+        int pc = Math.min(pocketCount, NO_POCKET);
+
+        int[] rows = OUTER_ROWS_TEMP;
+        Arrays.fill(rows, 0, pc * 6 * 16, 0);
+
+        byte[] sampleU = new byte[6 * NO_POCKET];
+        byte[] sampleV = new byte[6 * NO_POCKET];
+        int[] sampleSetMask = new int[6];
+
+        // Fill per-pocket per-face boundary masks from the six boundary planes only.
+        for (int face = 0; face < 6; face++) {
+            scanOuterFaceRowsMulti(pocketData, pc, face, rows, sampleU, sampleV, sampleSetMask);
+        }
+
+        int[][] sectionFaceQuads = new int[6][];
+        int[][] warnFaceQuads = new int[6][];
+        int[] facePocketBits = new int[6];
+
+        int[] union = PLANE16_TEMP;
+        int[] tmp = PLANE16_COPY_TEMP;
+
+        for (int face = 0; face < 6; face++) {
+            Arrays.fill(union, 0);
+
+            int bits = 0;
+            int faceBase = face * 16;
+
+            for (int pi = 0; pi < pc; pi++) {
+                int base = (pi * 96) + faceBase;
+                boolean any = false;
+                for (int r = 0; r < 16; r++) {
+                    int m = rows[base + r] & 0xFFFF;
+                    union[r] |= m;
+                    any |= (m != 0);
+                }
+                if (any) bits |= (1 << pi);
+            }
+
+            facePocketBits[face] = bits;
+
+            int plane = boundaryPlaneForFace(face);
+            sectionFaceQuads[face] = meshFaceRowsToPackedQuads(face, plane, union);
+
+            if (Integer.bitCount(bits) > 1) {
+                int first = Integer.numberOfTrailingZeros(bits);
+                Arrays.fill(tmp, 0);
+
+                for (int pi = 0; pi < pc; pi++) {
+                    if (pi == first) continue;
+                    if (((bits >>> pi) & 1) == 0) continue;
+
+                    int base = (pi * 96) + faceBase;
+                    for (int r = 0; r < 16; r++) {
+                        tmp[r] |= (rows[base + r] & 0xFFFF);
+                    }
+                }
+
+                warnFaceQuads[face] = meshFaceRowsToPackedQuads(face, plane, tmp);
+            } else {
+                warnFaceQuads[face] = new int[0];
+            }
+        }
+
+        return new MultiOuterMeshes(pocketData, pc, sectionFaceQuads, warnFaceQuads, facePocketBits, sampleU, sampleV);
+    }
+
+    private static SingleOuterMeshes buildSingleOuterMeshes(byte[] pocketData) {
+        int[][] sectionFaceQuads = new int[6][];
+        int[] plane = PLANE16_TEMP;
+        for (int face = 0; face < 6; face++) {
+            buildSingleOuterFacePlane(pocketData, face, plane);
+            sectionFaceQuads[face] = meshFaceRowsToPackedQuads(face, boundaryPlaneForFace(face), plane);
+        }
+        return new SingleOuterMeshes(pocketData, sectionFaceQuads);
     }
 
     public static void render(RenderWorldLastEvent evt) {
@@ -104,11 +457,12 @@ public final class RadVisOverlay {
             switch (CONFIG.mode) {
                 case WIRE -> renderWire(data, pcx, pcz, radius, filter);
                 case SLICE -> renderSlice(data, pcx, pcz, radius, sliceY, filter);
-                case FACES -> renderFaces(data, pcx, pcz, radius, filter);
+                case SECTIONS -> renderSections(data, pcx, pcz, radius, filter);
+                case POCKETS -> renderPockets(data, pcx, pcz, radius, filter);
                 case STATE -> renderState(data, pcx, pcz, radius, filter, camX, camY, camZ);
                 case ERRORS -> renderErrors(data, pcx, pcz, radius, filter);
             }
-        } catch (Throwable ignored) {
+        } catch (Throwable _) {
         } finally {
             GlStateManager.popMatrix();
             RenderUtil.popAttrib();
@@ -132,7 +486,11 @@ public final class RadVisOverlay {
         int pcz = MathHelper.floor(mc.player.posZ) >> 4;
 
         FocusFilter filter = FocusFilter.fromConfig(CONFIG, mc.player);
-        runVerification(data, pcx, pcz, radius, filter, ERROR_CACHE);
+        try {
+            runVerification(data, pcx, pcz, radius, filter, ERROR_CACHE);
+        } catch (Throwable _) {
+            ERROR_CACHE.clear();
+        }
     }
 
     private static @Nullable WorldRadiationData getData(Minecraft mc) {
@@ -146,7 +504,7 @@ public final class RadVisOverlay {
 
     private static void renderWire(WorldRadiationData data, int pcx, int pcz, int radius, FocusFilter filter) {
         GlStateManager.disableTexture2D();
-
+        GlStateManager.depthMask(false);
         Tessellator tess = Tessellator.getInstance();
         BufferBuilder buf = tess.getBuffer();
         buf.begin(GL11.GL_LINES, DefaultVertexFormats.POSITION_COLOR);
@@ -173,6 +531,7 @@ public final class RadVisOverlay {
         }
 
         tess.draw();
+        GlStateManager.depthMask(true);
     }
 
     private static void renderSlice(WorldRadiationData data, int pcx, int pcz, int radius, int sliceY, FocusFilter filter) {
@@ -181,10 +540,7 @@ public final class RadVisOverlay {
 
         GlStateManager.disableTexture2D();
 
-        if (CONFIG.depth) {
-            GlStateManager.enablePolygonOffset();
-            GlStateManager.doPolygonOffset(-1.0f, -1.0f);
-        }
+        depthAndPolygon(Mode.SLICE);
 
         Tessellator tess = Tessellator.getInstance();
         BufferBuilder buf = tess.getBuffer();
@@ -274,18 +630,19 @@ public final class RadVisOverlay {
         }
 
         tess.draw();
-
-        if (CONFIG.depth) GlStateManager.disablePolygonOffset();
+        cleanDepthAndPolygon();
     }
 
-    private static void renderFaces(WorldRadiationData data, int pcx, int pcz, int radius, FocusFilter filter) {
+    private static void renderSections(WorldRadiationData data, int pcx, int pcz, int radius, FocusFilter filter) {
         GlStateManager.disableTexture2D();
+        depthAndPolygon(Mode.SECTIONS);
 
         Tessellator tess = Tessellator.getInstance();
         BufferBuilder buf = tess.getBuffer();
         buf.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
 
-        int[] counts = new int[16];
+        float inset = Mode.SECTIONS.inset;
+        float a = CONFIG.alpha * 0.5f;
 
         Sec sec = new Sec();
         Sec nei = new Sec();
@@ -305,41 +662,453 @@ public final class RadVisOverlay {
                     int kind = sec.kind;
                     if (kind == ChunkRef.KIND_UNI) continue;
 
-                    int pocketCount = sec.pocketCount;
+                    if (kind == ChunkRef.KIND_SINGLE) {
+                        SingleMaskedSectionRef s = sec.single;
+                        if (s == null) continue;
+
+                        SingleOuterMeshes mesh = getOrBuildOuterMeshes(s);
+                        if (mesh == null) continue;
+
+                        float[] col = kindColor(kind);
+                        for (int face = 0; face < 6; face++) {
+                            int[] quads = mesh.sectionFaceQuads[face];
+                            if (quads.length == 0) continue;
+                            drawPackedQuads(buf, baseX, baseY, baseZ, quads, col[0], col[1], col[2], a, inset);
+                        }
+                        continue;
+                    }
+
+                    // MULTI
+                    MultiSectionRef m = sec.multi;
+                    if (m == null) continue;
+
+                    MultiOuterMeshes mesh = getOrBuildOuterMeshes(m, sec.pocketCount);
+                    if (mesh == null) continue;
 
                     for (int face = 0; face < 6; face++) {
-                        if (kind == ChunkRef.KIND_SINGLE) {
-                            int exposed = sec.single.getFaceCount(face);
-                            if (exposed <= 0) continue;
-                            float[] color = kindColor(kind);
-                            addFaceQuad(buf, baseX, baseY, baseZ, face, color[0], color[1], color[2], CONFIG.alpha * 0.5f, 0.01f);
-                            continue;
+                        int[] quads = mesh.sectionFaceQuads[face];
+                        if (quads.length == 0) continue;
+
+                        boolean leakRisk = false;
+                        if (Integer.bitCount(mesh.facePocketBits[face]) > 1) {
+                            long neighborKey = Library.sectionToLong(cx + FACE_DX[face], sy + FACE_DY[face], cz + FACE_DZ[face]);
+                            if (resolveSection(data, neighborKey, nei) && nei.kind == ChunkRef.KIND_UNI)
+                                leakRisk = true;
                         }
 
-                        for (int i = 0; i < pocketCount; i++) counts[i] = 0;
-
-                        int planeBase = face << 8;
-                        for (int t = 0; t < 256; t++) {
-                            int idx = FACE_PLANE[planeBase + t];
-                            int pi = pocketIndexAt(sec, idx);
-                            if (pi >= 0) counts[pi]++;
-                        }
-
-                        int nonZero = 0;
-                        for (int i = 0; i < pocketCount; i++) if (counts[i] > 0) nonZero++;
-                        if (nonZero == 0) continue;
-
-                        long neighborKey = Library.sectionToLong(cx + FACE_DX[face], sy + FACE_DY[face], cz + FACE_DZ[face]);
-                        boolean leakRisk = resolveSection(data, neighborKey, nei) && nei.kind == ChunkRef.KIND_UNI && nonZero > 1;
-
-                        float[] color = leakRisk ? COLOR_WARN : kindColor(kind);
-                        addFaceQuad(buf, baseX, baseY, baseZ, face, color[0], color[1], color[2], CONFIG.alpha * 0.5f, 0.01f);
+                        float[] col = leakRisk ? COLOR_WARN : kindColor(kind);
+                        drawPackedQuads(buf, baseX, baseY, baseZ, quads, col[0], col[1], col[2], a, inset);
                     }
                 }
             }
         }
 
         tess.draw();
+        cleanDepthAndPolygon();
+    }
+
+    private static void renderPockets(WorldRadiationData data, int pcx, int pcz, int radius, FocusFilter filter) {
+        GlStateManager.disableTexture2D();
+        depthAndPolygon(Mode.POCKETS);
+
+        Tessellator tess = Tessellator.getInstance();
+        BufferBuilder buf = tess.getBuffer();
+        buf.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
+
+        float baseAlpha = MathHelper.clamp(CONFIG.alpha, 0.0f, 1.0f);
+        float inset = Mode.POCKETS.inset;
+
+        double[] rad = new double[16];
+        boolean[] active = new boolean[16];
+        float[] radAlpha = new float[16];
+
+        Sec sec = new Sec();
+
+        for (int cx = pcx - radius; cx <= pcx + radius; cx++) {
+            for (int cz = pcz - radius; cz <= pcz + radius; cz++) {
+                for (int sy = 0; sy < 16; sy++) {
+                    int baseX = cx << 4;
+                    int baseY = sy << 4;
+                    int baseZ = cz << 4;
+
+                    if (filter != null && filter.isSectionOutsideFilter(baseX, baseY, baseZ)) continue;
+
+                    long sck = Library.sectionToLong(cx, sy, cz);
+                    if (!resolveSection(data, sck, sec)) continue;
+
+                    if (sec.kind != ChunkRef.KIND_MULTI) continue;
+
+                    MultiSectionRef ms = sec.multi;
+                    if (ms == null || sec.pocketData == null || sec.pocketCount <= 0) continue;
+
+                    int pocketCount = sec.pocketCount;
+                    for (int pi = 0; pi < pocketCount; pi++) {
+                        rad[pi] = readRad(sec, pi);
+                        active[pi] = readActive(sec, pi);
+                        radAlpha[pi] = computeRadAlpha(rad[pi], baseAlpha, active[pi]);
+                    }
+
+                    PocketMesh mesh = getOrBuildPocketMesh(ms, pocketCount);
+                    if (mesh == null) continue;
+
+                    int[] quads = mesh.quads;
+                    for (int q : quads) {
+                        int pi = q & 15;
+                        if (pi >= pocketCount) continue;
+
+                        float r, g, b, a;
+                        if (!active[pi] && Math.abs(rad[pi]) > 1.0e-6) {
+                            r = COLOR_INACTIVE[0];
+                            g = COLOR_INACTIVE[1];
+                            b = COLOR_INACTIVE[2];
+                            a = baseAlpha;
+                        } else {
+                            float[] c = POCKET_COLORS[pi & 15];
+                            r = c[0];
+                            g = c[1];
+                            b = c[2];
+                            a = radAlpha[pi];
+                        }
+
+                        emitPackedPocketQuad(buf, baseX, baseY, baseZ, r, g, b, a, inset, q);
+                    }
+                }
+            }
+        }
+
+        tess.draw();
+        cleanDepthAndPolygon();
+    }
+
+    private static void renderErrors(WorldRadiationData data, int pcx, int pcz, int radius, FocusFilter filter) {
+        GlStateManager.disableTexture2D();
+        depthAndPolygon(Mode.ERRORS);
+
+        Tessellator tess = Tessellator.getInstance();
+        BufferBuilder buf = tess.getBuffer();
+
+        float inset = Mode.ERRORS.inset;
+        float a = CONFIG.alpha * 0.5f;
+
+        Sec sec = new Sec();
+        Sec nei = new Sec();
+
+        int[] crossData = new int[128];
+        int crossCount = 0;
+
+        buf.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
+
+        for (int cx = pcx - radius; cx <= pcx + radius; cx++) {
+            for (int cz = pcz - radius; cz <= pcz + radius; cz++) {
+                for (int sy = 0; sy < 16; sy++) {
+                    int baseX = cx << 4;
+                    int baseY = sy << 4;
+                    int baseZ = cz << 4;
+
+                    if (filter != null && filter.isSectionOutsideFilter(baseX, baseY, baseZ)) continue;
+
+                    long sck = Library.sectionToLong(cx, sy, cz);
+                    if (!resolveSection(data, sck, sec)) continue;
+
+                    if (sec.kind != ChunkRef.KIND_MULTI) continue;
+                    if (sec.pocketCount <= 1) continue;
+
+                    MultiSectionRef m = sec.multi;
+                    if (m == null || sec.pocketData == null) continue;
+
+                    MultiOuterMeshes mesh = getOrBuildOuterMeshes(m, sec.pocketCount);
+                    if (mesh == null) continue;
+
+                    for (int face = 0; face < 6; face++) {
+                        int[] warnQuads = mesh.warnFaceQuads[face];
+                        if (warnQuads.length == 0) continue;
+
+                        long neighborKey = Library.sectionToLong(cx + FACE_DX[face], sy + FACE_DY[face], cz + FACE_DZ[face]);
+                        if (!resolveSection(data, neighborKey, nei) || nei.kind != ChunkRef.KIND_UNI) continue;
+
+                        drawPackedQuads(buf, baseX, baseY, baseZ, warnQuads, COLOR_WARN[0], COLOR_WARN[1], COLOR_WARN[2], a, inset);
+                        int bits = mesh.facePocketBits[face];
+                        int first = Integer.numberOfTrailingZeros(bits);
+                        int rest = bits & ~(1 << first);
+                        while (rest != 0) {
+                            int pi = Integer.numberOfTrailingZeros(rest);
+                            rest &= (rest - 1);
+                            int off = face * NO_POCKET + pi;
+                            int u = mesh.sampleU[off] & 15;
+                            int v = mesh.sampleV[off] & 15;
+                            int idx = faceUVToBlockIndex(face, u, v);
+                            int lx = idx & 15;
+                            int lz = (idx >>> 4) & 15;
+                            int ly = (idx >>> 8) & 15;
+                            if ((crossCount + 1) * 4 > crossData.length) {
+                                crossData = Arrays.copyOf(crossData, crossData.length + (crossData.length >>> 1) + 16);
+                            }
+                            int cOff = crossCount * 4;
+                            crossData[cOff] = baseX + lx;
+                            crossData[cOff + 1] = baseY + ly;
+                            crossData[cOff + 2] = baseZ + lz;
+                            crossData[cOff + 3] = face;
+                            crossCount++;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (CONFIG.verify && !ERROR_CACHE.isEmpty()) {
+            ERROR_MASK.clear();
+            for (ErrorRecord rec : ERROR_CACHE) {
+                long sectionA = rec.sectionA();
+                int face = rec.faceA();
+                int[] fr = ERROR_MASK.get(sectionA);
+                if (fr == null) {
+                    fr = new int[6 * 16];
+                    ERROR_MASK.put(sectionA, fr);
+                }
+                int lx = rec.sampleX() & 15;
+                int ly = rec.sampleY() & 15;
+                int lz = rec.sampleZ() & 15;
+                int row = coordAxis(FACE_V_AXIS[face], lx, ly, lz);
+                int col = coordAxis(FACE_U_AXIS[face], lx, ly, lz);
+                fr[face * 16 + row] |= (1 << col);
+            }
+            var iterator = ERROR_MASK.long2ReferenceEntrySet().fastIterator();
+            while (iterator.hasNext()) {
+                var e = iterator.next();
+                long sectionA = e.getLongKey();
+                int baseX = (Library.getSectionX(sectionA) << 4);
+                int baseY = (Library.getSectionY(sectionA) << 4);
+                int baseZ = (Library.getSectionZ(sectionA) << 4);
+                int[] fr = e.getValue();
+                for (int face = 0; face < 6; face++) {
+                    System.arraycopy(fr, face * 16, PLANE16_TEMP, 0, 16);
+                    int[] tmp = PLANE16_COPY_TEMP;
+                    System.arraycopy(PLANE16_TEMP, 0, tmp, 0, 16);
+                    QUADS_TEMP2.clear();
+                    greedyMeshPlane(tmp, 0, 0, face, boundaryPlaneForFace(face), QUADS_TEMP2);
+                    if (!QUADS_TEMP2.isEmpty())
+                        drawPackedQuads(buf, baseX, baseY, baseZ, QUADS_TEMP2, COLOR_ERR[0], COLOR_ERR[1], COLOR_ERR[2], a, inset);
+                }
+            }
+        }
+
+        tess.draw();
+
+        buf.begin(GL11.GL_LINES, DefaultVertexFormats.POSITION_COLOR);
+
+        for (int i = 0; i < crossCount; i++) {
+            int off = i * 4;
+            addCross(buf, crossData[off] + 0.5, crossData[off + 1] + 0.5, crossData[off + 2] + 0.5, crossData[off + 3], 0.35, COLOR_WARN[0], COLOR_WARN[1], COLOR_WARN[2], CONFIG.alpha);
+        }
+
+        if (CONFIG.verify) {
+            for (ErrorRecord rec : ERROR_CACHE) {
+                Vec3d aC = sectionCenter(rec.sectionA());
+                Vec3d bC = sectionCenter(rec.sectionB());
+                addLine(buf, aC.x, aC.y, aC.z, bC.x, bC.y, bC.z, COLOR_ERR[0], COLOR_ERR[1], COLOR_ERR[2], CONFIG.alpha);
+                addCross(buf, rec.sampleX() + 0.5, rec.sampleY() + 0.5, rec.sampleZ() + 0.5, rec.faceA(), 0.35, COLOR_ERR[0], COLOR_ERR[1], COLOR_ERR[2], CONFIG.alpha);
+            }
+        }
+
+        tess.draw();
+        cleanDepthAndPolygon();
+    }
+
+    private static void depthAndPolygon(Mode mode) {
+        GlStateManager.depthMask(false);
+        if (!CONFIG.depth) return;
+        GlStateManager.enablePolygonOffset();
+        GlStateManager.doPolygonOffset(mode.polygonFactor, mode.polygonUnits);
+    }
+
+    private static void cleanDepthAndPolygon() {
+        if (CONFIG.depth) GlStateManager.disablePolygonOffset();
+        GlStateManager.depthMask(true);
+    }
+
+    private static void runVerification(WorldRadiationData data, int pcx, int pcz, int radius, FocusFilter filter, List<? super ErrorRecord> out) {
+        int[] counts = new int[16 * 16];
+        int[] samplesA = new int[16 * 16];
+        int[] samplesB = new int[16 * 16];
+
+        Sec a = new Sec();
+        Sec b = new Sec();
+
+        for (int cx = pcx - radius; cx <= pcx + radius; cx++) {
+            for (int cz = pcz - radius; cz <= pcz + radius; cz++) {
+                for (int sy = 0; sy < 16; sy++) {
+                    int baseX = cx << 4;
+                    int baseY = sy << 4;
+                    int baseZ = cz << 4;
+                    if (filter != null && filter.isSectionOutsideFilter(baseX, baseY, baseZ)) continue;
+
+                    long aKey = Library.sectionToLong(cx, sy, cz);
+                    if (!resolveSection(data, aKey, a)) continue;
+
+                    for (int faceA : VERIFY_FACES) {
+                        int nx = cx + FACE_DX[faceA];
+                        int ny = sy + FACE_DY[faceA];
+                        int nz = cz + FACE_DZ[faceA];
+                        if (ny < 0 || ny > 15) continue;
+                        if (nx < pcx - radius || nx > pcx + radius || nz < pcz - radius || nz > pcz + radius) continue;
+
+                        long bKey = Library.sectionToLong(nx, ny, nz);
+                        if (!resolveSection(data, bKey, b)) continue;
+
+                        try {
+                            verifyPair(aKey, bKey, faceA, a, b, counts, samplesA, samplesB, out);
+                        } catch (Throwable _) {
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private static void verifyPair(long aKey, long bKey, int faceA, Sec a, Sec b, int[] counts, int[] samplesA, int[] samplesB, List<? super ErrorRecord> out) {
+        int faceB = faceA ^ 1;
+
+        int aCount = (a.kind == ChunkRef.KIND_MULTI) ? a.pocketCount : 1;
+        int bCount = (b.kind == ChunkRef.KIND_MULTI) ? b.pocketCount : 1;
+        if (aCount <= 0 || bCount <= 0) return;
+
+        if (a.kind >= ChunkRef.KIND_SINGLE && a.pocketData == null) return;
+        if (b.kind >= ChunkRef.KIND_SINGLE && b.pocketData == null) return;
+
+        int lim = aCount * bCount;
+
+        for (int i = 0; i < lim; i++) {
+            counts[i] = 0;
+            samplesA[i] = -1;
+            samplesB[i] = -1;
+        }
+
+        int planeA = faceA << 8;
+        int planeB = faceB << 8;
+
+        for (int t = 0; t < 256; t++) {
+            int idxA = FACE_PLANE[planeA + t];
+            int idxB = FACE_PLANE[planeB + t];
+
+            int pa = pocketIndexAt(a, idxA);
+            int pb = pocketIndexAt(b, idxB);
+            if (pa < 0 || pb < 0) continue;
+
+            int off = pa * bCount + pb;
+            if (counts[off] == 0) {
+                samplesA[off] = idxA;
+                samplesB[off] = idxB;
+            }
+            counts[off]++;
+        }
+
+        if (a.kind == ChunkRef.KIND_MULTI && b.kind == ChunkRef.KIND_MULTI) {
+            MultiSectionRef am = a.multi;
+            MultiSectionRef bm = b.multi;
+
+            int stride = 6 * NEI_SLOTS;
+
+            for (int pa = 0; pa < aCount; pa++) {
+                for (int pb = 0; pb < bCount; pb++) {
+                    int off = pa * bCount + pb;
+                    int actual = counts[off];
+
+                    int storedA = readConn(am, stride, pa, faceA, pb);
+                    int storedB = readConn(bm, stride, pb, faceB, pa);
+
+                    if (storedA != actual) addMismatch(out, aKey, bKey, faceA, pa, pb, storedA, actual, samplesA[off]);
+                    if (storedB != actual) addMismatch(out, bKey, aKey, faceB, pb, pa, storedB, actual, samplesB[off]);
+                }
+            }
+            return;
+        }
+
+        if (a.kind == ChunkRef.KIND_MULTI && b.kind == ChunkRef.KIND_SINGLE) {
+            MultiSectionRef am = a.multi;
+            int stride = 6 * NEI_SLOTS;
+
+            for (int pa = 0; pa < aCount; pa++) {
+                int off = pa * bCount;
+                int actual = counts[off];
+                int stored = readConn(am, stride, pa, faceA, 0);
+                if (stored != actual) addMismatch(out, aKey, bKey, faceA, pa, 0, stored, actual, samplesA[off]);
+            }
+            return;
+        }
+
+        if (a.kind == ChunkRef.KIND_SINGLE && b.kind == ChunkRef.KIND_MULTI) {
+            MultiSectionRef bm = b.multi;
+            int stride = 6 * NEI_SLOTS;
+
+            for (int pb = 0; pb < bCount; pb++) {
+                int actual = counts[pb];
+                int stored = readConn(bm, stride, pb, faceB, 0);
+                if (stored != actual) addMismatch(out, bKey, aKey, faceB, pb, 0, stored, actual, samplesB[pb]);
+            }
+            return;
+        }
+
+        if (a.kind == ChunkRef.KIND_SINGLE && b.kind == ChunkRef.KIND_SINGLE) {
+            int actual = counts[0];
+
+            int storedA = readSingleConn(a.single, faceA);
+            int storedB = readSingleConn(b.single, faceB);
+
+            if (storedA != actual) addMismatch(out, aKey, bKey, faceA, 0, 0, storedA, actual, samplesA[0]);
+            if (storedB != actual) addMismatch(out, bKey, aKey, faceB, 0, 0, storedB, actual, samplesB[0]);
+            return;
+        }
+
+        if (a.kind == ChunkRef.KIND_SINGLE && b.kind == ChunkRef.KIND_UNI) {
+            int actual = counts[0];
+            int exposedA = a.single.getFaceCount(faceA);
+            if (exposedA != actual) addMismatch(out, aKey, bKey, faceA, 0, 0, exposedA, actual, samplesA[0]);
+            return;
+        }
+
+        if (a.kind == ChunkRef.KIND_UNI && b.kind == ChunkRef.KIND_SINGLE) {
+            int actual = counts[0];
+            int exposedB = b.single.getFaceCount(faceB);
+            if (exposedB != actual) addMismatch(out, bKey, aKey, faceB, 0, 0, exposedB, actual, samplesB[0]);
+            return;
+        }
+
+        if (a.kind == ChunkRef.KIND_MULTI && b.kind == ChunkRef.KIND_UNI) {
+            MultiSectionRef am = a.multi;
+            int stride = 6 * NEI_SLOTS;
+
+            for (int pa = 0; pa < aCount; pa++) {
+                int off = pa * bCount;
+                int actual = counts[off];
+                int stored = readConn(am, stride, pa, faceA, 0);
+                if (stored != actual) addMismatch(out, aKey, bKey, faceA, pa, 0, stored, actual, samplesA[off]);
+            }
+            return;
+        }
+
+        if (a.kind == ChunkRef.KIND_UNI && b.kind == ChunkRef.KIND_MULTI) {
+            MultiSectionRef bm = b.multi;
+            int stride = 6 * NEI_SLOTS;
+
+            for (int pb = 0; pb < bCount; pb++) {
+                int actual = counts[pb];
+                int stored = readConn(bm, stride, pb, faceB, 0);
+                if (stored != actual) addMismatch(out, bKey, aKey, faceB, pb, 0, stored, actual, samplesB[pb]);
+            }
+        }
+    }
+
+    private static void addMismatch(List<? super ErrorRecord> out, long sectionA, long sectionB, int faceA, int pocketA, int pocketB, int expected, int actual, int sampleIdx) {
+        int sx = Library.getSectionX(sectionA) << 4;
+        int sy = Library.getSectionY(sectionA) << 4;
+        int sz = Library.getSectionZ(sectionA) << 4;
+
+        int idx = sampleIdx >= 0 ? sampleIdx : FACE_PLANE[faceA << 8];
+        int lx = idx & 15;
+        int ly = (idx >> 8) & 15;
+        int lz = (idx >> 4) & 15;
+
+        out.add(new ErrorRecord(sectionA, sectionB, faceA, pocketA, pocketB, expected, actual, sx + lx, sy + ly, sz + lz));
     }
 
     private static void renderState(WorldRadiationData data, int pcx, int pcz, int radius, FocusFilter filter, double camX, double camY, double camZ) {
@@ -480,312 +1249,7 @@ public final class RadVisOverlay {
         }
     }
 
-    private static void renderErrors(WorldRadiationData data, int pcx, int pcz, int radius, FocusFilter filter) {
-        GlStateManager.disableTexture2D();
-
-        Tessellator tess = Tessellator.getInstance();
-        BufferBuilder buf = tess.getBuffer();
-
-        int[] counts = new int[16];
-        int[] sample = new int[16];
-
-        int[] crossData = new int[128];
-        int crossCount = 0;
-
-        Sec sec = new Sec();
-        Sec nei = new Sec();
-
-        buf.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
-
-        for (int cx = pcx - radius; cx <= pcx + radius; cx++) {
-            for (int cz = pcz - radius; cz <= pcz + radius; cz++) {
-                for (int sy = 0; sy < 16; sy++) {
-                    int baseX = cx << 4;
-                    int baseY = sy << 4;
-                    int baseZ = cz << 4;
-
-                    if (filter != null && filter.isSectionOutsideFilter(baseX, baseY, baseZ)) continue;
-
-                    long sck = Library.sectionToLong(cx, sy, cz);
-                    if (!resolveSection(data, sck, sec)) continue;
-
-                    if (sec.kind != ChunkRef.KIND_MULTI) continue;
-
-                    int pocketCount = sec.pocketCount;
-                    if (pocketCount <= 1) continue;
-
-                    for (int face = 0; face < 6; face++) {
-                        long neighborKey = Library.sectionToLong(cx + FACE_DX[face], sy + FACE_DY[face], cz + FACE_DZ[face]);
-                        if (!resolveSection(data, neighborKey, nei) || nei.kind != ChunkRef.KIND_UNI) continue;
-
-                        for (int i = 0; i < pocketCount; i++) {
-                            counts[i] = 0;
-                            sample[i] = -1;
-                        }
-
-                        int planeBase = face << 8;
-                        for (int t = 0; t < 256; t++) {
-                            int idx = FACE_PLANE[planeBase + t];
-                            int pi = pocketIndexAt(sec, idx);
-                            if (pi >= 0) {
-                                if (counts[pi] == 0) sample[pi] = idx;
-                                counts[pi]++;
-                            }
-                        }
-
-                        int nonZero = 0;
-                        int firstPocket = -1;
-                        for (int i = 0; i < pocketCount; i++) {
-                            if (counts[i] > 0) {
-                                nonZero++;
-                                if (firstPocket == -1) firstPocket = i;
-                            }
-                        }
-
-                        if (nonZero <= 1) continue;
-
-                        addFaceQuad(buf, baseX, baseY, baseZ, face, COLOR_WARN[0], COLOR_WARN[1], COLOR_WARN[2], CONFIG.alpha * 0.5f, 0.015f);
-
-                        for (int i = 0; i < pocketCount; i++) {
-                            if (counts[i] <= 0 || i == firstPocket) continue;
-
-                            int idx = sample[i] >= 0 ? sample[i] : FACE_PLANE[face << 8];
-                            int lx = idx & 15;
-                            int ly = (idx >> 8) & 15;
-                            int lz = (idx >> 4) & 15;
-
-                            if ((crossCount + 1) * 4 > crossData.length) {
-                                crossData = Arrays.copyOf(crossData, crossData.length + (crossData.length >>> 1) + 16);
-                            }
-
-                            int off = crossCount * 4;
-                            crossData[off] = baseX + lx;
-                            crossData[off + 1] = baseY + ly;
-                            crossData[off + 2] = baseZ + lz;
-                            crossData[off + 3] = face;
-                            crossCount++;
-                        }
-                    }
-                }
-            }
-        }
-
-        if (CONFIG.verify) {
-            for (ErrorRecord rec : ERROR_CACHE) {
-                int ax = Library.getSectionX(rec.sectionA) << 4;
-                int ay = Library.getSectionY(rec.sectionA) << 4;
-                int az = Library.getSectionZ(rec.sectionA) << 4;
-                addFaceQuad(buf, ax, ay, az, rec.faceA, COLOR_ERR[0], COLOR_ERR[1], COLOR_ERR[2], CONFIG.alpha * 0.5f, 0.015f);
-            }
-        }
-
-        tess.draw();
-
-        buf.begin(GL11.GL_LINES, DefaultVertexFormats.POSITION_COLOR);
-
-        for (int i = 0; i < crossCount; i++) {
-            int off = i * 4;
-            addCross(buf, crossData[off] + 0.5, crossData[off + 1] + 0.5, crossData[off + 2] + 0.5, crossData[off + 3], 0.35, COLOR_WARN[0], COLOR_WARN[1], COLOR_WARN[2], CONFIG.alpha);
-        }
-
-        if (CONFIG.verify) {
-            for (ErrorRecord rec : ERROR_CACHE) {
-                Vec3d a = sectionCenter(rec.sectionA);
-                Vec3d b = sectionCenter(rec.sectionB);
-                addLine(buf, a.x, a.y, a.z, b.x, b.y, b.z, COLOR_ERR[0], COLOR_ERR[1], COLOR_ERR[2], CONFIG.alpha);
-                addCross(buf, rec.sampleX + 0.5, rec.sampleY + 0.5, rec.sampleZ + 0.5, rec.faceA, 0.35, COLOR_ERR[0], COLOR_ERR[1], COLOR_ERR[2], CONFIG.alpha);
-            }
-        }
-
-        tess.draw();
-    }
-
-    private static void runVerification(WorldRadiationData data, int pcx, int pcz, int radius, FocusFilter filter, List<ErrorRecord> out) {
-        int[] counts = new int[16 * 16];
-        int[] samplesA = new int[16 * 16];
-        int[] samplesB = new int[16 * 16];
-
-        Sec a = new Sec();
-        Sec b = new Sec();
-
-        for (int cx = pcx - radius; cx <= pcx + radius; cx++) {
-            for (int cz = pcz - radius; cz <= pcz + radius; cz++) {
-                for (int sy = 0; sy < 16; sy++) {
-                    int baseX = cx << 4;
-                    int baseY = sy << 4;
-                    int baseZ = cz << 4;
-                    if (filter != null && filter.isSectionOutsideFilter(baseX, baseY, baseZ)) continue;
-
-                    long aKey = Library.sectionToLong(cx, sy, cz);
-                    if (!resolveSection(data, aKey, a)) continue;
-
-                    for (int faceA : VERIFY_FACES) {
-                        int nx = cx + FACE_DX[faceA];
-                        int ny = sy + FACE_DY[faceA];
-                        int nz = cz + FACE_DZ[faceA];
-                        if (ny < 0 || ny > 15) continue;
-                        if (nx < pcx - radius || nx > pcx + radius || nz < pcz - radius || nz > pcz + radius) continue;
-
-                        long bKey = Library.sectionToLong(nx, ny, nz);
-                        if (!resolveSection(data, bKey, b)) continue;
-
-                        try {
-                            verifyPair(aKey, bKey, faceA, a, b, counts, samplesA, samplesB, out);
-                        } catch (Throwable ignored) {
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private static void verifyPair(long aKey, long bKey, int faceA, Sec a, Sec b, int[] counts, int[] samplesA, int[] samplesB, List<ErrorRecord> out) {
-        int faceB = faceA ^ 1;
-
-        int aCount = (a.kind == ChunkRef.KIND_MULTI) ? a.pocketCount : 1;
-        int bCount = (b.kind == ChunkRef.KIND_MULTI) ? b.pocketCount : 1;
-        if (aCount <= 0 || bCount <= 0) return;
-
-        if (a.kind >= ChunkRef.KIND_SINGLE && a.pocketData == null) return;
-        if (b.kind >= ChunkRef.KIND_SINGLE && b.pocketData == null) return;
-
-        int lim = aCount * bCount;
-
-        for (int i = 0; i < lim; i++) {
-            counts[i] = 0;
-            samplesA[i] = -1;
-            samplesB[i] = -1;
-        }
-
-        int planeA = faceA << 8;
-        int planeB = faceB << 8;
-
-        for (int t = 0; t < 256; t++) {
-            int idxA = FACE_PLANE[planeA + t];
-            int idxB = FACE_PLANE[planeB + t];
-
-            int pa = paletteIndexForSection(a, idxA);
-            int pb = paletteIndexForSection(b, idxB);
-            if (pa < 0 || pb < 0) continue;
-
-            int off = pa * bCount + pb;
-            if (counts[off] == 0) {
-                samplesA[off] = idxA;
-                samplesB[off] = idxB;
-            }
-            counts[off]++;
-        }
-
-        if (a.kind == ChunkRef.KIND_MULTI && b.kind == ChunkRef.KIND_MULTI) {
-            MultiSectionRef am = a.multi;
-            MultiSectionRef bm = b.multi;
-
-            int stride = 6 * NEI_SLOTS;
-
-            for (int pa = 0; pa < aCount; pa++) {
-                for (int pb = 0; pb < bCount; pb++) {
-                    int off = pa * bCount + pb;
-                    int actual = counts[off];
-
-                    int storedA = readConn(am, stride, pa, faceA, pb);
-                    int storedB = readConn(bm, stride, pb, faceB, pa);
-
-                    if (storedA != actual) addMismatch(out, aKey, bKey, faceA, pa, pb, storedA, actual, samplesA[off]);
-                    if (storedB != actual) addMismatch(out, bKey, aKey, faceB, pb, pa, storedB, actual, samplesB[off]);
-                }
-            }
-            return;
-        }
-
-        if (a.kind == ChunkRef.KIND_MULTI && b.kind == ChunkRef.KIND_SINGLE) {
-            MultiSectionRef am = a.multi;
-            int stride = 6 * NEI_SLOTS;
-
-            for (int pa = 0; pa < aCount; pa++) {
-                int off = pa * bCount;
-                int actual = counts[off];
-                int stored = readConn(am, stride, pa, faceA, 0);
-                if (stored != actual) addMismatch(out, aKey, bKey, faceA, pa, 0, stored, actual, samplesA[off]);
-            }
-            return;
-        }
-
-        if (a.kind == ChunkRef.KIND_SINGLE && b.kind == ChunkRef.KIND_MULTI) {
-            MultiSectionRef bm = b.multi;
-            int stride = 6 * NEI_SLOTS;
-
-            for (int pb = 0; pb < bCount; pb++) {
-                int actual = counts[pb];
-                int stored = readConn(bm, stride, pb, faceB, 0);
-                if (stored != actual) addMismatch(out, bKey, aKey, faceB, pb, 0, stored, actual, samplesB[pb]);
-            }
-            return;
-        }
-
-        if (a.kind == ChunkRef.KIND_SINGLE && b.kind == ChunkRef.KIND_SINGLE) {
-            int actual = counts[0];
-
-            int storedA = readSingleConn(a.single, faceA);
-            int storedB = readSingleConn(b.single, faceB);
-
-            if (storedA != actual) addMismatch(out, aKey, bKey, faceA, 0, 0, storedA, actual, samplesA[0]);
-            if (storedB != actual) addMismatch(out, bKey, aKey, faceB, 0, 0, storedB, actual, samplesB[0]);
-            return;
-        }
-
-        if (a.kind == ChunkRef.KIND_SINGLE && b.kind == ChunkRef.KIND_UNI) {
-            int actual = counts[0];
-            int exposedA = a.single.getFaceCount(faceA);
-            if (exposedA != actual) addMismatch(out, aKey, bKey, faceA, 0, 0, exposedA, actual, samplesA[0]);
-            return;
-        }
-
-        if (a.kind == ChunkRef.KIND_UNI && b.kind == ChunkRef.KIND_SINGLE) {
-            int actual = counts[0];
-            int exposedB = b.single.getFaceCount(faceB);
-            if (exposedB != actual) addMismatch(out, bKey, aKey, faceB, 0, 0, exposedB, actual, samplesB[0]);
-            return;
-        }
-
-        if (a.kind == ChunkRef.KIND_MULTI && b.kind == ChunkRef.KIND_UNI) {
-            MultiSectionRef am = a.multi;
-            int stride = 6 * NEI_SLOTS;
-
-            for (int pa = 0; pa < aCount; pa++) {
-                int off = pa * bCount;
-                int actual = counts[off];
-                int stored = readConn(am, stride, pa, faceA, 0);
-                if (stored != actual) addMismatch(out, aKey, bKey, faceA, pa, 0, stored, actual, samplesA[off]);
-            }
-            return;
-        }
-
-        if (a.kind == ChunkRef.KIND_UNI && b.kind == ChunkRef.KIND_MULTI) {
-            MultiSectionRef bm = b.multi;
-            int stride = 6 * NEI_SLOTS;
-
-            for (int pb = 0; pb < bCount; pb++) {
-                int actual = counts[pb];
-                int stored = readConn(bm, stride, pb, faceB, 0);
-                if (stored != actual) addMismatch(out, bKey, aKey, faceB, pb, 0, stored, actual, samplesB[pb]);
-            }
-        }
-    }
-
-    private static void addMismatch(List<ErrorRecord> out, long sectionA, long sectionB, int faceA, int pocketA, int pocketB, int expected, int actual, int sampleIdx) {
-        int sx = Library.getSectionX(sectionA) << 4;
-        int sy = Library.getSectionY(sectionA) << 4;
-        int sz = Library.getSectionZ(sectionA) << 4;
-
-        int idx = sampleIdx >= 0 ? sampleIdx : FACE_PLANE[faceA << 8];
-        int lx = idx & 15;
-        int ly = (idx >> 8) & 15;
-        int lz = (idx >> 4) & 15;
-
-        out.add(new ErrorRecord(sectionA, sectionB, faceA, pocketA, pocketB, expected, actual, sx + lx, sy + ly, sz + lz));
-    }
-
-    private static void appendLinks(List<String> lines, WorldRadiationData data, long sectionKey, int cx, int sy, int cz, Sec cur, int pocketIndex, int[] linkCounts, Sec nei) {
+    private static void appendLinks(List<? super String> lines, WorldRadiationData data, long sectionKey, int cx, int sy, int cz, Sec cur, int pocketIndex, int[] linkCounts, Sec nei) {
         int linkId = 1;
 
         int myPi = (cur.kind == ChunkRef.KIND_MULTI) ? pocketIndex : 0;
@@ -837,7 +1301,7 @@ public final class RadVisOverlay {
                 if (nKind == ChunkRef.KIND_UNI || nKind == ChunkRef.KIND_SINGLE) {
                     int area = readSingleConn(cur.single, face);
                     if (area > 0)
-                        lines.add(formatLink(linkId++, nKind == ChunkRef.KIND_UNI ? "UNI" : "S", ncx, nsy, ncz, 0, faceName, area, active, null));
+                        lines.add(formatLink(linkId++, nKind == ChunkRef.KIND_UNI ? "UNI" : "S", ncx, nsy, ncz, 0, faceName, area, active));
                     continue;
                 }
 
@@ -864,8 +1328,7 @@ public final class RadVisOverlay {
 
                     for (int pb = 0; pb < nCount; pb++) {
                         int area = linkCounts[pb];
-                        if (area > 0)
-                            lines.add(formatLink(linkId++, "M", ncx, nsy, ncz, pb, faceName, area, active, null));
+                        if (area > 0) lines.add(formatLink(linkId++, "M", ncx, nsy, ncz, pb, faceName, area, active));
                     }
                 }
 
@@ -875,7 +1338,7 @@ public final class RadVisOverlay {
             // cur is UNI
             if (nKind == ChunkRef.KIND_SINGLE) {
                 int area = readSingleConn(nei.single, faceB);
-                if (area > 0) lines.add(formatLink(linkId++, "S", ncx, nsy, ncz, 0, faceName, area, active, null));
+                if (area > 0) lines.add(formatLink(linkId++, "S", ncx, nsy, ncz, 0, faceName, area, active));
                 continue;
             }
 
@@ -886,87 +1349,92 @@ public final class RadVisOverlay {
                 int nCount = nei.pocketCount;
                 for (int pb = 0; pb < nCount; pb++) {
                     int area = readConn(nm, stride, pb, faceB, 0);
-                    if (area > 0) lines.add(formatLink(linkId++, "M", ncx, nsy, ncz, pb, faceName, area, active, null));
+                    if (area > 0) lines.add(formatLink(linkId++, "M", ncx, nsy, ncz, pb, faceName, area, active));
                 }
             }
         }
     }
 
-    private static String formatLink(int idx, String type, int cx, int sy, int cz, int id, String face, int area, boolean active, Boolean sentinel) {
-        StringBuilder sb = new StringBuilder(64);
-        sb.append("Link").append(idx).append(": ").append(type).append(" (").append(cx).append(',').append(sy).append(',').append(cz).append(')').append(" id=").append(id).append(' ').append(face).append(" area=").append(area).append(" active=").append(active ? "Y" : "N");
-        if (sentinel != null) sb.append(" sentinel=").append(sentinel ? "Y" : "N");
-        return sb.toString();
+    private static String formatLink(int idx, String type, int cx, int sy, int cz, int id, String face, int area, boolean active, boolean sentinel) {
+        return "Link" + idx + ": " + type + " (" + cx + ',' + sy + ',' + cz + ')' + " id=" + id + ' ' + face + " area=" + area + " active=" + (active ? "Y" : "N") + " sentinel=" + (sentinel ? "Y" : "N");
+    }
+
+    private static String formatLink(int idx, String type, int cx, int sy, int cz, int id, String face, int area, boolean active) {
+        return "Link" + idx + ": " + type + " (" + cx + ',' + sy + ',' + cz + ')' + " id=" + id + ' ' + face + " area=" + area + " active=" + (active ? "Y" : "N");
     }
 
     private static boolean resolveSection(WorldRadiationData data, long sectionKey, Sec out) {
-        int sy = Library.getSectionY(sectionKey);
-        if ((sy & ~15) != 0) {
-            out.clear();
-            return false;
-        }
-
-        long ck = Library.sectionToChunkLong(sectionKey);
-        ChunkRef cr = data.chunkRefs.get(ck);
-        if (cr == null || cr.mcChunk == null) {
-            out.clear();
-            return false;
-        }
-
-        int kind = cr.getKind(sy);
-        if (kind == ChunkRef.KIND_NONE) {
-            out.clear();
-            return false;
-        }
-
-        out.cr = cr;
-        out.sy = sy;
-        out.kind = kind;
-
-        if (kind == ChunkRef.KIND_UNI) {
-            out.sc = null;
-            out.multi = null;
-            out.single = null;
-            out.pocketData = null;
-            out.pocketCount = 1;
-            return true;
-        }
-
-        SectionRef sc = cr.sec[sy];
-        if (sc == null || (sc.pocketCount & 0xFF) <= 0) {
-            out.clear();
-            return false;
-        }
-
-        out.sc = sc;
-
-        if (kind == ChunkRef.KIND_SINGLE) {
-            if (!(sc instanceof SingleMaskedSectionRef s)) {
+        try {
+            int sy = Library.getSectionY(sectionKey);
+            if ((sy & ~15) != 0) {
                 out.clear();
                 return false;
             }
-            out.single = s;
-            out.multi = null;
-            out.pocketData = s.pocketData;
-            out.pocketCount = 1;
-            return out.pocketData != null;
-        }
 
-        if (kind == ChunkRef.KIND_MULTI) {
-            if (!(sc instanceof MultiSectionRef m)) {
+            long ck = Library.sectionToChunkLong(sectionKey);
+            ChunkRef cr = data.chunkRefs.get(ck);  // may race
+            if (cr == null || cr.mcChunk == null) {
                 out.clear();
                 return false;
             }
-            out.multi = m;
-            out.single = null;
-            out.pocketData = m.pocketData;
-            int pc = m.pocketCount & 0xFF;
-            out.pocketCount = Math.min(pc, NO_POCKET);
-            return out.pocketData != null && out.pocketCount > 0;
-        }
 
-        out.clear();
-        return false;
+            int kind = cr.getKind(sy);
+            if (kind == ChunkRef.KIND_NONE) {
+                out.clear();
+                return false;
+            }
+
+            out.cr = cr;
+            out.sy = sy;
+            out.kind = kind;
+
+            if (kind == ChunkRef.KIND_UNI) {
+                out.sc = null;
+                out.multi = null;
+                out.single = null;
+                out.pocketData = null;
+                out.pocketCount = 1;
+                return true;
+            }
+
+            SectionRef sc = cr.sec[sy];
+            if (sc == null || (sc.pocketCount & 0xFF) <= 0) {
+                out.clear();
+                return false;
+            }
+            out.sc = sc;
+
+            if (kind == ChunkRef.KIND_SINGLE) {
+                if (!(sc instanceof SingleMaskedSectionRef s)) {
+                    out.clear();
+                    return false;
+                }
+                out.single = s;
+                out.multi = null;
+                out.pocketData = s.pocketData;
+                out.pocketCount = 1;
+                return true;
+            }
+
+            if (kind == ChunkRef.KIND_MULTI) {
+                if (!(sc instanceof MultiSectionRef m)) {
+                    out.clear();
+                    return false;
+                }
+                out.multi = m;
+                out.single = null;
+                out.pocketData = m.pocketData;
+                int pc = m.pocketCount & 0xFF;
+                out.pocketCount = Math.min(pc, NO_POCKET);
+                return out.pocketCount > 0;
+            }
+
+            out.clear();
+            return false;
+        } catch (Throwable _) {
+            out.clear();
+            return false;
+        }
     }
 
     private static double readRad(Sec sec, int pocketIndex) {
@@ -999,12 +1467,7 @@ public final class RadVisOverlay {
 
         if (kind == ChunkRef.KIND_SINGLE) return (nibble == 0) ? 0 : -1;
 
-        // MULTI
         return (nibble >= 0 && nibble < sec.pocketCount) ? nibble : -1;
-    }
-
-    private static int paletteIndexForSection(Sec sec, int blockIndex) {
-        return pocketIndexAt(sec, blockIndex);
     }
 
     private static int readConn(MultiSectionRef ms, int stride, int pocketIndex, int face, int neighborPocket) {
@@ -1070,57 +1533,6 @@ public final class RadVisOverlay {
         addLine(buf, x1, y1, z2, x1, y2, z2, r, g, b, a);
     }
 
-    private static void addFaceQuad(BufferBuilder buf, int x0, int y0, int z0, int face, float r, float g, float b, float a, float inset) {
-        double x1 = x0 + 16;
-        double y1 = y0 + 16;
-        double z1 = z0 + 16;
-
-        switch (face) {
-            case 0 -> {
-                double y = (double) y0 + inset;
-                buf.pos(x0, y, z0).color(r, g, b, a).endVertex();
-                buf.pos(x1, y, z0).color(r, g, b, a).endVertex();
-                buf.pos(x1, y, z1).color(r, g, b, a).endVertex();
-                buf.pos(x0, y, z1).color(r, g, b, a).endVertex();
-            }
-            case 1 -> {
-                double y = y1 - inset;
-                buf.pos(x0, y, z1).color(r, g, b, a).endVertex();
-                buf.pos(x1, y, z1).color(r, g, b, a).endVertex();
-                buf.pos(x1, y, z0).color(r, g, b, a).endVertex();
-                buf.pos(x0, y, z0).color(r, g, b, a).endVertex();
-            }
-            case 2 -> {
-                double z = (double) z0 + inset;
-                buf.pos(x0, y0, z).color(r, g, b, a).endVertex();
-                buf.pos(x1, y0, z).color(r, g, b, a).endVertex();
-                buf.pos(x1, y1, z).color(r, g, b, a).endVertex();
-                buf.pos(x0, y1, z).color(r, g, b, a).endVertex();
-            }
-            case 3 -> {
-                double z = z1 - inset;
-                buf.pos(x0, y1, z).color(r, g, b, a).endVertex();
-                buf.pos(x1, y1, z).color(r, g, b, a).endVertex();
-                buf.pos(x1, y0, z).color(r, g, b, a).endVertex();
-                buf.pos(x0, y0, z).color(r, g, b, a).endVertex();
-            }
-            case 4 -> {
-                double x = (double) x0 + inset;
-                buf.pos(x, y0, z1).color(r, g, b, a).endVertex();
-                buf.pos(x, y0, z0).color(r, g, b, a).endVertex();
-                buf.pos(x, y1, z0).color(r, g, b, a).endVertex();
-                buf.pos(x, y1, z1).color(r, g, b, a).endVertex();
-            }
-            case 5 -> {
-                double x = x1 - inset;
-                buf.pos(x, y0, z0).color(r, g, b, a).endVertex();
-                buf.pos(x, y0, z1).color(r, g, b, a).endVertex();
-                buf.pos(x, y1, z1).color(r, g, b, a).endVertex();
-                buf.pos(x, y1, z0).color(r, g, b, a).endVertex();
-            }
-        }
-    }
-
     private static void addCross(BufferBuilder buf, double x, double y, double z, int face, double size, float r, float g, float b, float a) {
         double s = size * 0.5;
         switch (face) {
@@ -1176,27 +1588,27 @@ public final class RadVisOverlay {
     }
 
     private static void renderLabelLines(FontRenderer fr, RenderManager rm, List<String> lines, double x, double y, double z, int color, float scale) {
-        if (lines.isEmpty()) return;
-
         GlStateManager.pushMatrix();
-        GlStateManager.translate(x, y, z);
-        GlStateManager.rotate(-rm.playerViewY, 0.0F, 1.0F, 0.0F);
-        GlStateManager.rotate(rm.playerViewX, 1.0F, 0.0F, 0.0F);
-        GlStateManager.scale(-scale, -scale, scale);
-
-        GlStateManager.disableLighting();
-        GlStateManager.enableTexture2D();
-
-        int lineHeight = fr.FONT_HEIGHT + 1;
-        int yBase = -((lines.size() - 1) * lineHeight) / 2;
-
-        for (int i = 0; i < lines.size(); i++) {
-            String line = lines.get(i);
-            int width = fr.getStringWidth(line);
-            fr.drawString(line, -width / 2, yBase + i * lineHeight, color, false);
+        try {
+            GlStateManager.translate(x, y, z);
+            GlStateManager.rotate(-rm.playerViewY, 0.0F, 1.0F, 0.0F);
+            GlStateManager.rotate(rm.playerViewX, 1.0F, 0.0F, 0.0F);
+            GlStateManager.scale(-scale, -scale, scale);
+            GlStateManager.disableLighting();
+            GlStateManager.enableTexture2D();
+            GlStateManager.depthMask(false);
+            int lineHeight = fr.FONT_HEIGHT + 1;
+            int size = lines.size();
+            int yBase = -((size - 1) * lineHeight) / 2;
+            for (int i = 0; i < size; i++) {
+                String line = lines.get(i);
+                int width = fr.getStringWidth(line);
+                fr.drawString(line, -width / 2, yBase + i * lineHeight, color, false);
+            }
+        } finally {
+            GlStateManager.depthMask(true);
+            GlStateManager.popMatrix();
         }
-
-        GlStateManager.popMatrix();
     }
 
     private static String formatRad(double v) {
@@ -1206,12 +1618,67 @@ public final class RadVisOverlay {
         return String.format(Locale.ROOT, "%.3e", v);
     }
 
-    public enum Mode {WIRE, SLICE, FACES, STATE, ERRORS}
+    private static void emitQuadX(BufferBuilder buf, double x, double y0, double z0, double y1, double z1, boolean flipV, float r, float g, float b, float a) {
+        if (!flipV) {
+            buf.pos(x, y0, z0).color(r, g, b, a).endVertex();
+            buf.pos(x, y0, z1).color(r, g, b, a).endVertex();
+            buf.pos(x, y1, z1).color(r, g, b, a).endVertex();
+            buf.pos(x, y1, z0).color(r, g, b, a).endVertex();
+        } else {
+            buf.pos(x, y0, z1).color(r, g, b, a).endVertex();
+            buf.pos(x, y0, z0).color(r, g, b, a).endVertex();
+            buf.pos(x, y1, z0).color(r, g, b, a).endVertex();
+            buf.pos(x, y1, z1).color(r, g, b, a).endVertex();
+        }
+    }
+
+    private static void emitQuadY(BufferBuilder buf, double y, double x0, double z0, double x1, double z1, boolean flipV, float r, float g, float b, float a) {
+        if (!flipV) {
+            buf.pos(x0, y, z0).color(r, g, b, a).endVertex();
+            buf.pos(x1, y, z0).color(r, g, b, a).endVertex();
+            buf.pos(x1, y, z1).color(r, g, b, a).endVertex();
+            buf.pos(x0, y, z1).color(r, g, b, a).endVertex();
+        } else {
+            buf.pos(x0, y, z1).color(r, g, b, a).endVertex();
+            buf.pos(x1, y, z1).color(r, g, b, a).endVertex();
+            buf.pos(x1, y, z0).color(r, g, b, a).endVertex();
+            buf.pos(x0, y, z0).color(r, g, b, a).endVertex();
+        }
+    }
+
+    private static void emitQuadZ(BufferBuilder buf, double z, double x0, double y0, double x1, double y1, boolean flipV, float r, float g, float b, float a) {
+        if (!flipV) {
+            buf.pos(x0, y0, z).color(r, g, b, a).endVertex();
+            buf.pos(x1, y0, z).color(r, g, b, a).endVertex();
+            buf.pos(x1, y1, z).color(r, g, b, a).endVertex();
+            buf.pos(x0, y1, z).color(r, g, b, a).endVertex();
+        } else {
+            buf.pos(x0, y1, z).color(r, g, b, a).endVertex();
+            buf.pos(x1, y1, z).color(r, g, b, a).endVertex();
+            buf.pos(x1, y0, z).color(r, g, b, a).endVertex();
+            buf.pos(x0, y0, z).color(r, g, b, a).endVertex();
+        }
+    }
+
+    public enum Mode {
+        WIRE, SLICE, SECTIONS(0.01f, -16f, -1f), POCKETS(0.01f, -2f, -512f), STATE, ERRORS(0.01f, -16f, -256f);
+        final float inset, polygonFactor, polygonUnits;
+
+        Mode() {
+            this(0.01f, -1f, -1f);
+        }
+
+        Mode(float i, float pf, float ps) {
+            inset = i;
+            polygonFactor = pf;
+            polygonUnits = ps;
+        }
+    }
 
     public static final class Config {
         public boolean enabled = false;
         public int radiusChunks = 2;
-        public Mode mode = Mode.WIRE;
+        public Mode mode = Mode.POCKETS;
         public boolean sliceAutoY = true;
         public int sliceY = 0;
         public boolean depth = true;
@@ -1223,6 +1690,16 @@ public final class RadVisOverlay {
         public int focusDx = 0;
         public int focusDy = 0;
         public int focusDz = 0;
+    }
+
+    private record PocketMesh(byte[] pocketDataRef, int pocketCount, int[] quads) {
+    }
+
+    private record MultiOuterMeshes(byte[] pocketDataRef, int pocketCount, int[][] sectionFaceQuads,
+                                    int[][] warnFaceQuads, int[] facePocketBits, byte[] sampleU, byte[] sampleV) {
+    }
+
+    private record SingleOuterMeshes(byte[] pocketDataRef, int[][] sectionFaceQuads) {
     }
 
     private record ErrorRecord(long sectionA, long sectionB, int faceA, int pocketA, int pocketB, int expected,

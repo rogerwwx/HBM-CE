@@ -28,7 +28,7 @@ public class CommandRadVisClient extends CommandBase implements IClientCommand {
                 Usage:
                  /radvis on|off
                  /radvis radius <rChunks>
-                 /radvis mode <wire|slice|faces|state|errors>
+                 /radvis mode <wire|slice|sections|pockets|state|errors>
                  /radvis y <auto|0-255>
                  /radvis depth <on|off>
                  /radvis alpha <0.0-1.0>
@@ -216,7 +216,7 @@ public class CommandRadVisClient extends CommandBase implements IClientCommand {
                     "filterBox");
         }
         if (args.length == 2 && "mode".equalsIgnoreCase(args[0])) {
-            return getListOfStringsMatchingLastWord(args, "wire", "slice", "faces", "state", "errors");
+            return getListOfStringsMatchingLastWord(args, "wire", "slice", "sections", "pockets", "state", "errors");
         }
         if (args.length == 2 && ("depth".equalsIgnoreCase(args[0]) || "verify".equalsIgnoreCase(args[0]))) {
             return getListOfStringsMatchingLastWord(args, "on", "off");
@@ -253,7 +253,8 @@ public class CommandRadVisClient extends CommandBase implements IClientCommand {
         return switch (s.toLowerCase()) {
             case "wire" -> RadVisOverlay.Mode.WIRE;
             case "slice" -> RadVisOverlay.Mode.SLICE;
-            case "faces" -> RadVisOverlay.Mode.FACES;
+            case "sections" -> RadVisOverlay.Mode.SECTIONS;
+            case "pockets" -> RadVisOverlay.Mode.POCKETS;
             case "state" -> RadVisOverlay.Mode.STATE;
             case "errors" -> RadVisOverlay.Mode.ERRORS;
             default -> null;
