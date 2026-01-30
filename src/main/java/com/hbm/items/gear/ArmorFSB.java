@@ -40,6 +40,8 @@ import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.event.entity.living.LivingAttackEvent;
+import net.minecraftforge.event.entity.living.LivingDeathEvent;
+import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 import net.minecraftforge.fml.relauncher.Side;
@@ -155,6 +157,12 @@ public class ArmorFSB extends ItemArmor {
     }
 
     public void handleHurt(LivingHurtEvent event) {
+    }
+
+    public void handleDeath(LivingDeathEvent event) {
+    }
+
+    public void handleUpdate(LivingEvent.LivingUpdateEvent event) {
     }
 
     public void handleTick(TickEvent.PlayerTickEvent event) {

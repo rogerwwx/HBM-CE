@@ -1,0 +1,13 @@
+{
+  "package": "com.hbm.mixin",
+  "refmap": "mixins.hbm.refmap.json",
+  "target": "@env(DEFAULT)",
+  "minVersion": "0.8",
+  "compatibilityLevel": "JAVA_8",
+  "mixins": [
+    "MixinRenderLivingBase",
+    "MixinRender"
+  ],
+  "server": [],
+  "client": []
+}

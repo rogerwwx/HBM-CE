@@ -10,13 +10,17 @@ import com.hbm.items.ModItems;
 import com.hbm.lib.HBMSoundHandler;
 import com.hbm.main.AdvancementManager;
 import com.hbm.main.MainRegistry;
+import com.hbm.packet.PacketDispatcher;
+import com.hbm.packet.toclient.GuiDeathPacket;
 import com.hbm.potion.HbmPotion;
+import com.hbm.util.DropItem;
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.entity.ai.attributes.AttributeModifier;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.MobEffects;
 import net.minecraft.init.SoundEvents;
@@ -25,10 +29,7 @@ import net.minecraft.item.EnumRarity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemSword;
 import net.minecraft.potion.PotionEffect;
-import net.minecraft.util.EnumActionResult;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumHand;
-import net.minecraft.util.SoundCategory;
+import net.minecraft.util.*;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.text.TextFormatting;
@@ -67,12 +68,20 @@ public class WeaponSpecial extends ItemSword {
 	@Override
 	public boolean hitEntity(ItemStack stack, EntityLivingBase target, EntityLivingBase attacker) {
 		World world = target.world;
-		if(this == ModItems.schrabidium_hammer) {
-			if (!world.isRemote)
-        	{
-				target.setHealth(0.0F);
-        	}
-        	world.playSound(null, target.posX, target.posY, target.posZ, HBMSoundHandler.bonk, SoundCategory.PLAYERS, 3.0F, 0.1F);
+		if (this == ModItems.schrabidium_hammer) {
+			if (!world.isRemote) {
+				target.getEntityAttribute(SharedMonsterAttributes.MAX_HEALTH).setBaseValue(0.0D);
+				target.setHealth(0);
+				target.onDeath(DamageSource.GENERIC);
+				target.getEntityData().setBoolean("Dead", true);
+				if (target instanceof EntityPlayerMP) {
+					EntityPlayerMP player = (EntityPlayerMP) target;
+					String deathText = player.getName() + " 在锤子的重击下变成了一摊薄饼";
+					GuiDeathPacket packet = new GuiDeathPacket(deathText);
+					PacketDispatcher.sendTo(packet, player);
+				}
+				world.playSound(null, target.posX, target.posY, target.posZ, HBMSoundHandler.bonk, SoundCategory.PLAYERS, 3.0F, 0.1F);
+			}
 		}
 		if(this == ModItems.bottle_opener) {
 			if (!target.world.isRemote)

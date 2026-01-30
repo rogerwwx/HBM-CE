@@ -33,9 +33,9 @@ public class EntityMaskMan extends EntityMob implements IRadiationImmune {
 	public EntityMaskMan(World worldIn) {
 		super(worldIn);
 		this.tasks.addTask(1, new EntityAISwimming(this));
-		this.tasks.addTask(2, new EntityAIMaskmanCasualApproach(this, EntityPlayer.class, 1.0D, false));
-        this.tasks.addTask(2, new EntityAIMaskmanMinigun(this, true, true, 3));
-        this.tasks.addTask(3, new EntityAIMaskmanLasergun(this, true, true));
+		this.tasks.addTask(2, new EntityAIMaskmanCasualApproach(this, 1.0D, false));
+		this.tasks.addTask(2, new EntityAIMaskmanMinigun(this, 3));
+		this.tasks.addTask(3, new EntityAIMaskmanLasergun(this));
         this.tasks.addTask(3, new EntityAIWander(this, 1.0D));
         this.tasks.addTask(4, new EntityAILookIdle(this));
         this.tasks.addTask(5, new EntityAIWatchClosest(this, EntityPlayer.class, 8.0F));

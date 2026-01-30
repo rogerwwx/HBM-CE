@@ -537,7 +537,7 @@ dependencies {
         annotationProcessor 'com.google.guava:guava:30.0-jre'
         // should use 2.8.6 but 2.8.9+ has a vulnerability fix
         annotationProcessor 'com.google.code.gson:gson:2.8.9'
-
+        
         mixinProviderSpec = modUtils.enableMixins(mixinProviderSpec, mixinConfigRefmap)
         api (mixinProviderSpec) {
             transitive = false

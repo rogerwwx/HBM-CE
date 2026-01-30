@@ -973,6 +973,15 @@ public class ModEventHandler {
                 }
             }
         }
+        if (event.getEntityLiving() instanceof EntityPlayer) {
+            EntityPlayer player = (EntityPlayer) event.getEntityLiving();
+
+            ItemStack chest = player.getItemStackFromSlot(EntityEquipmentSlot.CHEST);
+            if (chest.getItem() instanceof ArmorFSB) {
+                ArmorFSB fsb = (ArmorFSB) chest.getItem();
+                fsb.handleDeath(event);
+            }
+        }
         if (event.isCancelable() && event.isCanceled())
             return;
         if (GeneralConfig.enableCataclysm) {
@@ -1185,7 +1194,15 @@ public class ModEventHandler {
                 }
             }
         }
+        if (event.getEntityLiving() instanceof EntityPlayer) {
+            EntityPlayer player = (EntityPlayer) event.getEntityLiving();
 
+            ItemStack chest = player.getItemStackFromSlot(EntityEquipmentSlot.CHEST);
+            if (chest.getItem() instanceof ArmorFSB) {
+                ArmorFSB fsb = (ArmorFSB) chest.getItem();
+                fsb.handleUpdate(event);
+            }
+        }
         EntityEffectHandler.onUpdate(event.getEntityLiving());
     }
 

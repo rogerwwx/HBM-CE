@@ -1,6 +1,5 @@
 package com.hbm.render.util;
 
-import com.hbm.lib.internal.MethodHandleHelper;
 import com.hbm.main.ClientProxy;
 import com.hbm.main.MainRegistry;
 import com.hbm.main.ResourceManager;
@@ -33,12 +32,12 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.util.vector.Matrix4f;
+import com.hbm.mixin.MixinRender;
+import com.hbm.mixin.MixinRenderLivingBase;
 
 import javax.annotation.Nullable;
 import javax.vecmath.Matrix3f;
 import javax.vecmath.Vector3f;
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -46,11 +45,6 @@ import java.util.List;
 import java.util.function.Consumer;
 
 public class ModelRendererUtil {
-
-	//Need to call this because things like bats do extra scaling
-	public static final MethodHandle rGetEntityTexture = MethodHandleHelper.findVirtual(Render.class, "getEntityTexture", "func_110775_a", MethodType.methodType(ResourceLocation.class, Entity.class));
-	public static final MethodHandle rHandleRotationFloat = MethodHandleHelper.findVirtual(RenderLivingBase.class, "handleRotationFloat", "func_77044_a", MethodType.methodType(float.class, EntityLivingBase.class, float.class));
-	public static final MethodHandle rApplyRotations = MethodHandleHelper.findVirtual(RenderLivingBase.class, "applyRotations", "func_77043_a", MethodType.methodType(void.class, EntityLivingBase.class, float.class, float.class, float.class));
 
     public static @NotNull <T extends Entity> ResourceLocation getEntityTexture(T e) {
         Render<T> eRenderer = Minecraft.getMinecraft().getRenderManager().getEntityRenderObject(e);
@@ -60,8 +54,8 @@ public class ModelRendererUtil {
     public static @NotNull <T extends Entity> ResourceLocation getEntityTexture(T e, Render<T> eRenderer) {
         ResourceLocation r = null;
         try {
-            r = (ResourceLocation) rGetEntityTexture.invokeExact(eRenderer, e);
-        } catch(Throwable e1) {
+			r = MixinRender.callGetEntityTexture(eRenderer, e);
+		} catch(Throwable e1) {
             MainRegistry.logger.catching(e1);
         }
         return r == null ? ResourceManager.turbofan_blades_tex : r;
@@ -124,8 +118,8 @@ public class ModelRendererUtil {
 		
 		float f8 = 0;
 		try {
-			f8 = (float)rHandleRotationFloat.invokeExact(render, e, partialTicks);
-			rApplyRotations.invokeExact(render, e, f8, f, partialTicks);
+			f8 = MixinRenderLivingBase.callHandleRotationFloat(render, e, partialTicks);
+			MixinRenderLivingBase.callApplyRotations(render, e, f8, f, partialTicks);
 		} catch(Throwable x){
             MainRegistry.logger.catching(x);
 		}
@@ -616,7 +610,7 @@ public class ModelRendererUtil {
 				Iterator<CutModelData> itr = toSort.iterator();
 				while(itr.hasNext()){
 					CutModelData d = itr.next();
-					if(d.collider.localBox.grow(0.01F).intersects(c.collider.localBox)){
+					if(d.collider.localBox.grow(0.3F).intersects(c.collider.localBox)){
 						if(GJK.collidesAny(null, null, c.collider, d.collider)){
 							//Something got removed, which means we have to iterate again to check if that one is connected to anything.
 							removed = true;

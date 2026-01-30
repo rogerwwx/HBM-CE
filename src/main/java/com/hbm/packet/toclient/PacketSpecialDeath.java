@@ -97,7 +97,7 @@ public class PacketSpecialDeath implements IMessage {
 				if(ent instanceof EntityLivingBase livingBase){
 					switch(m.effectId){
 					case 0:
-						ent.setDead();
+						ent.isDead=true;
 						ModEventHandlerClient.specialDeathEffectEntities.add(livingBase);
 						DisintegrationParticleHandler.spawnGluonDisintegrateParticles(ent);
 						break;
@@ -112,12 +112,12 @@ public class PacketSpecialDeath implements IMessage {
 						}
 						break;
 					case 2:
-						ent.setDead();
+						ent.isDead=true;
 						ModEventHandlerClient.specialDeathEffectEntities.add(livingBase);
 						DisintegrationParticleHandler.spawnLightningDisintegrateParticles(ent, new Vec3(m.auxData[0], m.auxData[1], m.auxData[2]));
 						break;
 					case 3:
-						ent.setDead();
+						ent.isDead=true;
 						//ModEventHandlerClient.specialDeathEffectEntities.add((EntityLivingBase) ent);
 						float[] data = m.auxData;
 						int id = Float.floatToIntBits(data[4]);

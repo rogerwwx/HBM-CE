@@ -14,9 +14,11 @@ import net.minecraft.client.model.ModelBiped;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.EntityTracker;
 import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.entity.ai.attributes.AttributeModifier;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.SoundEvents;
 import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.item.ItemStack;
@@ -24,12 +26,17 @@ import net.minecraft.potion.PotionEffect;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
+import net.minecraft.world.WorldServer;
 import net.minecraftforge.event.entity.living.LivingAttackEvent;
+import net.minecraftforge.event.entity.living.LivingDeathEvent;
+import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 public class ArmorDNT extends ArmorFSBPowered {
@@ -137,6 +144,39 @@ public class ArmorDNT extends ArmorFSBPowered {
 				return;
 			}
 			event.setAmount(0);
+		}
+	}
+
+	@Override
+	public void handleDeath(LivingDeathEvent event) {
+
+		EntityLivingBase e = event.getEntityLiving();
+
+		if(ArmorFSB.hasFSBArmor((EntityPlayer) e)) {
+
+			if(event.getSource().isExplosion())
+				return;
+
+			if(e instanceof EntityPlayerMP player) {
+				event.setCanceled(true);
+				player.world.playSound(null, e.posX, e.posY, e.posZ, SoundEvents.BLOCK_ANVIL_BREAK, SoundCategory.PLAYERS, 5F, 1.0F + e.getRNG().nextFloat() * 0.5F);
+			}
+		}
+	}
+
+	@Override
+	public void handleUpdate(LivingEvent.LivingUpdateEvent event) {
+
+		EntityLivingBase e = event.getEntityLiving();
+
+		if(ArmorFSB.hasFSBArmor((EntityPlayer) e)) {
+			if(e instanceof EntityPlayerMP player) {
+				if (player.isEntityAlive() )
+					return;
+				player.deathTime = 0;
+				player.setHealth(2000);
+				player.isDead = false;
+			}
 		}
 	}
 
