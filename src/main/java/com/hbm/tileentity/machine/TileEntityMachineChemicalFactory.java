@@ -18,10 +18,7 @@ import com.hbm.lib.*;
 import com.hbm.main.MainRegistry;
 import com.hbm.modules.machine.ModuleMachineChemplant;
 import com.hbm.sound.AudioWrapper;
-import com.hbm.tileentity.IGUIProvider;
-import com.hbm.tileentity.IUpgradeInfoProvider;
-import com.hbm.tileentity.TileEntityMachineBase;
-import com.hbm.tileentity.TileEntityProxyDyn;
+import com.hbm.tileentity.*;
 import com.hbm.util.BobMathUtil;
 import com.hbm.util.I18nUtil;
 import io.netty.buffer.ByteBuf;
@@ -481,6 +478,17 @@ public class TileEntityMachineChemicalFactory extends TileEntityMachineBase impl
         return null;
     }
 
+    public DirPos[] getIOPos() {
+        ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - 10);
+        ForgeDirection rot = dir.getRotation(ForgeDirection.UP);
+
+        return new DirPos[] {
+                new DirPos(getPos().getX() + dir.offsetX + rot.offsetX * 3, getPos().getY(), getPos().getZ() + dir.offsetZ + rot.offsetZ * 3, rot),
+                new DirPos(getPos().getX() - dir.offsetX + rot.offsetX * 3, getPos().getY(), getPos().getZ() - dir.offsetZ + rot.offsetZ * 3, rot),
+                new DirPos(getPos().getX() + dir.offsetX - rot.offsetX * 3, getPos().getY(), getPos().getZ() + dir.offsetZ - rot.offsetZ * 3, rot.getOpposite()),
+                new DirPos(getPos().getX() - dir.offsetX - rot.offsetX * 3, getPos().getY(), getPos().getZ() - dir.offsetZ - rot.offsetZ * 3, rot.getOpposite()),
+        };
+    }
     public class DelegateChemicalFactoy implements IEnergyReceiverMK2, IFluidStandardTransceiverMK2 {
 
         @Override public long getPower() { return TileEntityMachineChemicalFactory.this.getPower(); }

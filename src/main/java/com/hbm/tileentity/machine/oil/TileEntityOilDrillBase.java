@@ -29,10 +29,11 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayDeque;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Queue;
 
-public abstract class TileEntityOilDrillBase extends TileEntityMachineBase implements ITickable, IEnergyReceiverMK2, IFluidStandardTransceiver, IConfigurableMachine, IPersistentNBT, IGUIProvider, IFluidCopiable, IFFtoNTMF {
+public abstract class TileEntityOilDrillBase extends TileEntityMachineBase implements ITickable, IEnergyReceiverMK2, IFluidStandardTransceiver, IConfigurableMachine, IPersistentNBT, IGUIProvider, IFluidCopiable, IFFtoNTMF, IUpgradeInfoProvider {
     private static boolean converted = false;
     private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT(this);
     public long power;
@@ -350,4 +351,20 @@ public abstract class TileEntityOilDrillBase extends TileEntityMachineBase imple
     public FluidTankNTM getTankToPaste() {
         return null;
     }
+
+    @Override
+    public boolean canProvideInfo(ItemMachineUpgrade.UpgradeType type, int level, boolean extendedInfo) {
+        return type == ItemMachineUpgrade.UpgradeType.SPEED || type == ItemMachineUpgrade.UpgradeType.POWER || type == ItemMachineUpgrade.UpgradeType.OVERDRIVE || type == ItemMachineUpgrade.UpgradeType.AFTERBURN;
+    }
+
+    @Override
+    public HashMap<ItemMachineUpgrade.UpgradeType, Integer> getValidUpgrades() {
+        HashMap<ItemMachineUpgrade.UpgradeType, Integer> upgrades = new HashMap<>();
+        upgrades.put(ItemMachineUpgrade.UpgradeType.SPEED, 3);
+        upgrades.put(ItemMachineUpgrade.UpgradeType.POWER, 3);
+        upgrades.put(ItemMachineUpgrade.UpgradeType.AFTERBURN, 3);
+        upgrades.put(ItemMachineUpgrade.UpgradeType.OVERDRIVE, 3);
+        return upgrades;
+    }
+
 }

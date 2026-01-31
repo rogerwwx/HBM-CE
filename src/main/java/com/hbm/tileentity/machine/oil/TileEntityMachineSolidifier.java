@@ -2,6 +2,7 @@ package com.hbm.tileentity.machine.oil;
 
 import com.hbm.api.energymk2.IEnergyReceiverMK2;
 import com.hbm.api.fluid.IFluidStandardReceiver;
+import com.hbm.blocks.ModBlocks;
 import com.hbm.interfaces.AutoRegister;
 import com.hbm.inventory.UpgradeManagerNT;
 import com.hbm.inventory.container.ContainerSolidifier;
@@ -14,7 +15,9 @@ import com.hbm.lib.DirPos;
 import com.hbm.lib.Library;
 import com.hbm.tileentity.IFluidCopiable;
 import com.hbm.tileentity.IGUIProvider;
+import com.hbm.tileentity.IUpgradeInfoProvider;
 import com.hbm.tileentity.TileEntityMachineBase;
+import com.hbm.util.I18nUtil;
 import com.hbm.util.Tuple;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.client.gui.GuiScreen;
@@ -25,13 +28,17 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ITickable;
 import net.minecraft.util.math.AxisAlignedBB;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.HashMap;
+import java.util.List;
+
 @AutoRegister
-public class TileEntityMachineSolidifier extends TileEntityMachineBase implements ITickable, IEnergyReceiverMK2, IFluidStandardReceiver, IGUIProvider, IFluidCopiable {
+public class TileEntityMachineSolidifier extends TileEntityMachineBase implements ITickable, IEnergyReceiverMK2, IUpgradeInfoProvider, IFluidStandardReceiver, IGUIProvider, IFluidCopiable {
 
     public static final long maxPower = 100000;
     public static final int usageBase = 500;
@@ -135,8 +142,7 @@ public class TileEntityMachineSolidifier extends TileEntityMachineBase implement
             if (inventory.getStackInSlot(0).getItemDamage() != stack.getItemDamage())
                 return false;
 
-            if (inventory.getStackInSlot(0).getCount() + stack.getCount() > inventory.getStackInSlot(0).getMaxStackSize())
-                return false;
+            return inventory.getStackInSlot(0).getCount() + stack.getCount() <= inventory.getStackInSlot(0).getMaxStackSize();
         }
 
         return true;
@@ -262,4 +268,30 @@ public class TileEntityMachineSolidifier extends TileEntityMachineBase implement
     public FluidTankNTM getTankToPaste() {
         return tank;
     }
+
+    @Override
+    public boolean canProvideInfo(ItemMachineUpgrade.UpgradeType type, int level, boolean extendedInfo) {
+        return type == ItemMachineUpgrade.UpgradeType.SPEED || type == ItemMachineUpgrade.UpgradeType.POWER;
+    }
+
+    @Override
+    public void provideInfo(ItemMachineUpgrade.UpgradeType type, int level, List<String> info, boolean extendedInfo) {
+        info.add(IUpgradeInfoProvider.getStandardLabel(ModBlocks.machine_solidifier));
+        if(type == ItemMachineUpgrade.UpgradeType.SPEED) {
+            info.add(TextFormatting.GREEN + I18nUtil.resolveKey(IUpgradeInfoProvider.KEY_DELAY, "-" + (level * 25) + "%"));
+            info.add(TextFormatting.RED + I18nUtil.resolveKey(IUpgradeInfoProvider.KEY_CONSUMPTION, "+" + (level * 100) + "%"));
+        }
+        if(type == ItemMachineUpgrade.UpgradeType.POWER) {
+            info.add(TextFormatting.GREEN + I18nUtil.resolveKey(IUpgradeInfoProvider.KEY_CONSUMPTION, "-" + (100 - 100 / (level + 1)) + "%"));
+        }
+    }
+
+    @Override
+    public HashMap<ItemMachineUpgrade.UpgradeType, Integer> getValidUpgrades() {
+        HashMap<ItemMachineUpgrade.UpgradeType, Integer> upgrades = new HashMap<>();
+        upgrades.put(ItemMachineUpgrade.UpgradeType.SPEED, 3);
+        upgrades.put(ItemMachineUpgrade.UpgradeType.POWER, 3);
+        return upgrades;
+    }
+
 }

@@ -77,6 +77,7 @@ public class MachineChemicalFactory extends BlockDummyable implements ITooltipPr
         if(!(te instanceof TileEntityMachineChemicalFactory chemfac)) return;
 
         DirPos[] cool = chemfac.getCoolPos();
+        DirPos[] io = chemfac.getIOPos();
 
         for(DirPos dirPos : cool) if(dirPos.compare(x + dirPos.getDir().offsetX, y, z + dirPos.getDir().offsetZ)) {
             List<String> text = new ArrayList<>();
@@ -86,6 +87,17 @@ public class MachineChemicalFactory extends BlockDummyable implements ITooltipPr
 
             ILookOverlay.printGeneric(event, I18nUtil.resolveKey(getTranslationKey() + ".name"), 0xffff00, 0x404000, text);
             break;
+        }
+
+
+        for(int i = 0; i < io.length; i++) {
+            DirPos port = io[i];
+            if(port.compare(x + port.getDir().offsetX, y, z + port.getDir().offsetZ)) {
+                List<String> text = new ArrayList();
+                text.add(TextFormatting.YELLOW + "-> " + TextFormatting.RESET + "Recipe field [" + (i + 1) + "]");
+                ILookOverlay.printGeneric(event, I18nUtil.resolveKey(getTranslationKey() + ".name"), 0xffff00, 0x404000, text);
+                break;
+            }
         }
     }
 }

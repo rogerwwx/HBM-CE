@@ -2,6 +2,7 @@ package com.hbm.tileentity.machine.oil;
 
 import com.hbm.api.energymk2.IEnergyProviderMK2;
 import com.hbm.api.fluid.IFluidStandardReceiver;
+import com.hbm.blocks.ModBlocks;
 import com.hbm.interfaces.AutoRegister;
 import com.hbm.interfaces.IControlReceiver;
 import com.hbm.inventory.UpgradeManagerNT;
@@ -20,7 +21,9 @@ import com.hbm.lib.Library;
 import com.hbm.main.MainRegistry;
 import com.hbm.tileentity.IFluidCopiable;
 import com.hbm.tileentity.IGUIProvider;
+import com.hbm.tileentity.IUpgradeInfoProvider;
 import com.hbm.tileentity.TileEntityMachineBase;
+import com.hbm.util.I18nUtil;
 import com.hbm.util.ParticleUtil;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.client.gui.GuiScreen;
@@ -34,16 +37,21 @@ import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ITickable;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.AxisAlignedBB;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.HashMap;
 import java.util.List;
 
 @AutoRegister
-public class TileEntityMachineGasFlare extends TileEntityMachineBase implements ITickable, IEnergyProviderMK2, IFluidStandardReceiver, IGUIProvider, IControlReceiver, IFluidCopiable {
+public class TileEntityMachineGasFlare extends TileEntityMachineBase
+        implements ITickable, IEnergyProviderMK2,
+        IFluidStandardReceiver, IGUIProvider,
+        IControlReceiver, IFluidCopiable, IUpgradeInfoProvider {
     public static final long maxPower = 1000000;
     private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT(this);
     public long power;
@@ -57,7 +65,6 @@ public class TileEntityMachineGasFlare extends TileEntityMachineBase implements 
     public TileEntityMachineGasFlare() {
         super(6, true, true);
         tankType = Fluids.GAS.getFF();
-        ;
         tank = new FluidTankNTM(Fluids.GAS, 64000);
     }
 
@@ -329,5 +336,29 @@ public class TileEntityMachineGasFlare extends TileEntityMachineBase implements 
     public boolean isUseableByPlayer(EntityPlayer player) {
         if (this.world.getTileEntity(this.pos) != this) return false;
         return player.getDistanceSq(this.pos.getX() + 0.5D, this.pos.getY() + 0.5D, this.pos.getZ() + 0.5D) <= 1024.0D;
+    }
+
+    @Override
+    public boolean canProvideInfo(UpgradeType type, int level, boolean extendedInfo) {
+        return type == UpgradeType.SPEED || type == UpgradeType.EFFECT;
+    }
+
+    @Override
+    public void provideInfo(UpgradeType type, int level, List<String> info, boolean extendedInfo) {
+        info.add(IUpgradeInfoProvider.getStandardLabel(ModBlocks.machine_flare));
+        if (type == UpgradeType.SPEED) {
+            info.add(TextFormatting.GREEN + I18nUtil.resolveKey(IUpgradeInfoProvider.KEY_CONSUMPTION, "+" + (level * 100) + "%"));
+        }
+        if (type == UpgradeType.EFFECT) {
+            info.add(TextFormatting.GREEN + I18nUtil.resolveKey(IUpgradeInfoProvider.KEY_EFFICIENCY, "+" + (100 * level / 3) + "%"));
+        }
+    }
+
+    @Override
+    public HashMap<UpgradeType, Integer> getValidUpgrades() {
+        HashMap<UpgradeType, Integer> upgrades = new HashMap<>();
+        upgrades.put(UpgradeType.SPEED, 3);
+        upgrades.put(UpgradeType.EFFECT, 3);
+        return upgrades;
     }
 }

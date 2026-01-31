@@ -231,7 +231,7 @@ public class TileEntityRBMKBoiler extends TileEntityRBMKSlottedBase implements I
         if (RBMKDials.getOverpressure(world)) {
             for (DirPos pos : getOutputPos()) {
                 FluidNode node = (FluidNode) UniNodespace.getNode(world, pos.getPos(), steam.getTankType().getNetworkProvider());
-                if (node.net != null) {
+                if (node.net != null && node.hasValidNet()) {
                     this.pipes.add(node.net);
                 }
             }

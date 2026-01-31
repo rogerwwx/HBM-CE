@@ -2,6 +2,7 @@ package com.hbm.tileentity.machine;
 
 import com.hbm.api.energymk2.IEnergyReceiverMK2;
 import com.hbm.api.fluid.IFluidStandardReceiver;
+import com.hbm.blocks.ModBlocks;
 import com.hbm.interfaces.AutoRegister;
 import com.hbm.interfaces.IClimbable;
 import com.hbm.interfaces.IFFtoNTMF;
@@ -16,8 +17,12 @@ import com.hbm.lib.DirPos;
 import com.hbm.lib.ForgeDirection;
 import com.hbm.lib.HBMSoundHandler;
 import com.hbm.lib.Library;
+import com.hbm.tileentity.IFluidCopiable;
 import com.hbm.tileentity.IGUIProvider;
+import com.hbm.tileentity.IUpgradeInfoProvider;
 import com.hbm.tileentity.TileEntityMachineBase;
+import com.hbm.util.BobMathUtil;
+import com.hbm.util.I18nUtil;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.entity.EntityLivingBase;
@@ -30,6 +35,7 @@ import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ITickable;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.AxisAlignedBB;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidTank;
@@ -39,8 +45,11 @@ import net.minecraftforge.items.ItemStackHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.HashMap;
+import java.util.List;
+
 @AutoRegister
-public class TileEntityMachineCrystallizer extends TileEntityMachineBase implements ITickable, IEnergyReceiverMK2, IFluidStandardReceiver, IGUIProvider, IFFtoNTMF, IClimbable {
+public class TileEntityMachineCrystallizer extends TileEntityMachineBase implements ITickable, IEnergyReceiverMK2, IFluidStandardReceiver, IGUIProvider, IFFtoNTMF, IClimbable, IUpgradeInfoProvider, IFluidCopiable {
 
     public static final long maxPower = 1000000;
     public static final int demand = 1000;
@@ -53,7 +62,6 @@ public class TileEntityMachineCrystallizer extends TileEntityMachineBase impleme
     public float prevAngle;
     public FluidTankNTM tankNew;
     public FluidTank tank;
-    ;
     public UpgradeManagerNT upgradeManager = new UpgradeManagerNT(this);
     private Fluid oldFluid = Fluids.NONE.getFF();
     private AxisAlignedBB ladderAABB = null;
@@ -230,10 +238,7 @@ public class TileEntityMachineCrystallizer extends TileEntityMachineBase impleme
             return false;
 
         //Or is the output slot already full?
-        if (!inventory.getStackInSlot(2).isEmpty() && inventory.getStackInSlot(2).getCount() + stack.getCount() > inventory.getStackInSlot(2).getMaxStackSize())
-            return false;
-
-        return true;
+        return inventory.getStackInSlot(2).isEmpty() || inventory.getStackInSlot(2).getCount() + stack.getCount() <= inventory.getStackInSlot(2).getMaxStackSize();
     }
 
     public int getRequiredAcid(int base) {
@@ -264,7 +269,7 @@ public class TileEntityMachineCrystallizer extends TileEntityMachineBase impleme
 
     public int getPowerRequired() {
         int speed = Math.min(upgradeManager.getLevel(ItemMachineUpgrade.UpgradeType.SPEED), 3);
-        return (int) (demand + Math.min(speed * 1000, 3000));
+        return demand + Math.min(speed * 1000, 3000);
     }
 
     public float getCycleCount() {
@@ -306,7 +311,6 @@ public class TileEntityMachineCrystallizer extends TileEntityMachineBase impleme
         if (!converted) {
             tank.readFromNBT(nbt.getCompoundTag("tank"));
             oldFluid = tank.getFluid() != null ? tank.getFluid().getFluid() : Fluids.NONE.getFF();
-            ;
         } else {
             tankNew.readFromNBT(nbt, "tankNew");
             nbt.removeTag("tank");
@@ -406,5 +410,47 @@ public class TileEntityMachineCrystallizer extends TileEntityMachineBase impleme
     @Override
     public @Nullable AxisAlignedBB getClimbAABBForIndexing() {
         return getLadderAABB();
+    }
+
+
+
+    @Override
+    public boolean canProvideInfo(ItemMachineUpgrade.UpgradeType type, int level, boolean extendedInfo) {
+        return type == ItemMachineUpgrade.UpgradeType.SPEED || type == ItemMachineUpgrade.UpgradeType.EFFECT || type == ItemMachineUpgrade.UpgradeType.OVERDRIVE;
+    }
+
+    @Override
+    public void provideInfo(ItemMachineUpgrade.UpgradeType type, int level, List<String> info, boolean extendedInfo) {
+        info.add(IUpgradeInfoProvider.getStandardLabel(ModBlocks.machine_crystallizer));
+        if (type == ItemMachineUpgrade.UpgradeType.SPEED) {
+            info.add(TextFormatting.GREEN + I18nUtil.resolveKey(IUpgradeInfoProvider.KEY_DELAY, "-" + (level * 25) + "%"));
+            info.add(TextFormatting.RED + I18nUtil.resolveKey(IUpgradeInfoProvider.KEY_CONSUMPTION, "+" + (level * 100) + "%"));
+        }
+        if (type == ItemMachineUpgrade.UpgradeType.EFFECT) {
+            info.add(TextFormatting.GREEN + I18nUtil.resolveKey(IUpgradeInfoProvider.KEY_EFFICIENCY, "x" + level));
+            info.add(TextFormatting.RED + I18nUtil.resolveKey(IUpgradeInfoProvider.KEY_CONSUMPTION, "+" + (level * 200) + "%"));
+        }
+        if (type == ItemMachineUpgrade.UpgradeType.OVERDRIVE) {
+            info.add((BobMathUtil.getBlink() ? TextFormatting.RED : TextFormatting.DARK_GRAY) + "YES");
+        }
+    }
+
+    @Override
+    public HashMap<ItemMachineUpgrade.UpgradeType, Integer> getValidUpgrades() {
+        HashMap<ItemMachineUpgrade.UpgradeType, Integer> upgrades = new HashMap<>();
+        upgrades.put(ItemMachineUpgrade.UpgradeType.SPEED, 3);
+        upgrades.put(ItemMachineUpgrade.UpgradeType.EFFECT, 3);
+        upgrades.put(ItemMachineUpgrade.UpgradeType.OVERDRIVE, 3);
+        return upgrades;
+    }
+
+    @Override
+    public int[] getFluidIDToCopy() {
+        return new int[]{tankNew.getTankType().getID()};
+    }
+
+    @Override
+    public FluidTankNTM getTankToPaste() {
+        return tankNew;
     }
 }

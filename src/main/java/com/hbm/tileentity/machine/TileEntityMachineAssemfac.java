@@ -2,6 +2,7 @@ package com.hbm.tileentity.machine;
 
 import com.hbm.api.fluid.IFluidStandardTransceiver;
 import com.hbm.blocks.BlockDummyable;
+import com.hbm.blocks.ModBlocks;
 import com.hbm.interfaces.AutoRegister;
 import com.hbm.inventory.UpgradeManagerNT;
 import com.hbm.inventory.container.ContainerAssemfac;
@@ -14,6 +15,9 @@ import com.hbm.lib.ForgeDirection;
 import com.hbm.lib.HBMSoundHandler;
 import com.hbm.tileentity.IFluidCopiable;
 import com.hbm.tileentity.IGUIProvider;
+import com.hbm.tileentity.IUpgradeInfoProvider;
+import com.hbm.util.BobMathUtil;
+import com.hbm.util.I18nUtil;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.entity.player.EntityPlayer;
@@ -22,6 +26,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
@@ -29,10 +34,12 @@ import net.minecraftforge.items.ItemStackHandler;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 
 import javax.annotation.Nonnull;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Random;
 
 @AutoRegister
-public class TileEntityMachineAssemfac extends TileEntityMachineAssemblerBase implements IFluidStandardTransceiver, IGUIProvider, IFluidCopiable {
+public class TileEntityMachineAssemfac extends TileEntityMachineAssemblerBase implements IFluidStandardTransceiver, IGUIProvider, IFluidCopiable, IUpgradeInfoProvider {
 
     private static final int invSize = 117;
     private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT(this);
@@ -174,30 +181,14 @@ public class TileEntityMachineAssemfac extends TileEntityMachineAssemblerBase im
         ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset);
         ForgeDirection rot = dir.getRotation(ForgeDirection.UP);
 
-        return new DirPos[]{
-                new DirPos(pos.getX() - dir.offsetX * 3 + rot.offsetX * 5, pos.getY(), pos.getZ() - dir.offsetZ * 3 + rot.offsetZ * 5, rot),
-                new DirPos(pos.getX() + dir.offsetX * 2 + rot.offsetX * 5, pos.getY(), pos.getZ() + dir.offsetZ * 2 + rot.offsetZ * 5, rot),
-                new DirPos(pos.getX() - dir.offsetX * 3 - rot.offsetX * 4, pos.getY(), pos.getZ() - dir.offsetZ * 3 - rot.offsetZ * 4, rot.getOpposite()),
-                new DirPos(pos.getX() + dir.offsetX * 2 - rot.offsetX * 4, pos.getY(), pos.getZ() + dir.offsetZ * 2 - rot.offsetZ * 4, rot.getOpposite()),
-                new DirPos(pos.getX() - dir.offsetX * 5 + rot.offsetX * 3, pos.getY(), pos.getZ() - dir.offsetZ * 5 + rot.offsetZ * 3, dir.getOpposite()),
-                new DirPos(pos.getX() - dir.offsetX * 5 - rot.offsetX * 2, pos.getY(), pos.getZ() - dir.offsetZ * 5 - rot.offsetZ * 2, dir.getOpposite()),
-                new DirPos(pos.getX() + dir.offsetX * 4 + rot.offsetX * 3, pos.getY(), pos.getZ() + dir.offsetZ * 4 + rot.offsetZ * 3, dir),
-                new DirPos(pos.getX() + dir.offsetX * 4 - rot.offsetX * 2, pos.getY(), pos.getZ() + dir.offsetZ * 4 - rot.offsetZ * 2, dir)
-        };
+        return new DirPos[]{new DirPos(pos.getX() - dir.offsetX * 3 + rot.offsetX * 5, pos.getY(), pos.getZ() - dir.offsetZ * 3 + rot.offsetZ * 5, rot), new DirPos(pos.getX() + dir.offsetX * 2 + rot.offsetX * 5, pos.getY(), pos.getZ() + dir.offsetZ * 2 + rot.offsetZ * 5, rot), new DirPos(pos.getX() - dir.offsetX * 3 - rot.offsetX * 4, pos.getY(), pos.getZ() - dir.offsetZ * 3 - rot.offsetZ * 4, rot.getOpposite()), new DirPos(pos.getX() + dir.offsetX * 2 - rot.offsetX * 4, pos.getY(), pos.getZ() + dir.offsetZ * 2 - rot.offsetZ * 4, rot.getOpposite()), new DirPos(pos.getX() - dir.offsetX * 5 + rot.offsetX * 3, pos.getY(), pos.getZ() - dir.offsetZ * 5 + rot.offsetZ * 3, dir.getOpposite()), new DirPos(pos.getX() - dir.offsetX * 5 - rot.offsetX * 2, pos.getY(), pos.getZ() - dir.offsetZ * 5 - rot.offsetZ * 2, dir.getOpposite()), new DirPos(pos.getX() + dir.offsetX * 4 + rot.offsetX * 3, pos.getY(), pos.getZ() + dir.offsetZ * 4 + rot.offsetZ * 3, dir), new DirPos(pos.getX() + dir.offsetX * 4 - rot.offsetX * 2, pos.getY(), pos.getZ() + dir.offsetZ * 4 - rot.offsetZ * 2, dir)};
     }
 
     @Override
     public AxisAlignedBB getRenderBoundingBox() {
 
         if (bb == null) {
-            bb = new AxisAlignedBB(
-                    pos.getX() - 5,
-                    pos.getY(),
-                    pos.getZ() - 5,
-                    pos.getX() + 5,
-                    pos.getY() + 4,
-                    pos.getZ() + 5
-            );
+            bb = new AxisAlignedBB(pos.getX() - 5, pos.getY(), pos.getZ() - 5, pos.getX() + 5, pos.getY() + 4, pos.getZ() + 5);
         }
 
         return bb;
@@ -232,18 +223,12 @@ public class TileEntityMachineAssemfac extends TileEntityMachineAssemblerBase im
     @Override
     public ImmutablePair<BlockPos, ForgeDirection>[] getInputPositions() {
 
-        if (inpos != null)
-            return inpos;
+        if (inpos != null) return inpos;
 
         ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset);
         ForgeDirection rot = dir.getRotation(ForgeDirection.UP);
 
-        inpos = new ImmutablePair[]{
-                ImmutablePair.of(new BlockPos(getPos().getX() + dir.offsetX * 4 - rot.offsetX, getPos().getY(), getPos().getZ() + dir.offsetZ * 4 - rot.offsetZ), dir),
-                ImmutablePair.of(new BlockPos(getPos().getX() - dir.offsetX * 5 + rot.offsetX * 2, getPos().getY(), getPos().getZ() - dir.offsetZ * 5 + rot.offsetZ * 2), dir.getOpposite()),
-                ImmutablePair.of(new BlockPos(getPos().getX() - dir.offsetX * 2 - rot.offsetX * 4, getPos().getY(), getPos().getZ() - dir.offsetZ * 2 - rot.offsetZ * 4), rot.getOpposite()),
-                ImmutablePair.of(new BlockPos(getPos().getX() + dir.offsetX + rot.offsetX * 5, getPos().getY(), getPos().getZ() + dir.offsetZ + rot.offsetZ * 5), rot)
-        };
+        inpos = new ImmutablePair[]{ImmutablePair.of(new BlockPos(getPos().getX() + dir.offsetX * 4 - rot.offsetX, getPos().getY(), getPos().getZ() + dir.offsetZ * 4 - rot.offsetZ), dir), ImmutablePair.of(new BlockPos(getPos().getX() - dir.offsetX * 5 + rot.offsetX * 2, getPos().getY(), getPos().getZ() - dir.offsetZ * 5 + rot.offsetZ * 2), dir.getOpposite()), ImmutablePair.of(new BlockPos(getPos().getX() - dir.offsetX * 2 - rot.offsetX * 4, getPos().getY(), getPos().getZ() - dir.offsetZ * 2 - rot.offsetZ * 4), rot.getOpposite()), ImmutablePair.of(new BlockPos(getPos().getX() + dir.offsetX + rot.offsetX * 5, getPos().getY(), getPos().getZ() + dir.offsetZ + rot.offsetZ * 5), rot)};
 
         return inpos;
     }
@@ -251,18 +236,12 @@ public class TileEntityMachineAssemfac extends TileEntityMachineAssemblerBase im
     @Override
     public ImmutablePair<BlockPos, ForgeDirection>[] getOutputPositions() {
 
-        if (outpos != null)
-            return outpos;
+        if (outpos != null) return outpos;
 
         ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset);
         ForgeDirection rot = dir.getRotation(ForgeDirection.UP);
 
-        outpos = new ImmutablePair[]{
-                ImmutablePair.of(new BlockPos(getPos().getX() + dir.offsetX * 4 + rot.offsetX * 2, getPos().getY(), getPos().getZ() + dir.offsetZ * 4 + rot.offsetZ * 2), dir),
-                ImmutablePair.of(new BlockPos(getPos().getX() - dir.offsetX * 5 - rot.offsetX * 1, getPos().getY(), getPos().getZ() - dir.offsetZ * 5 - rot.offsetZ * 1), dir.getOpposite()),
-                ImmutablePair.of(new BlockPos(getPos().getX() + dir.offsetX * 1 - rot.offsetX * 4, getPos().getY(), getPos().getZ() + dir.offsetZ * 1 - rot.offsetZ * 4), rot.getOpposite()),
-                ImmutablePair.of(new BlockPos(getPos().getX() - dir.offsetX * 2 + rot.offsetX * 5, getPos().getY(), getPos().getZ() - dir.offsetZ * 2 + rot.offsetZ * 5), rot)
-        };
+        outpos = new ImmutablePair[]{ImmutablePair.of(new BlockPos(getPos().getX() + dir.offsetX * 4 + rot.offsetX * 2, getPos().getY(), getPos().getZ() + dir.offsetZ * 4 + rot.offsetZ * 2), dir), ImmutablePair.of(new BlockPos(getPos().getX() - dir.offsetX * 5 - rot.offsetX, getPos().getY(), getPos().getZ() - dir.offsetZ * 5 - rot.offsetZ), dir.getOpposite()), ImmutablePair.of(new BlockPos(getPos().getX() + dir.offsetX - rot.offsetX * 4, getPos().getY(), getPos().getZ() + dir.offsetZ - rot.offsetZ * 4), rot.getOpposite()), ImmutablePair.of(new BlockPos(getPos().getX() - dir.offsetX * 2 + rot.offsetX * 5, getPos().getY(), getPos().getZ() - dir.offsetZ * 2 + rot.offsetZ * 5), rot)};
 
         return outpos;
     }
@@ -403,9 +382,7 @@ public class TileEntityMachineAssemfac extends TileEntityMachineAssemblerBase im
         }
 
         private void updateInterp() {
-            for (int i = 0; i < angles.length; i++) {
-                prevAngles[i] = angles[i];
-            }
+            System.arraycopy(angles, 0, prevAngles, 0, angles.length);
         }
 
         /**
@@ -415,8 +392,7 @@ public class TileEntityMachineAssemfac extends TileEntityMachineAssemblerBase im
             boolean didMove = false;
 
             for (int i = 0; i < angles.length; i++) {
-                if (angles[i] == targetAngles[i])
-                    continue;
+                if (angles[i] == targetAngles[i]) continue;
 
                 didMove = true;
 
@@ -440,11 +416,38 @@ public class TileEntityMachineAssemfac extends TileEntityMachineAssemblerBase im
             return !didMove;
         }
 
-        public static enum ArmActionState {
-            ASSUME_POSITION,
-            EXTEND_STRIKER,
-            WELD,
-            RETRACT_STRIKER
+        public enum ArmActionState {
+            ASSUME_POSITION, EXTEND_STRIKER, WELD, RETRACT_STRIKER
         }
+    }
+
+    @Override
+    public void provideInfo(ItemMachineUpgrade.UpgradeType type, int level, List<String> info, boolean extendedInfo) {
+        info.add(IUpgradeInfoProvider.getStandardLabel(ModBlocks.machine_assemfac));
+        if (type == ItemMachineUpgrade.UpgradeType.SPEED) {
+            info.add(TextFormatting.GREEN + I18nUtil.resolveKey(IUpgradeInfoProvider.KEY_DELAY, "-" + (level * 15) + "%"));
+            info.add(TextFormatting.RED + I18nUtil.resolveKey(IUpgradeInfoProvider.KEY_CONSUMPTION, "+" + (level * 300) + "%"));
+        }
+        if (type == ItemMachineUpgrade.UpgradeType.POWER) {
+            info.add(TextFormatting.GREEN + I18nUtil.resolveKey(IUpgradeInfoProvider.KEY_CONSUMPTION, "-" + (level * 30) + "%"));
+            info.add(TextFormatting.RED + I18nUtil.resolveKey(IUpgradeInfoProvider.KEY_DELAY, "+" + (level * 5) + "%"));
+        }
+        if (type == ItemMachineUpgrade.UpgradeType.OVERDRIVE) {
+            info.add((BobMathUtil.getBlink() ? TextFormatting.RED : TextFormatting.DARK_GRAY) + "YES");
+        }
+    }
+
+    @Override
+    public HashMap<ItemMachineUpgrade.UpgradeType, Integer> getValidUpgrades() {
+        HashMap<ItemMachineUpgrade.UpgradeType, Integer> upgrades = new HashMap<>();
+        upgrades.put(ItemMachineUpgrade.UpgradeType.SPEED, 6);
+        upgrades.put(ItemMachineUpgrade.UpgradeType.POWER, 3);
+        upgrades.put(ItemMachineUpgrade.UpgradeType.OVERDRIVE, 12);
+        return upgrades;
+    }
+
+    @Override
+    public boolean canProvideInfo(ItemMachineUpgrade.UpgradeType type, int level, boolean extendedInfo) {
+        return type == ItemMachineUpgrade.UpgradeType.SPEED || type == ItemMachineUpgrade.UpgradeType.POWER || type == ItemMachineUpgrade.UpgradeType.OVERDRIVE;
     }
 }

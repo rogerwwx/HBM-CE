@@ -1,6 +1,7 @@
 package com.hbm.tileentity.machine;
 
 import com.hbm.blocks.BlockDummyable;
+import com.hbm.blocks.ModBlocks;
 import com.hbm.interfaces.AutoRegister;
 import com.hbm.inventory.UpgradeManagerNT;
 import com.hbm.inventory.container.ContainerChemfac;
@@ -13,7 +14,11 @@ import com.hbm.lib.DirPos;
 import com.hbm.lib.ForgeDirection;
 import com.hbm.lib.HBMSoundHandler;
 import com.hbm.lib.Library;
+import com.hbm.tileentity.IFluidCopiable;
 import com.hbm.tileentity.IGUIProvider;
+import com.hbm.tileentity.IUpgradeInfoProvider;
+import com.hbm.util.BobMathUtil;
+import com.hbm.util.I18nUtil;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.entity.player.EntityPlayer;
@@ -23,6 +28,7 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumParticleTypes;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.AxisAlignedBB;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
@@ -31,11 +37,12 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 
 @AutoRegister
-public class TileEntityMachineChemfac extends TileEntityMachineChemplantBase implements IGUIProvider {
+public class TileEntityMachineChemfac extends TileEntityMachineChemplantBase implements IGUIProvider, IUpgradeInfoProvider, IFluidCopiable {
     private final UpgradeManagerNT upgradeManager = new UpgradeManagerNT(this);
     public float rot;
     public float prevRot;
@@ -267,10 +274,10 @@ public class TileEntityMachineChemfac extends TileEntityMachineChemplantBase imp
         ForgeDirection rot = dir.getRotation(ForgeDirection.UP);
 
         inpos = new DirPos[]{
-                new DirPos(pos.getX() + dir.offsetX * 4 - rot.offsetX * 1, pos.getY(), pos.getZ() + dir.offsetZ * 4 - rot.offsetZ * 1, dir),
+                new DirPos(pos.getX() + dir.offsetX * 4 - rot.offsetX, pos.getY(), pos.getZ() + dir.offsetZ * 4 - rot.offsetZ, dir),
                 new DirPos(pos.getX() - dir.offsetX * 5 + rot.offsetX * 2, pos.getY(), pos.getZ() - dir.offsetZ * 5 + rot.offsetZ * 2, dir.getOpposite()),
                 new DirPos(pos.getX() - dir.offsetX * 2 - rot.offsetX * 4, pos.getY(), pos.getZ() - dir.offsetZ * 2 - rot.offsetZ * 4, rot.getOpposite()),
-                new DirPos(pos.getX() + dir.offsetX * 1 + rot.offsetX * 5, pos.getY(), pos.getZ() + dir.offsetZ * 1 + rot.offsetZ * 5, rot)
+                new DirPos(pos.getX() + dir.offsetX + rot.offsetX * 5, pos.getY(), pos.getZ() + dir.offsetZ + rot.offsetZ * 5, rot)
         };
 
         return inpos;
@@ -287,8 +294,8 @@ public class TileEntityMachineChemfac extends TileEntityMachineChemplantBase imp
 
         outpos = new DirPos[]{
                 new DirPos(pos.getX() + dir.offsetX * 4 + rot.offsetX * 2, pos.getY(), pos.getZ() + dir.offsetZ * 4 + rot.offsetZ * 2, dir),
-                new DirPos(pos.getX() - dir.offsetX * 5 - rot.offsetX * 1, pos.getY(), pos.getZ() - dir.offsetZ * 5 - rot.offsetZ * 1, dir.getOpposite()),
-                new DirPos(pos.getX() + dir.offsetX * 1 - rot.offsetX * 4, pos.getY(), pos.getZ() + dir.offsetZ * 1 - rot.offsetZ * 4, rot.getOpposite()),
+                new DirPos(pos.getX() - dir.offsetX * 5 - rot.offsetX, pos.getY(), pos.getZ() - dir.offsetZ * 5 - rot.offsetZ, dir.getOpposite()),
+                new DirPos(pos.getX() + dir.offsetX - rot.offsetX * 4, pos.getY(), pos.getZ() + dir.offsetZ - rot.offsetZ * 4, rot.getOpposite()),
                 new DirPos(pos.getX() - dir.offsetX * 2 + rot.offsetX * 5, pos.getY(), pos.getZ() - dir.offsetZ * 2 + rot.offsetZ * 5, rot)
         };
 
@@ -365,5 +372,40 @@ public class TileEntityMachineChemfac extends TileEntityMachineChemplantBase imp
     @Override
     public FluidTankNTM[] getSendingTanks() {
         return outTanks().toArray(new FluidTankNTM[0]);
+    }
+
+    @Override
+    public boolean canProvideInfo(UpgradeType type, int level, boolean extendedInfo) {
+        return type == UpgradeType.SPEED || type == UpgradeType.POWER || type == UpgradeType.OVERDRIVE;
+    }
+
+    @Override
+    public void provideInfo(UpgradeType type, int level, List<String> info, boolean extendedInfo) {
+        info.add(IUpgradeInfoProvider.getStandardLabel(ModBlocks.machine_chemfac));
+        if (type == UpgradeType.SPEED) {
+            info.add(TextFormatting.GREEN + I18nUtil.resolveKey(IUpgradeInfoProvider.KEY_DELAY, "-" + (level * 15) + "%"));
+            info.add(TextFormatting.RED + I18nUtil.resolveKey(IUpgradeInfoProvider.KEY_CONSUMPTION, "+" + (level * 300) + "%"));
+        }
+        if (type == UpgradeType.POWER) {
+            info.add(TextFormatting.GREEN + I18nUtil.resolveKey(IUpgradeInfoProvider.KEY_CONSUMPTION, "-" + (level * 30) + "%"));
+            info.add(TextFormatting.RED + I18nUtil.resolveKey(IUpgradeInfoProvider.KEY_DELAY, "+" + (level * 5) + "%"));
+        }
+        if (type == UpgradeType.OVERDRIVE) {
+            info.add((BobMathUtil.getBlink() ? TextFormatting.RED : TextFormatting.DARK_GRAY) + "YES");
+        }
+    }
+
+    @Override
+    public HashMap<UpgradeType, Integer> getValidUpgrades() {
+        HashMap<UpgradeType, Integer> upgrades = new HashMap<>();
+        upgrades.put(UpgradeType.SPEED, 6);
+        upgrades.put(UpgradeType.POWER, 3);
+        upgrades.put(UpgradeType.OVERDRIVE, 12);
+        return upgrades;
+    }
+
+    @Override
+    public FluidTankNTM getTankToPaste() {
+        return null;
     }
 }

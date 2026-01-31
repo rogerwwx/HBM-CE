@@ -24,7 +24,10 @@ import com.hbm.lib.Library;
 import com.hbm.packet.PacketDispatcher;
 import com.hbm.packet.toclient.LoopedSoundPacket;
 import com.hbm.tileentity.IGUIProvider;
+import com.hbm.tileentity.IUpgradeInfoProvider;
 import com.hbm.tileentity.TileEntityMachineBase;
+import com.hbm.util.BobMathUtil;
+import com.hbm.util.I18nUtil;
 import com.hbm.util.InventoryUtil;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.block.Block;
@@ -45,6 +48,7 @@ import net.minecraft.util.ITickable;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.fluids.FluidTank;
 import net.minecraftforge.fml.relauncher.Side;
@@ -55,10 +59,11 @@ import net.minecraftforge.items.IItemHandlerModifiable;
 import net.minecraftforge.items.ItemStackHandler;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.HashMap;
 import java.util.List;
 
 @AutoRegister
-public class TileEntityMachineMiningLaser extends TileEntityMachineBase implements ITickable, IEnergyReceiverMK2, IFluidStandardSender, IMiningDrill, IFFtoNTMF, IGUIProvider {
+public class TileEntityMachineMiningLaser extends TileEntityMachineBase implements ITickable, IEnergyReceiverMK2, IFluidStandardSender, IMiningDrill, IFFtoNTMF, IGUIProvider, IUpgradeInfoProvider {
 
     public static final long maxPower = 100000000;
     public static final int consumption = 10000;
@@ -318,8 +323,7 @@ public class TileEntityMachineMiningLaser extends TileEntityMachineBase implemen
             }
         }
 
-        if (normal && b instanceof IDrillInteraction) {
-            IDrillInteraction in = (IDrillInteraction) b;
+        if (normal && b instanceof IDrillInteraction in) {
             doesBreak = in.canBreak(world, targetX, targetY, targetZ, state, this);
             if (doesBreak) {
                 ItemStack drop = in.extractResource(world, targetX, targetY, targetZ, state, this);
@@ -581,5 +585,42 @@ public class TileEntityMachineMiningLaser extends TileEntityMachineBase implemen
     @SideOnly(Side.CLIENT)
     public GuiScreen provideGUI(int ID, EntityPlayer player, World world, int x, int y, int z) {
         return new GUIMachineMiningLaser(player.inventory, this);
+    }
+
+    @Override
+    public boolean canProvideInfo(ItemMachineUpgrade.UpgradeType type, int level, boolean extendedInfo) {
+        return type == ItemMachineUpgrade.UpgradeType.SPEED || type == ItemMachineUpgrade.UpgradeType.POWER || type == ItemMachineUpgrade.UpgradeType.OVERDRIVE || type == ItemMachineUpgrade.UpgradeType.EFFECT || type == ItemMachineUpgrade.UpgradeType.FORTUNE;
+    }
+
+    @Override
+    public void provideInfo(ItemMachineUpgrade.UpgradeType type, int level, List<String> info, boolean extendedInfo) {
+        info.add(IUpgradeInfoProvider.getStandardLabel(ModBlocks.machine_mining_laser));
+        if (type == ItemMachineUpgrade.UpgradeType.SPEED) {
+            info.add(TextFormatting.GREEN + I18nUtil.resolveKey(IUpgradeInfoProvider.KEY_DELAY, "-" + (100 - 100 / (level + 1)) + "%"));
+            info.add(TextFormatting.RED + I18nUtil.resolveKey(IUpgradeInfoProvider.KEY_CONSUMPTION, "+" + (100 * level / 16) + "%"));
+        }
+        if (type == ItemMachineUpgrade.UpgradeType.POWER) {
+            info.add(TextFormatting.GREEN + I18nUtil.resolveKey(IUpgradeInfoProvider.KEY_CONSUMPTION, "-" + (100 * level / 16) + "%"));
+        }
+        if (type == ItemMachineUpgrade.UpgradeType.EFFECT) {
+            info.add(TextFormatting.GREEN + I18nUtil.resolveKey(IUpgradeInfoProvider.KEY_RANGE, "+" + (2 * level) + "m"));
+        }
+        if (type == ItemMachineUpgrade.UpgradeType.FORTUNE) {
+            info.add(TextFormatting.GREEN + I18nUtil.resolveKey(IUpgradeInfoProvider.KEY_FORTUNE, "+" + level));
+        }
+        if (type == ItemMachineUpgrade.UpgradeType.OVERDRIVE) {
+            info.add((BobMathUtil.getBlink() ? TextFormatting.RED : TextFormatting.DARK_GRAY) + "YES");
+        }
+    }
+
+    @Override
+    public HashMap<ItemMachineUpgrade.UpgradeType, Integer> getValidUpgrades() {
+        HashMap<ItemMachineUpgrade.UpgradeType, Integer> upgrades = new HashMap<>();
+        upgrades.put(ItemMachineUpgrade.UpgradeType.SPEED, 12);
+        upgrades.put(ItemMachineUpgrade.UpgradeType.POWER, 12);
+        upgrades.put(ItemMachineUpgrade.UpgradeType.EFFECT, 12);
+        upgrades.put(ItemMachineUpgrade.UpgradeType.FORTUNE, 3);
+        upgrades.put(ItemMachineUpgrade.UpgradeType.OVERDRIVE, 9);
+        return upgrades;
     }
 }

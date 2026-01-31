@@ -21,12 +21,12 @@ public class RenderFoundryChannel extends TileEntitySpecialRenderer<TileEntityFo
 
     @Override
     public void render(TileEntityFoundryChannel tile, double x, double y, double z, float partialTicks, int destroyStage, float alpha) {
-        if (tile == null || !tile.hasWorld()) {
+        BlockPos pos = tile.getPos();
+        if (getWorld().isAirBlock(pos) || !tile.hasWorld()) {
             return;
         }
 
         World world = tile.getWorld();
-        BlockPos pos = tile.getPos();
         FoundryChannel channel = (FoundryChannel) tile.getBlockType();
 
         boolean doRender = tile.amount > 0 && tile.type != null;

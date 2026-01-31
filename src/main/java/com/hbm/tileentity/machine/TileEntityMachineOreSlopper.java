@@ -2,6 +2,7 @@ package com.hbm.tileentity.machine;
 
 import com.hbm.api.energymk2.IEnergyReceiverMK2;
 import com.hbm.api.fluid.IFluidStandardTransceiver;
+import com.hbm.blocks.ModBlocks;
 import com.hbm.handler.threading.PacketThreading;
 import com.hbm.interfaces.AutoRegister;
 import com.hbm.inventory.UpgradeManagerNT;
@@ -24,7 +25,9 @@ import com.hbm.main.MainRegistry;
 import com.hbm.packet.toclient.AuxParticlePacketNT;
 import com.hbm.tileentity.IFluidCopiable;
 import com.hbm.tileentity.IGUIProvider;
+import com.hbm.tileentity.IUpgradeInfoProvider;
 import com.hbm.tileentity.TileEntityMachineBase;
+import com.hbm.util.I18nUtil;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.block.Block;
 import net.minecraft.client.gui.GuiScreen;
@@ -40,16 +43,18 @@ import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ITickable;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.AxisAlignedBB;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.HashMap;
 import java.util.List;
 
 @AutoRegister
-public class TileEntityMachineOreSlopper extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardTransceiver, IGUIProvider, IFluidCopiable, ITickable {
+public class TileEntityMachineOreSlopper extends TileEntityMachineBase implements IEnergyReceiverMK2, IFluidStandardTransceiver, IGUIProvider, IFluidCopiable, ITickable, IUpgradeInfoProvider {
 
     public static final long maxPower = 100_000;
     public static final int waterUsedBase = 1_000;
@@ -113,7 +118,7 @@ public class TileEntityMachineOreSlopper extends TileEntityMachineBase implement
             int speed = Math.min(upgradeManager.getLevel(ItemMachineUpgrade.UpgradeType.SPEED), 3);
             int efficiency = Math.min(upgradeManager.getLevel(ItemMachineUpgrade.UpgradeType.EFFECT), 3);
 
-            this.consumption = this.consumptionBase + (this.consumptionBase * speed) / 2 + (this.consumptionBase * efficiency);
+            this.consumption = consumptionBase + (consumptionBase * speed) / 2 + (consumptionBase * efficiency);
 
             if (canSlop()) {
                 this.power -= this.consumption;
@@ -172,7 +177,7 @@ public class TileEntityMachineOreSlopper extends TileEntityMachineBase implement
                             ores[type.ordinal()] -= 1F;
                             continue outer;
                         }
-                    break outer;
+                    break;
                 }
             }
 
@@ -200,7 +205,7 @@ public class TileEntityMachineOreSlopper extends TileEntityMachineBase implement
                     prevFan -= 360;
                 }
 
-                if (animation == animation.DUMPING && MainRegistry.proxy.me().getDistance(pos.getX() + 0.5, pos.getY() + 4, pos.getZ() + 0.5) <= 50) {
+                if (animation == SlopperAnimation.DUMPING && MainRegistry.proxy.me().getDistance(pos.getX() + 0.5, pos.getY() + 4, pos.getZ() + 0.5) <= 50) {
                     NBTTagCompound data = new NBTTagCompound();
                     data.setString("type", "vanillaExt");
                     data.setString("mode", "blockdust");
@@ -406,7 +411,33 @@ public class TileEntityMachineOreSlopper extends TileEntityMachineBase implement
         return new GUIOreSlopper(player.inventory, this);
     }
 
-    public static enum SlopperAnimation {
+    @Override
+    public boolean canProvideInfo(ItemMachineUpgrade.UpgradeType type, int level, boolean extendedInfo) {
+        return type == ItemMachineUpgrade.UpgradeType.SPEED || type == ItemMachineUpgrade.UpgradeType.EFFECT;
+    }
+
+    @Override
+    public void provideInfo(ItemMachineUpgrade.UpgradeType type, int level, List<String> info, boolean extendedInfo) {
+        info.add(IUpgradeInfoProvider.getStandardLabel(ModBlocks.machine_ore_slopper));
+        if (type == ItemMachineUpgrade.UpgradeType.SPEED) {
+            info.add(TextFormatting.GREEN + I18nUtil.resolveKey(IUpgradeInfoProvider.KEY_DELAY, "-" + (level * 25) + "%"));
+            info.add(TextFormatting.RED + I18nUtil.resolveKey(IUpgradeInfoProvider.KEY_CONSUMPTION, "+" + (level * 50) + "%"));
+        }
+        if (type == ItemMachineUpgrade.UpgradeType.EFFECT) {
+            info.add(TextFormatting.GREEN + I18nUtil.resolveKey(IUpgradeInfoProvider.KEY_EFFICIENCY, "+" + (level * 10) + "%"));
+            info.add(TextFormatting.RED + I18nUtil.resolveKey(IUpgradeInfoProvider.KEY_CONSUMPTION, "+" + (level * 100) + "%"));
+        }
+    }
+
+    @Override
+    public HashMap<ItemMachineUpgrade.UpgradeType, Integer> getValidUpgrades() {
+        HashMap<ItemMachineUpgrade.UpgradeType, Integer> upgrades = new HashMap<>();
+        upgrades.put(ItemMachineUpgrade.UpgradeType.SPEED, 3);
+        upgrades.put(ItemMachineUpgrade.UpgradeType.EFFECT, 3);
+        return upgrades;
+    }
+
+    public enum SlopperAnimation {
         LOWERING, LIFTING, MOVE_SHREDDER, DUMPING, MOVE_BUCKET
     }
 }
