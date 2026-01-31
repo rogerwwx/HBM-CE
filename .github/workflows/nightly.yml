@@ -80,6 +80,14 @@ jobs:
           git tag -f $TAG
           git push --force origin $TAG
 
+      - name: Collect release jars
+        run: |
+          mkdir -p release
+          find build/libs -name '*.jar' \
+            ! -name '*dev*.jar' \
+            ! -name '*downgraded*.jar' \
+            -exec cp {} release/ \;
+
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
@@ -89,12 +97,10 @@ jobs:
           body: |
             Auto Build
             Commit: `${{ github.sha }}`
-          files: |
-            build/libs/*.jar
-            !build/libs/*dev*.jar
-            !build/libs/*downgraded*.jar
+          files: release/*.jar
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 
       - name: Delete old nightly releases
         uses: dev-drprasad/delete-older-releases@v0.3.3
