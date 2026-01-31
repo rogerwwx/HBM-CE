@@ -2,7 +2,7 @@ name: Nightly Gradle Build
 
 on:
   schedule:
-    - cron: '0 0 * * *' # Runs daily at midnight
+    - cron: '0 0 * * *' # Runs daily at midnight ！
   workflow_dispatch:
 
 concurrency:
@@ -66,6 +66,7 @@ jobs:
           path: |
             build/libs/*.jar
           if-no-files-found: error
+
 
       - name: Create nightly tag
         id: tag
