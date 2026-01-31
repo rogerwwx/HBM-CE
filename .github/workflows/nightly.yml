@@ -64,9 +64,7 @@ jobs:
         with:
           name: nightly-artifacts
           path: |
-            build/libs/*-sources.jar
-            build/libs/*-dev.jar
-            build/libs/*-dev-java25.jar
+            build/libs/*-java25.jar
           if-no-files-found: error
 
       - name: Create nightly tag
