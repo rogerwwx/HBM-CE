@@ -1,7 +1,5 @@
 package com.hbm.world.generator;
 
-import com.hbm.blocks.PlantEnums;
-import com.hbm.blocks.generic.BlockFlowerPlant;
 import com.hbm.world.feature.WorldGenMinableNonCascade;
 import com.hbm.world.phased.AbstractPhasedStructure;
 import net.minecraft.block.Block;
@@ -20,16 +18,10 @@ public class DungeonToolbox {
 
     private static final MutableBlockPos mutablePos = new BlockPos.MutableBlockPos();
 
-    public static void generateFlowers(World world, Random rand, int chunkX, int chunkZ, BlockFlowerPlant flower, PlantEnums.EnumFlowerPlantType type){
-		int x = chunkX + rand.nextInt(16);
-		int z = chunkZ + rand.nextInt(16);
-        MutableBlockPos pos = mutablePos;
-        int y = world.getHeight(pos.setPos(x, 0, z)).getY();
-        pos.setPos(x, y, z);
 
-		//new NTMFlowers(flower, type).generate(world, rand, pos);
-	}
-    private static final WorldGenFlowers dummyGen = new WorldGenFlowers(Blocks.RED_FLOWER, BlockFlower.EnumFlowerType.ALLIUM); // Unused dummy to extend class
+    static {
+        new WorldGenFlowers(Blocks.RED_FLOWER, BlockFlower.EnumFlowerType.ALLIUM);
+    }
 
     public static void generateBox(AbstractPhasedStructure.LegacyBuilder world, int x, int y, int z, int sx, int sy, int sz, List<IBlockState> blocks) {
 
