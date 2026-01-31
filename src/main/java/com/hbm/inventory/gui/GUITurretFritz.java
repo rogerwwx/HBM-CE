@@ -40,7 +40,5 @@ public class GUITurretFritz extends GUITurretBase {
         return texture;
     }
 
-    @Override
-    public void drawAmmo(int mouseX, int mouseY) {
-    }
+
 }

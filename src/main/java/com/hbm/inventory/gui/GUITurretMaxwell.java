@@ -17,9 +17,7 @@ public class GUITurretMaxwell extends GUITurretBase {
 		return texture;
 	}
 
-	@Override
-	public void drawAmmo(int mouseX, int mouseY){
-	}
+
 
 	@Override
 	public int getTurretFontColor(){
