@@ -64,7 +64,8 @@ jobs:
         with:
           name: nightly-artifacts
           path: |
-            build/libs/*-java25.jar
+            build/libs/*.jar
+            !build/libs/**/*-downgraded.jar
           if-no-files-found: error
 
 
@@ -86,12 +87,12 @@ jobs:
           name: "Nightly Build v${{ env.MOD_VERSION }}"
           prerelease: true
           body: |
-            ## This release is for **development purposes only**
-            - For normal end-user downloads, use CurseForge or Modrinth (see project README).
-            - For bleeding-edge builds, use GitHub Actions artifacts. They could be unstable, use at your own risk.
+            Auto Build
             Commit: `${{ github.sha }}`
           files: |
             build/libs/*.jar
+            !build/libs/*dev*.jar
+            !build/libs/*downgraded*.jar
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

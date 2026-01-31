@@ -1,13 +1,12 @@
 package com.hbm.mixin;
 
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.WorldServer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
-
-import net.minecraft.entity.Entity;
 
 @Mixin(WorldServer.class)
 public abstract class MixinWorldServer {

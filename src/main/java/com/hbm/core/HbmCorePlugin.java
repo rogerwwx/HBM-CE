@@ -4,13 +4,17 @@ import net.minecraft.launchwrapper.Launch;
 import net.minecraftforge.fml.relauncher.IFMLLoadingPlugin;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import zone.rong.mixinbooter.IEarlyMixinLoader;
 
+import javax.annotation.Nullable;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 @IFMLLoadingPlugin.MCVersion("1.12.2")
 @IFMLLoadingPlugin.TransformerExclusions({"com.hbm.core"})
-@IFMLLoadingPlugin.SortingIndex(2077) // mlbv: this shit must be greater than 1000, after the srg transformer
-public class HbmCorePlugin implements IFMLLoadingPlugin {
+@IFMLLoadingPlugin.SortingIndex(2077) // >1000 after SRG
+public class HbmCorePlugin implements IFMLLoadingPlugin, IEarlyMixinLoader {
 
     static final Logger coreLogger = LogManager.getLogger("HBM CoreMod");
     private static final Brand brand;
@@ -31,13 +35,52 @@ public class HbmCorePlugin implements IFMLLoadingPlugin {
         }
     }
 
-    static void fail(String className, Throwable t) {
-        coreLogger.fatal("Error transforming class {}. This is a coremod clash! Please report this on our issue tracker", className, t);
-        if (hardCrash) {
-            coreLogger.info("Crashing! To suppress the crash, launch Minecraft with -Dhbm.core.disablecrash");
-            throw new IllegalStateException("HBM CoreMod transformation failure: " + className, t);
+    // ================= CoreMod 原有逻辑 =================
+
+    @Override
+    public String[] getASMTransformerClass() {
+        return new String[] {
+                HbmCoreTransformer.class.getName()
+        };
+    }
+
+    @Override
+    public String getModContainerClass() {
+        return HbmCoreModContainer.class.getName();
+    }
+
+    @Nullable
+    @Override
+    public String getSetupClass() {
+        return null;
+    }
+
+    @Override
+    public void injectData(Map<String, Object> data) {
+        runtimeDeobfEnabled = (Boolean) data.get("runtimeDeobfuscationEnabled");
+
+        if (System.getProperty("hbm.core.disablecrash") != null) {
+            hardCrash = false;
+            coreLogger.info("Crash suppressed with -Dhbm.core.disablecrash");
         }
     }
+
+    @Override
+    public String getAccessTransformerClass() {
+        return null;
+    }
+
+    // ================= Mixin Booter =================
+
+    @Override
+    public List<String> getMixinConfigs() {
+        return Arrays.asList(
+                "mixins.living.json",
+                "mixins.render.json"
+        );
+    }
+
+    // ================= 工具方法 =================
 
     public static boolean runtimeDeobfEnabled() {
         return runtimeDeobfEnabled;
@@ -51,34 +94,11 @@ public class HbmCorePlugin implements IFMLLoadingPlugin {
         return brand;
     }
 
-    @Override
-    public String[] getASMTransformerClass() {
-        return new String[]{HbmCoreTransformer.class.getName()};
-    }
-
-    @Override
-    public String getModContainerClass() {
-        return HbmCoreModContainer.class.getName();
-    }
-
-    @Override
-    public String getSetupClass() {
-        return null;
-    }
-
-    @Override
-    public void injectData(Map<String, Object> data) {
-        runtimeDeobfEnabled = (Boolean) data.get("runtimeDeobfuscationEnabled");
-        String prop = System.getProperty("hbm.core.disablecrash");
-        if (prop != null) {
-            hardCrash = false;
-            coreLogger.info("Crash suppressed with -Dhbm.core.disablecrash");
+    static void fail(String className, Throwable t) {
+        coreLogger.fatal("Error transforming class {}", className, t);
+        if (hardCrash) {
+            throw new IllegalStateException("HBM CoreMod transformation failure: " + className, t);
         }
-    }
-
-    @Override
-    public String getAccessTransformerClass() {
-        return null;
     }
 
     public enum Brand {
