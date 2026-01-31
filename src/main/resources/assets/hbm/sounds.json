@@ -102,12 +102,12 @@
 	"weapon.osiprShoot": {"category": "player", "sounds": [{"name": "hbm:weapon/osiprShoot", "stream": false}]},
 	"weapon.osiprAltFire": {"category": "player", "sounds": [{"name": "hbm:weapon/osiprAltFire", "stream": false}]},
 	"weapon.osiprCharging": {"category": "player", "sounds": [{"name": "hbm:weapon/osiprCharging", "stream": false}]},
-	"weapon.osiprReload": {"category": "player", "sounds": [{"name": "hbm:weapon/osiprReload", "stream": false}]},	
+	"weapon.osiprReload": {"category": "player", "sounds": [{"name": "hbm:weapon/osiprReload", "stream": false}]},
 	"weapon.singFlyby": {"category": "player", "sounds": [{"name": "hbm:weapon/singFlyby", "stream": false}]},
 	"weapon.rifleShoot": {"category": "player", "sounds": [{"name": "hbm:weapon/rifleShoot", "stream": false}]},
 	"weapon.rpgShoot": {"category": "player", "sounds": [{"name": "hbm:weapon/rpgShoot", "stream": false}]},
 	"weapon.fatmanShoot": {"category": "player", "sounds": [{"name": "hbm:weapon/fatmanShoot", "stream": false}]},
-	"weapon.fatmanReload": {"category": "player", "sounds": [{"name": "hbm:weapon/fatmanReload", "stream": false}]},	
+	"weapon.fatmanReload": {"category": "player", "sounds": [{"name": "hbm:weapon/fatmanReload", "stream": false}]},
 	"weapon.zomgShoot": {"category": "player", "sounds": [{"name": "hbm:weapon/zomgShoot", "stream": false}]},
 	"weapon.flamethrowerIgnite": {"category": "player", "sounds": [{"name": "hbm:weapon/flamethrowerIgnite", "stream": false}]},
 	"weapon.flamethrowerShoot": {"category": "player", "sounds": [{"name": "hbm:weapon/flamethrowerShoot", "stream": false}]},
@@ -224,7 +224,7 @@
 	"weapon.reloadTurret": {"category": "player", "sounds": [{"name": "hbm:weapon/reloadTurret", "stream": false}]},
     "weapon.switchmode1": {"category": "player", "sounds": [{"name": "hbm:weapon/switchmode1", "stream": false}]},
     "weapon.switchmode2": {"category": "player", "sounds": [{"name": "hbm:weapon/switchmode2", "stream": false}]},
-	
+
 	"weapon.fire.blackPowder": {"category": "player", "sounds": ["hbm:weapon/fire/blackPowder"]},
     "weapon.fire.flameLoop": {"category": "player", "sounds": ["hbm:weapon/fire/flameLoop"]},
     "weapon.fire.lockon": {"category": "player", "sounds": ["hbm:weapon/fire/lockon"]},
@@ -255,7 +255,7 @@
     "weapon.fire.stab": {"category": "player", "sounds": ["hbm:weapon/fire/stab1", "hbm:weapon/fire/stab2"]},
     "weapon.fire.grenade": {"category": "player", "sounds": ["hbm:weapon/fire/grenade"]},
     "weapon.fire.amat": {"category": "player", "sounds": ["hbm:weapon/fire/amat"]},
-	
+
 	"weapon.reload.boltClose": {"category": "player", "sounds": ["hbm:weapon/reload/boltclose"]},
     "weapon.reload.boltOpen": {"category": "player", "sounds": ["hbm:weapon/reload/boltopen"]},
     "weapon.reload.closeClick": {"category": "player", "sounds": ["hbm:weapon/reload/closeclick"]},
@@ -285,8 +285,8 @@
     "weapon.reload.fatmanFull": {"category": "player", "sounds": ["hbm:weapon/reload/fatmanfull"]},
     "weapon.reload.screw": {"category": "player", "sounds": ["hbm:weapon/reload/screw"]},
 
-    "weapon.foley.gunWhack": {"category": "player", "sounds": ["hbm:weapon/foley/gunWhack", "hbm:weapon/foley/gunWhack2"]},	
-	
+    "weapon.foley.gunWhack": {"category": "player", "sounds": ["hbm:weapon/foley/gunWhack", "hbm:weapon/foley/gunWhack2"]},
+
 	"weapon.44Shoot": {"category": "player", "sounds": [{"name": "hbm:weapon/44shoot", "stream": false}]},
     "weapon.glReload": {"category": "player", "sounds": [{"name": "hbm:weapon/glReload", "stream": false}]},
     "weapon.glShoot": {"category": "player", "sounds": [{"name": "hbm:weapon/glShoot", "stream": false}]},
@@ -328,7 +328,7 @@
     "entity.ufoBeam": {"category": "hostile", "sounds": [{"name": "hbm:entity/ufoBeamShort", "stream": false}]},
     "entity.ufoBlast": {"category": "hostile", "sounds": [{"name": "hbm:entity/ufoBlast", "stream": false}]},
     "entity.vomit": {"subtitle": "subtitles.entity.vomit", "category": "player", "sounds": [{"name": "hbm:player/vomit", "stream": false}]},
-	
+
     "player.cough": {"subtitle": "subtitles.player.cough", "category": "player", "sounds": ["hbm:player/cough1", "hbm:player/cough2", "hbm:player/cough3", "hbm:player/cough4"]},
 	"player.gulp": {"category": "player", "sounds": ["hbm:player/gulp1", "hbm:player/gulp2", "hbm:player/gulp3", "hbm:player/gulp4"]},
     "player.groan": {"category": "player", "sounds": ["hbm:player/groan1", "hbm:player/groan2", "hbm:player/groan3"]},
@@ -341,7 +341,7 @@
     "step.iron": {"category": "player", "sounds": ["hbm:footsteps/iron1", "hbm:footsteps/iron2", "hbm:footsteps/iron3", "hbm:footsteps/iron4"]},
     "step.metalBlock": {"category": "block", "sounds": ["hbm:footsteps/metalStep1", "hbm:footsteps/metalStep2", "hbm:footsteps/metalStep3", "hbm:footsteps/metalStep4"]},
     "step.powered": {"category": "block", "sounds": ["hbm:footsteps/powered1", "hbm:footsteps/powered2", "hbm:footsteps/powered3"]},
-    
+
     "block.door.transitionseal": {"category": "player", "sounds": [{"name": "hbm:block/doors/transition_seal_open", "stream": false}]},
     "block.door.garage": {"category": "player", "sounds": [{"name": "hbm:block/doors/garage_move", "stream": false}]},
     "block.door.garagestop": {"category": "player", "sounds": [{"name": "hbm:block/doors/garage_stop", "stream": false}]},
@@ -359,13 +359,13 @@
     "block.door.sliding_seal_stop": {"category": "player", "sounds": [{"name": "hbm:block/doors/metal_stop1", "stream": false}]},
     "block.door.siloopen": {"category": "block", "sounds": [{"name": "hbm:block/doors/siloopen", "stream": false}]},
     "block.door.siloclose": {"category": "block", "sounds": [{"name": "hbm:block/doors/siloclose", "stream": false}]},
-    
+
     "potatos.random": {"category": "player", "sounds": ["hbm:potatos/randResponse0", "hbm:potatos/randResponse1", "hbm:potatos/randResponse2", "hbm:potatos/randResponse3", "hbm:potatos/randResponse4", "hbm:potatos/randResponse5", "hbm:potatos/randResponse6", "hbm:potatos/randResponse7"]},
-    
+
     "fm.clap":  {"category": "block", "sounds": [{"name": "hbm:clap", "stream": false}]},
     "fm.mug":  {"category": "block", "sounds": [{"name": "hbm:mug", "stream": false}]},
     "fm.sample":  {"category": "block", "sounds": [{"name": "hbm:sample", "stream": false}]},
-    
+
     "alarm.amsSiren": {"subtitle": "subtitles.alarm.amsSiren", "category": "record", "sounds": [{"name": "hbm:alarm/amsSiren", "stream": false}]},
     "alarm.apcLoop": {"subtitle": "subtitles.alarm.apcLoop", "category": "record", "sounds": [{"name": "hbm:alarm/apcLoop", "stream": false}]},
     "alarm.apcPass": {"subtitle": "subtitles.alarm.apcPass", "category": "record", "sounds": [{"name": "hbm:alarm/apcPass", "stream": false}]},
@@ -422,9 +422,14 @@
     "block.sentry_lockon": {"category": "block", "sounds": [{"name": "hbm:block/sentry_lockon", "stream": false}]},
 	"item.upgradePlug": {"subtitle": "subtitles.item.upgradePlug", "category": "player", "sounds": [{"name": "hbm:tool/upgradePlug", "stream": false}]},
 	"item.battery": {"category": "player", "sounds": [{"name": "hbm:tool/battery", "stream": false}]},
-	
+
 	"entity.rocketFlyHeavy": {"category": "player", "sounds": [{"name": "hbm:entity/rocketFlyHeavy", "stream": false}]},
 	"entity.rocketFlyLight": {"category": "player", "sounds": [{"name": "hbm:entity/rocketFlyLight", "stream": false}]},
 	"entity.rocketIgnition": {"category": "player", "sounds": [{"name": "hbm:entity/rocketIgnition", "stream": false}]},
-	"entity.pipefail": {"category": "player", "sounds": [{"name": "hbm:entity/pipefail", "stream": false}]}
+	"entity.pipefail": {"category": "player", "sounds": [{"name": "hbm:entity/pipefail", "stream": false}]},
+
+  "weapon.casing.small": {"category": "player", "sounds": ["hbm:weapon/casing/small1", "hbm:weapon/casing/small2", "hbm:weapon/casing/small3"]},
+  "weapon.casing.medium": {"category": "player", "sounds": ["hbm:weapon/casing/medium1", "hbm:weapon/casing/medium2", "hbm:weapon/casing/medium3"]},
+  "weapon.casing.large": {"category": "player", "sounds": ["hbm:weapon/casing/large1", "hbm:weapon/casing/large2", "hbm:weapon/casing/large3"]},
+  "weapon.casing.shell": {"category": "player", "sounds": ["hbm:weapon/casing/shell1", "hbm:weapon/casing/shell2", "hbm:weapon/casing/shell3"]}
 }

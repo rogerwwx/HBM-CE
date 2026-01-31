@@ -131,6 +131,18 @@ public class TileEntityMachineAssemblyFactory extends TileEntityMachineBase impl
         return "container.machineAssemblyFactory";
     }
 
+    public DirPos[] getIOPos() {
+        ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - 10);
+        ForgeDirection rot = dir.getRotation(ForgeDirection.UP);
+
+        return new DirPos[] {
+                new DirPos(getPos().getX() + dir.offsetX + rot.offsetX * 3, getPos().getY(), getPos().getZ() + dir.offsetZ + rot.offsetZ * 3, rot),
+                new DirPos(getPos().getX() - dir.offsetX + rot.offsetX * 3, getPos().getY(), getPos().getZ() - dir.offsetZ + rot.offsetZ * 3, rot),
+                new DirPos(getPos().getX() + dir.offsetX - rot.offsetX * 3, getPos().getY(), getPos().getZ() + dir.offsetZ - rot.offsetZ * 3, rot.getOpposite()),
+                new DirPos(getPos().getX() - dir.offsetX - rot.offsetX * 3, getPos().getY(), getPos().getZ() - dir.offsetZ - rot.offsetZ * 3, rot.getOpposite()),
+        };
+    }
+
     @Override
     public void update() {
 

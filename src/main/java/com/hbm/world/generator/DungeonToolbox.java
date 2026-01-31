@@ -2,7 +2,6 @@ package com.hbm.world.generator;
 
 import com.hbm.blocks.PlantEnums;
 import com.hbm.blocks.generic.BlockFlowerPlant;
-import com.hbm.render.amlfrom1710.Vec3;
 import com.hbm.world.feature.WorldGenMinableNonCascade;
 import com.hbm.world.phased.AbstractPhasedStructure;
 import net.minecraft.block.Block;
@@ -101,11 +100,6 @@ public class DungeonToolbox {
                 }
             }
         }
-    }
-
-    //now with vectors to provide handy rotations
-    public static void generateBox(AbstractPhasedStructure.LegacyBuilder world, int x, int y, int z, Vec3 size, List<IBlockState> blocks) {
-        generateBox(world, x, y, z, (int) size.xCoord, (int) size.yCoord, (int) size.zCoord, blocks);
     }
 
     public static <T> T getRandom(List<T> list, Random rand) {

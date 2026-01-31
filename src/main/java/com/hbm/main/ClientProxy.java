@@ -920,7 +920,7 @@ public class ClientProxy extends ServerProxy {
                 if (casingConfig == null) return;
 
                 for (int i = 0; i < ejector.getAmount(); i++) {
-                    ejector.spawnCasing(Minecraft.getMinecraft().renderEngine, casingConfig, world, x, y, z,
+                    ejector.spawnCasing(casingConfig, world, x, y, z,
                             data.getFloat("pitch"), data.getFloat("yaw"), data.getBoolean("crouched"));
                 }
             }
