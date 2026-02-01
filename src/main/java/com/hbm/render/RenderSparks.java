@@ -1,11 +1,7 @@
 package com.hbm.render;
 
 import com.hbm.util.Vec3NT;
-import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.util.math.Vec3d;
 import org.lwjgl.opengl.GL11;
 
 import java.util.Random;
@@ -24,48 +20,50 @@ public class RenderSparks {
         GlStateManager.pushMatrix();
         GlStateManager.disableTexture2D();
         GlStateManager.disableLighting();
-        GlStateManager.enableBlend();
-        GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
+        GlStateManager.glLineWidth(3F);
+
 
         Random rand = new Random(seed);
+        Vec3NT vec = new Vec3NT(rand.nextDouble() - 0.5, rand.nextDouble() - 0.5, rand.nextDouble() - 0.5);
+        vec = vec.normalize();
 
-        Vec3NT directionBase = new Vec3NT(rand.nextDouble() - 0.5, rand.nextDouble() - 0.5, rand.nextDouble() - 0.5);
-        directionBase.normalizeSelf();
+        double prevX;
+        double prevY;
+        double prevZ;
 
-        Tessellator tessellator = Tessellator.getInstance();
-        BufferBuilder bufferbuilder = tessellator.getBuffer();
+        for (int i = 0; i < min + rand.nextInt(max); i++) {
 
-        int segments = min + rand.nextInt(max - min + 1);
+            prevX = x;
+            prevY = y;
+            prevZ = z;
 
-        for (int i = 0; i < segments; i++) {
-            double prevX = x;
-            double prevY = y;
-            double prevZ = z;
+            Vec3NT dir = vec.normalize();
+            dir.multiply(length * rand.nextFloat());
 
-            float segmentScale = length * rand.nextFloat();
-            Vec3d step = new Vec3d(directionBase.x * segmentScale, directionBase.y * segmentScale, directionBase.z * segmentScale);
-
-            x = prevX + step.x;
-            y = prevY + step.y;
-            z = prevZ + step.z;
+            x = prevX + dir.x;
+            y = prevY + dir.y;
+            z = prevZ + dir.z;
 
             GlStateManager.glLineWidth(5F);
-            bufferbuilder.begin(GL11.GL_LINES, DefaultVertexFormats.POSITION_COLOR);
-            bufferbuilder.pos(prevX, prevY, prevZ).color(r1, g1, b1, 1.0F).endVertex();
-            bufferbuilder.pos(x, y, z).color(r1, g1, b1, 1.0F).endVertex();
-            tessellator.draw();
-
+            GL11.glBegin(3);
+            GlStateManager.color(r1, g1, b1, 1.0F);
+            GL11.glVertex3d(prevX, prevY, prevZ);
+            GL11.glVertex3d(x, y, z);
+            GL11.glEnd();
             GlStateManager.glLineWidth(2F);
-            bufferbuilder.begin(GL11.GL_LINES, DefaultVertexFormats.POSITION_COLOR);
-            bufferbuilder.pos(prevX, prevY, prevZ).color(r2, g2, b2, 1.0F).endVertex();
-            bufferbuilder.pos(x, y, z).color(r2, g2, b2, 1.0F).endVertex();
-            tessellator.draw();
+            GL11.glBegin(3);
+            GlStateManager.color(r2, g2, b2, 1.0F);
+            GL11.glVertex3d(prevX, prevY, prevZ);
+            GL11.glVertex3d(x, y, z);
+            GL11.glEnd();
+
+
         }
 
-        GlStateManager.disableBlend();
         GlStateManager.enableLighting();
         GlStateManager.enableTexture2D();
         GlStateManager.popMatrix();
     }
-
 }
+
+
