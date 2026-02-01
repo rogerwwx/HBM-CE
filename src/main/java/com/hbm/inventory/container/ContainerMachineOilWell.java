@@ -1,8 +1,8 @@
 package com.hbm.inventory.container;
 
-import com.hbm.inventory.SlotBattery;
-import com.hbm.inventory.SlotTakeOnly;
-import com.hbm.inventory.SlotUpgrade;
+import com.hbm.inventory.slot.SlotBattery;
+import com.hbm.inventory.slot.SlotFiltered;
+import com.hbm.inventory.slot.SlotUpgrade;
 import com.hbm.lib.Library;
 import com.hbm.tileentity.machine.oil.TileEntityOilDrillBase;
 import com.hbm.util.InventoryUtil;
@@ -25,11 +25,11 @@ public class ContainerMachineOilWell extends Container {
 		// Canister Input
 		this.addSlotToContainer(new SlotItemHandler(tedf.inventory, 1, 80, 17));
 		// Canister Output
-		this.addSlotToContainer(new SlotTakeOnly(tedf.inventory, 2, 80, 53));
+		this.addSlotToContainer(SlotFiltered.takeOnly(tedf.inventory, 2, 80, 53));
 		// Gas Input
 		this.addSlotToContainer(new SlotItemHandler(tedf.inventory, 3, 125, 17));
 		// Gas Output
-		this.addSlotToContainer(new SlotTakeOnly(tedf.inventory, 4, 125, 53));
+		this.addSlotToContainer(SlotFiltered.takeOnly(tedf.inventory, 4, 125, 53));
 		//Upgrades
 		this.addSlotToContainer(new SlotUpgrade(tedf.inventory, 5, 152, 17));
 		this.addSlotToContainer(new SlotUpgrade(tedf.inventory, 6, 152, 35));

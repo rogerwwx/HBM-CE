@@ -1,8 +1,8 @@
 package com.hbm.inventory.container;
 
-import com.hbm.inventory.SlotBattery;
-import com.hbm.inventory.SlotTakeOnly;
-import com.hbm.inventory.SlotUpgrade;
+import com.hbm.inventory.slot.SlotBattery;
+import com.hbm.inventory.slot.SlotFiltered;
+import com.hbm.inventory.slot.SlotUpgrade;
 import com.hbm.items.machine.IItemFluidIdentifier;
 import com.hbm.lib.Library;
 import com.hbm.tileentity.machine.oil.TileEntityMachineSolidifier;
@@ -22,7 +22,7 @@ public class ContainerSolidifier extends Container {
         solidifier = tile;
 
         // Output
-        this.addSlotToContainer(new SlotTakeOnly(tile.inventory, 0, 71, 45));
+        this.addSlotToContainer(SlotFiltered.takeOnly(tile.inventory, 0, 71, 45));
         // Battery
         this.addSlotToContainer(new SlotBattery(tile.inventory, 1, 134, 72));
         // Upgrades

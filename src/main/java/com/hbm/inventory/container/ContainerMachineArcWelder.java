@@ -1,8 +1,8 @@
 package com.hbm.inventory.container;
 
-import com.hbm.inventory.SlotBattery;
-import com.hbm.inventory.SlotTakeOnly;
-import com.hbm.inventory.SlotUpgrade;
+import com.hbm.inventory.slot.SlotBattery;
+import com.hbm.inventory.slot.SlotFiltered;
+import com.hbm.inventory.slot.SlotUpgrade;
 import com.hbm.items.machine.IItemFluidIdentifier;
 import com.hbm.lib.Library;
 import com.hbm.tileentity.machine.TileEntityMachineArcWelder;
@@ -26,7 +26,7 @@ public class ContainerMachineArcWelder extends Container {
         this.addSlotToContainer(new SlotItemHandler(welder.inventory, 1, 35, 36));
         this.addSlotToContainer(new SlotItemHandler(welder.inventory, 2, 53, 36));
         // Output
-        this.addSlotToContainer(new SlotTakeOnly(welder.inventory, 3, 107, 36));
+        this.addSlotToContainer(SlotFiltered.takeOnly(welder.inventory, 3, 107, 36));
         //Battery
         this.addSlotToContainer(new SlotBattery(welder.inventory, 4, 152, 72));
         //Fluid ID
