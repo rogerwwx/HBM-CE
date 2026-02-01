@@ -41,7 +41,7 @@ public class XFactory75Bolt {
 
             // 如果还活着，再额外扣 3 血
             if (living.isEntityAlive()) {
-                float newHealth = Math.max(0, living.getHealth() - 2.0F);
+                float newHealth = Math.max(0, living.getHealth() - 4.0F);
                 living.setHealth(newHealth);
 
                 // 如果血量归零，手动触发死亡
@@ -60,14 +60,14 @@ public class XFactory75Bolt {
         b75_inc = new BulletConfig()
                 .setItem(GunFactory.EnumAmmo.B75_INC)
                 .setCasing(casing75.clone().register("b75inc"))
-                .setDamage(0.8F)      // 燃烧弹伤害高一点
+                .setDamage(0.5F)      // 燃烧弹伤害高一点
                 .setArmorPiercing(0.1F)
                 .setOnEntityHit(FIXED_THREE_DAMAGE);
 
         b75_exp = new BulletConfig()
                 .setItem(GunFactory.EnumAmmo.B75_EXP)
                 .setCasing(casing75.clone().register("b75exp"))
-                .setDamage(1.5F)      // 高爆伤害最大
+                .setDamage(1.0F)      // 高爆伤害最大
                 .setArmorPiercing(-0.25F)
                 .setOnEntityHit(FIXED_THREE_DAMAGE);
 
