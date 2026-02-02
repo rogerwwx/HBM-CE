@@ -65,7 +65,7 @@ public class GUIScreenTemplateFolder extends GuiScreen {
 			for(ItemStack i : ItemStamp.stamps.get(ItemStamp.StampType.WIRE)) allStacks.add(i.copy());
 			for(ItemStack i : ItemStamp.stamps.get(ItemStamp.StampType.CIRCUIT)) allStacks.add(i.copy());
 			// Tracks
-			for (int i = 1; i < ItemCassette.TrackType.VALUES.length; i++) {
+			for (int i = 1; i < ItemCassette.TrackType.VALUES.size(); i++) {
 				allStacks.add(new ItemStack(ModItems.siren_track, 1, i));
 			}
 		}

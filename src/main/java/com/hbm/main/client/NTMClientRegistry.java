@@ -89,7 +89,7 @@ public class NTMClientRegistry {
         };
         evt.getItemColors().registerItemColorHandler((ItemStack stack, int tintIndex) -> {
             if (tintIndex == 1) {
-                int j = ItemCassette.TrackType.getEnum(stack.getItemDamage()).getColor();
+                int j = ItemCassette.TrackType.byIndex(stack.getItemDamage()).getColor();
                 if (j < 0) j = 0xFFFFFF;
                 return j;
             }
@@ -366,7 +366,7 @@ public class NTMClientRegistry {
                 ModelLoader.setCustomModelResourceLocation(item, i, new ModelResourceLocation(item.getRegistryName(), "inventory"));
             }
         } else if (item == ModItems.siren_track) {
-            for (int i = 0; i < ItemCassette.TrackType.VALUES.length; i++) {
+            for (int i = 0; i < ItemCassette.TrackType.VALUES.size(); i++) {
                 ModelLoader.setCustomModelResourceLocation(item, i, new ModelResourceLocation(item.getRegistryName(), "inventory"));
             }
         } else if (item == ModItems.ingot_u238m2) {

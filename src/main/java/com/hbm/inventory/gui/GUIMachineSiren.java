@@ -37,7 +37,7 @@ public class GUIMachineSiren extends GuiContainer {
 		this.fontRenderer.drawString(I18n.format("container.inventory"), 8, this.ySize - 96 + 2, 4210752);
 		
 		//Draw record meta here//
-		if(!siren.getCurrentType().name().equals(TrackType.NULL.name())) {
+		if(!siren.getCurrentType().getTrackTitle().equals(TrackType.NULL.getTrackTitle())) {
 			int color = siren.getCurrentType().getColor();
 			this.fontRenderer.drawString(siren.getCurrentType().getTrackTitle(), 46, 28, color);
 			this.fontRenderer.drawString("Type: " + siren.getCurrentType().getType().name(), 46, 40, color);
