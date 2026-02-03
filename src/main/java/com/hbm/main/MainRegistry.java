@@ -25,6 +25,7 @@ import com.hbm.handler.*;
 import com.hbm.handler.imc.IMCHandler;
 import com.hbm.handler.pollution.PollutionHandler;
 import com.hbm.handler.radiation.RadiationSystemNT;
+import com.hbm.handler.threading.BombForkJoinPool;
 import com.hbm.handler.threading.PacketThreading;
 import com.hbm.hazard.HazardData;
 import com.hbm.hazard.HazardRegistry;
@@ -387,6 +388,7 @@ public class MainRegistry {
         RadiationSystemNT.onServerStopped();
         PhasedEventHandler.onServerStopped();
         PhasedStructureRegistry.onServerStopped();
+        BombForkJoinPool.onServerStopped();
     }
 
     @EventHandler

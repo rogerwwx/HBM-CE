@@ -2,6 +2,7 @@ package com.hbm.explosion;
 
 import com.hbm.config.BombConfig;
 import com.hbm.config.CompatibilityConfig;
+import com.hbm.handler.threading.BombForkJoinPool;
 import com.hbm.interfaces.BitMask;
 import com.hbm.interfaces.IExplosionRay;
 import com.hbm.interfaces.ServerThread;
@@ -51,7 +52,7 @@ import static com.hbm.lib.internal.UnsafeHolder.fieldOffset;
  *
  * @author mlbv
  */
-public class ExplosionNukeRayParallelized implements IExplosionRay {
+public class ExplosionNukeRayParallelized implements IExplosionRay, BombForkJoinPool.IJobCancellable {
     static final int WORLD_HEIGHT = 256;
     static final int BITSET_SIZE = 16 * WORLD_HEIGHT * 16;
     static final int SUB_MASK_SIZE = 16 * 16 * 16;
@@ -92,6 +93,8 @@ public class ExplosionNukeRayParallelized implements IExplosionRay {
     static final long OFF_COLLECT_FINISHED = fieldOffset(ExplosionNukeRayParallelized.class, "collectFinished");
     static final long OFF_CONSOLIDATION_FINISHED = fieldOffset(ExplosionNukeRayParallelized.class, "consolidationFinished");
     static final long OFF_DESTROY_FINISHED = fieldOffset(ExplosionNukeRayParallelized.class, "destroyFinished");
+    static final long OFF_POOL_ACQUIRED = fieldOffset(ExplosionNukeRayParallelized.class, "poolAcquired");
+    static final long OFF_JOB_REGISTERED = fieldOffset(ExplosionNukeRayParallelized.class, "jobRegistered");
 
     static {
         for (int r = 0; r < LUT_RESISTANCE_BINS; r++) {
@@ -125,10 +128,11 @@ public class ExplosionNukeRayParallelized implements IExplosionRay {
     ForkJoinPool pool;
     NonBlockingHashMapLong<Chunk> mirror;
     volatile UUID detonator;
+    int jobDimension = Integer.MIN_VALUE;
 
     @SuppressWarnings("unused")
     volatile int mapAcquired, consolidationStarted, finishQueued, pendingRays, pendingCarveNotifies,
-            collectFinished, consolidationFinished, destroyFinished;
+            collectFinished, consolidationFinished, destroyFinished, poolAcquired, jobRegistered;
 
     volatile boolean isContained = true;
 
@@ -275,17 +279,39 @@ public class ExplosionNukeRayParallelized implements IExplosionRay {
             U.putIntRelease(this, OFF_CONSOLIDATION_FINISHED, 1);
             return;
         }
-        int processors = Runtime.getRuntime().availableProcessors();
-        int workers = BombConfig.maxThreads <= 0 ? Math.max(1, processors + BombConfig.maxThreads) : Math.min(BombConfig.maxThreads, processors);
-        pool = new ForkJoinPool(workers, ForkJoinPool.defaultForkJoinWorkerThreadFactory, (t, ex) -> {
-            MainRegistry.logger.error("Nuke ray-tracing crashed in {}", t.getName(), ex);
-            onAllRaysFinished();
-        }, false);
+        if (U.compareAndSetInt(this, OFF_POOL_ACQUIRED, 0, 1)) {
+            pool = BombForkJoinPool.acquire();
+        }
+        registerJobIfNeeded();
         buildRayOrder();
         mirror = ChunkUtil.acquireMirrorMap(world);
         U.putIntRelease(this, OFF_MAP_ACQUIRED, 1);
         int minRayGrain = (rayOrder != null) ? 4096 : 512;
         pool.submit(new RayTracerTask(0, rayCount, computeTaskGrain(rayCount, minRayGrain)));
+    }
+
+    void releasePoolIfHeld() {
+        unregisterJobIfNeeded();
+        if (U.getAndSetInt(this, OFF_POOL_ACQUIRED, 0) != 0) {
+            BombForkJoinPool.release();
+            pool = null;
+        }
+    }
+
+    void registerJobIfNeeded() {
+        if (U.compareAndSetInt(this, OFF_JOB_REGISTERED, 0, 1)) {
+            int dim = world == null ? Integer.MIN_VALUE : world.provider.getDimension();
+            jobDimension = dim;
+            BombForkJoinPool.register(dim, this);
+        }
+    }
+
+    void unregisterJobIfNeeded() {
+        if (U.getAndSetInt(this, OFF_JOB_REGISTERED, 0) != 0) {
+            int dim = jobDimension;
+            jobDimension = Integer.MIN_VALUE;
+            if (dim != Integer.MIN_VALUE) BombForkJoinPool.unregister(dim, this);
+        }
     }
 
     private void buildRayOrder() {
@@ -716,25 +742,19 @@ public class ExplosionNukeRayParallelized implements IExplosionRay {
             postLoadQueues.clear();
         }
 
-        ForkJoinPool p = pool;
-        if (p != null && !p.isShutdown()) {
-            p.shutdownNow();
-            try {
-                if (!p.awaitTermination(100, TimeUnit.MILLISECONDS))
-                    MainRegistry.logger.error("ExplosionNukeRayParallelized ForkJoinPool did not terminate promptly on cancel.");
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                if (!p.isShutdown()) p.shutdownNow();
-            }
-        }
+        releasePoolIfHeld();
         rayOrder = null;
         if (U.getAndSetInt(this, OFF_MAP_ACQUIRED, 0) != 0) {
             ChunkUtil.releaseMirrorMap(world);
-            mirror = null;
         }
         if (destructionMap != null) destructionMap.clear();
         if (aggMap != null) aggMap.clear();
         if (chunkLoadQueue != null) chunkLoadQueue.clear();
+    }
+
+    @Override
+    public void cancelJob() {
+        cancel();
     }
 
     /**
@@ -772,11 +792,9 @@ public class ExplosionNukeRayParallelized implements IExplosionRay {
         world.addScheduledTask(() -> {
             secondPass();
             U.putIntRelease(this, OFF_DESTROY_FINISHED, 1);
-            ForkJoinPool p = pool;
-            if (p != null && !p.isShutdown()) p.shutdown();
+            releasePoolIfHeld();
             if (U.getAndSetInt(this, OFF_MAP_ACQUIRED, 0) != 0) {
                 ChunkUtil.releaseMirrorMap(world);
-                mirror = null;
             }
         });
     }
@@ -1224,7 +1242,7 @@ public class ExplosionNukeRayParallelized implements IExplosionRay {
             if (energy <= 0) return true;
             while (energy > 0) {
                 if ((loopCount++ & 0x3FF) == 0) {
-                    if (y < 0 || y >= WORLD_HEIGHT || Thread.currentThread().isInterrupted()) break;
+                    if (destroyFinished != 0 || y < 0 || y >= WORLD_HEIGHT || Thread.currentThread().isInterrupted()) break;
                     if (currentRayPosition >= radiusLimit) break;
                 } else {
                     if (currentRayPosition >= radiusLimit) break;
@@ -1773,7 +1791,7 @@ public class ExplosionNukeRayParallelized implements IExplosionRay {
                 agg.clear();
                 int completed = 0;
                 for (int i = start; i < end; i++) {
-                    if (Thread.currentThread().isInterrupted()) break;
+                    if (Thread.currentThread().isInterrupted() || destroyFinished != 0) break;
                     int dirIndex = (rayOrder != null) ? rayOrder[i] : i;
                     if (traceSingle(dirIndex, agg)) completed++;
                 }
@@ -1810,7 +1828,7 @@ public class ExplosionNukeRayParallelized implements IExplosionRay {
                 int completed = 0;
                 for (int i = start; i < end; i++) {
                     int dirIndex = indices.getInt(i);
-                    if (Thread.currentThread().isInterrupted()) break;
+                    if (Thread.currentThread().isInterrupted() || destroyFinished != 0) break;
                     if (traceSingle(dirIndex, agg)) completed++;
                 }
                 flushDeferredMissing(agg);

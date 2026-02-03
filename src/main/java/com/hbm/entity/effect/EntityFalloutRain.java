@@ -7,6 +7,7 @@ import com.hbm.config.FalloutConfigJSON;
 import com.hbm.config.FalloutConfigJSON.FalloutEntry;
 import com.hbm.config.WorldConfig;
 import com.hbm.entity.logic.EntityExplosionChunkloading;
+import com.hbm.handler.threading.BombForkJoinPool;
 import com.hbm.interfaces.AutoRegister;
 import com.hbm.lib.Library;
 import com.hbm.lib.maps.NonBlockingHashMapLong;
@@ -42,15 +43,13 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.LockSupport;
 
 import static com.hbm.config.BombConfig.safeCommit;
 import static com.hbm.lib.internal.UnsafeHolder.U;
 import static com.hbm.lib.internal.UnsafeHolder.fieldOffset;
 
 @AutoRegister(name = "entity_fallout_rain", trackingRange = 1000)
-public class EntityFalloutRain extends EntityExplosionChunkloading {
+public class EntityFalloutRain extends EntityExplosionChunkloading implements BombForkJoinPool.IJobCancellable {
 
     static final DataParameter<Integer> SCALE = EntityDataManager.createKey(EntityFalloutRain.class, DataSerializers.VARINT);
     static final int MAX_SOLID_DEPTH = 3;
@@ -71,6 +70,10 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
     static final long OFF_FINISHED = fieldOffset(EntityFalloutRain.class, "finished");
     static final long OFF_INNER_CURSOR = fieldOffset(EntityFalloutRain.class, "innerCursor");
     static final long OFF_OUTER_CURSOR = fieldOffset(EntityFalloutRain.class, "outerCursor");
+    static final long OFF_POOL_ACQUIRED = fieldOffset(EntityFalloutRain.class, "poolAcquired");
+    static final long OFF_ACTIVE_WORKERS = fieldOffset(EntityFalloutRain.class, "activeWorkers");
+    static final long OFF_JOB_REGISTERED = fieldOffset(EntityFalloutRain.class, "jobRegistered");
+    static final int WORKER_BATCH = 32;
     public UUID detonator;
     NonBlockingHashMapLong<Chunk> mirror;
     LongArrayList chunksToProcess;
@@ -83,11 +86,16 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
     Long2IntOpenHashMap sectionMaskByChunk;
     MainScratch mainScratch;
     @SuppressWarnings("unused")
-    volatile int pendingChunks, pendingMainThreadNotifies, finished, mapAcquired, finishQueued;
+    volatile int pendingChunks, pendingMainThreadNotifies, finished, mapAcquired, finishQueued, poolAcquired, activeWorkers, jobRegistered;
     @SuppressWarnings("unused")
     volatile int innerCursor, outerCursor;
 
     ForkJoinPool pool;
+    int workerScale;
+    int workerInnerSize;
+    int workerOuterSize;
+    int workerTarget;
+    int jobDimension = Integer.MIN_VALUE;
 
     int tickDelay = BombConfig.falloutDelay;
     boolean biomeChange = true;
@@ -220,66 +228,120 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
         initWorkStructuresIfNeeded(innerSize, outerSize);
         innerCursor = 0;
         outerCursor = 0;
+        activeWorkers = 0;
         pendingChunks = total;
         mirror = ChunkUtil.acquireMirrorMap((WorldServer) world);
         mapAcquired = 1;
-        int processors = Runtime.getRuntime().availableProcessors();
-        int workers = BombConfig.maxThreads <= 0 ? Math.max(1, processors + BombConfig.maxThreads) : Math.min(BombConfig.maxThreads, processors);
-        pool = new ForkJoinPool(Math.max(1, workers));
-        int scale = getScale();
-        MpmcUnboundedXaddArrayLongQueue retryInner = qInner;
-        MpmcUnboundedXaddArrayLongQueue retryOuter = qOuter;
+        if (U.compareAndSetInt(this, OFF_POOL_ACQUIRED, 0, 1)) {
+            pool = BombForkJoinPool.acquire();
+        }
+        ForkJoinPool p = pool;
+        int workers = p == null ? 1 : Math.max(1, p.getParallelism());
+        if (p == null) {
+            finished = 1;
+            clearChunkLoader();
+            setDead();
+            return;
+        }
+        workerScale = getScale();
+        workerInnerSize = innerSize;
+        workerOuterSize = outerSize;
+        workerTarget = Math.max(1, Math.min(workers, total));
+        registerJobIfNeeded();
+        maybeScheduleWorkers();
+    }
 
-        for (int i = 0; i < workers; i++) {
-            pool.submit(() -> {
-                int spins = 0;
+    void releasePool() {
+        unregisterJobIfNeeded();
+        if (U.getAndSetInt(this, OFF_POOL_ACQUIRED, 0) != 0) {
+            BombForkJoinPool.release();
+            pool = null;
+        }
+    }
 
-                while (!Thread.currentThread().isInterrupted()) {
-                    if (finished != 0) return;
+    void registerJobIfNeeded() {
+        if (U.compareAndSetInt(this, OFF_JOB_REGISTERED, 0, 1)) {
+            int dim = world == null ? Integer.MIN_VALUE : world.provider.getDimension();
+            jobDimension = dim;
+            BombForkJoinPool.register(dim, this);
+        }
+    }
 
-                    long cp = retryInner.poll();
-                    boolean clamp = false;
-
-                    if (cp == EMPTY_LONG) {
-                        int idx = U.getAndAddInt(this, OFF_INNER_CURSOR, 1);
-                        if (idx < innerSize) {
-                            cp = innerList.getLong(idx);
-                        } else {
-                            cp = retryOuter.poll();
-                            clamp = true;
-                            if (cp == EMPTY_LONG) {
-                                int oidx = U.getAndAddInt(this, OFF_OUTER_CURSOR, 1);
-                                if (oidx < outerSize) {
-                                    cp = outerList.getLong(oidx);
-                                } else {
-                                    cp = EMPTY_LONG;
-                                }
-                            }
-                        }
-                    }
-
-                    if (cp != EMPTY_LONG) {
-                        spins = 0;
-                        processChunkOffThread(cp, scale, clamp);
-                        continue;
-                    }
-
-                    if (pendingChunks == 0) return;
-
-                    if (++spins < 256) {
-                        Library.onSpinWait();
-                    } else {
-                        spins = 0;
-                        LockSupport.parkNanos(1_000_000L);
-                    }
-                }
-            });
+    void unregisterJobIfNeeded() {
+        if (U.getAndSetInt(this, OFF_JOB_REGISTERED, 0) != 0) {
+            int dim = jobDimension;
+            jobDimension = Integer.MIN_VALUE;
+            if (dim != Integer.MIN_VALUE) BombForkJoinPool.unregister(dim, this);
         }
     }
 
     void enqueueWork(long cp, boolean clamp) {
         if (clamp) qOuter.offer(cp);
         else qInner.offer(cp);
+        maybeScheduleWorkers();
+    }
+
+    void maybeScheduleWorkers() {
+        if (finished != 0) return;
+        ForkJoinPool p = pool;
+        if (p == null || p.isShutdown()) return;
+        int target = workerTarget <= 0 ? 1 : workerTarget;
+        while (true) {
+            if (!hasImmediateWork()) return;
+            int cur = activeWorkers;
+            if (cur >= target) return;
+            if (U.compareAndSetInt(this, OFF_ACTIVE_WORKERS, cur, cur + 1)) {
+                p.submit(this::workerDrain);
+            }
+        }
+    }
+
+    boolean hasImmediateWork() {
+        MpmcUnboundedXaddArrayLongQueue retryInner = qInner;
+        if (retryInner != null && !retryInner.isEmpty()) return true;
+        MpmcUnboundedXaddArrayLongQueue retryOuter = qOuter;
+        if (retryOuter != null && !retryOuter.isEmpty()) return true;
+        if (innerCursor < workerInnerSize) return true;
+        return outerCursor < workerOuterSize;
+    }
+
+    void workerDrain() {
+        try {
+            int processed = 0;
+            while (processed < WORKER_BATCH) {
+                if (finished != 0) return;
+                long cp = EMPTY_LONG;
+                boolean clamp = false;
+                MpmcUnboundedXaddArrayLongQueue retryInner = qInner;
+                if (retryInner != null) cp = retryInner.poll();
+                if (cp == EMPTY_LONG) {
+                    int idx = U.getAndAddInt(this, OFF_INNER_CURSOR, 1);
+                    if (idx < workerInnerSize) {
+                        LongArrayList innerList = chunksToProcess;
+                        if (innerList != null) cp = innerList.getLong(idx);
+                    } else {
+                        clamp = true;
+                        MpmcUnboundedXaddArrayLongQueue retryOuter = qOuter;
+                        if (retryOuter != null) {
+                            cp = retryOuter.poll();
+                        }
+                        if (cp == EMPTY_LONG) {
+                            int oidx = U.getAndAddInt(this, OFF_OUTER_CURSOR, 1);
+                            if (oidx < workerOuterSize) {
+                                LongArrayList outerList = outerChunksToProcess;
+                                if (outerList != null) cp = outerList.getLong(oidx);
+                            }
+                        }
+                    }
+                }
+                if (cp == EMPTY_LONG) return;
+                processChunkOffThread(cp, workerScale, clamp);
+                processed++;
+            }
+        } finally {
+            U.getAndAddInt(this, OFF_ACTIVE_WORKERS, -1);
+            if (finished == 0) maybeScheduleWorkers();
+        }
     }
 
     void loadMissingChunksUntil(long deadlineNanos) {
@@ -597,17 +659,10 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 
         finished = 1;
 
-        if (pool != null) {
-            pool.shutdown();
-            try {
-                pool.awaitTermination(100, TimeUnit.MILLISECONDS);
-            } catch (InterruptedException ignored) {
-            }
-        }
+        releasePool();
 
         if (U.getAndSetInt(this, OFF_MAP_ACQUIRED, 0) != 0) {
             ChunkUtil.releaseMirrorMap((WorldServer) world);
-            mirror = null;
         }
         clearChunkLoader();
         setDead();
@@ -738,15 +793,33 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
     @Override
     public void setDead() {
         try {
-            U.putIntRelease(this, OFF_FINISHED, 1);
-            if (pool != null) pool.shutdownNow();
-            if (U.getAndSetInt(this, OFF_MAP_ACQUIRED, 0) != 0) {
-                ChunkUtil.releaseMirrorMap((WorldServer) world);
-                mirror = null;
-            }
+            abort();
         } finally {
             super.setDead();
         }
+    }
+
+    private void abort() {
+        U.putIntRelease(this, OFF_FINISHED, 1);
+        releasePool();
+        if (U.getAndSetInt(this, OFF_MAP_ACQUIRED, 0) != 0) {
+            ChunkUtil.releaseMirrorMap((WorldServer) world);
+        }
+        clearChunkLoader();
+    }
+
+    @Override
+    public void onRemovedFromWorld() {
+        try {
+            abort();
+        } finally {
+            super.onRemovedFromWorld();
+        }
+    }
+
+    @Override
+    public void cancelJob() {
+        abort();
     }
 
     public int getScale() {

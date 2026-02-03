@@ -14,6 +14,7 @@ import com.hbm.entity.mob.EntityCreeperTainted;
 import com.hbm.entity.mob.EntityCyberCrab;
 import com.hbm.entity.projectile.EntityBulletBaseMK4;
 import com.hbm.entity.projectile.EntityBurningFOEQ;
+import com.hbm.handler.threading.BombForkJoinPool;
 import com.hbm.events.CheckLadderEvent;
 import com.hbm.events.InventoryChangedEvent;
 import com.hbm.handler.*;
@@ -178,6 +179,7 @@ public class ModEventHandler {
 
     @SubscribeEvent
     public void worldUnload(WorldEvent.Unload e) {
+        BombForkJoinPool.onWorldUnload(e.getWorld());
         ClimbableRegistry.clearDimension(e.getWorld());
     }
 
