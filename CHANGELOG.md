@@ -23,7 +23,7 @@ tank(machine), or into a ForgerFluid fluid tank(e.g. Mekanism tanks) before upda
 - Fixed Crayon item texture z-fighting
 - Fixed some crucible bugs
 - Fixed Fallout Rain pinning worker threads on jvm
-- Fixed Diode texture
+- Fixed Diode texture and energy transfer
 ### Changes
 - Reworked phased worldgen system(`package com.hbm.world.phased`) to be vastly more extensible and robust
 ### New Features
@@ -32,6 +32,10 @@ tank(machine), or into a ForgerFluid fluid tank(e.g. Mekanism tanks) before upda
 - Added pocket visualization for radiation system as the default radvis mode. Turn on with `/radvis on`
 - Customizable Siren Soundtracks! (PR #1320 by Vidarin)
 - Ported `missile_shuttle`
+- Doors are now configurable! see `hbm.cfg` `9.99_CE_02_doorConf`. Three modes are available:
+  - "DEFAULT", default behavior
+  - "TOOLABLE", can toggle between default and redstone-only mode with a screwdriver. When locked, requires key on offhand.
+  - "REDSTONE", redstone only
 ### Performance
 - Overhauled Radiation System to be ~60% faster
 - Made nuke algorithm 2 marginally faster
