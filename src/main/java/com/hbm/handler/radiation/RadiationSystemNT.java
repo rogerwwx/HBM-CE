@@ -50,7 +50,6 @@ import org.jetbrains.annotations.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.concurrent.*;
 
@@ -1026,66 +1025,21 @@ public final class RadiationSystemNT {
         }
     }//@formatter:on
 
-    static void processDiffuseGroup(ChunkRef aCr, ChunkRef bCr, long unionMask, int group, int faceA, int faceB) {
-        while (unionMask != 0L) {
-            int lane = Long.numberOfTrailingZeros(unionMask) >>> 4;
-            int sy = (group << 2) + lane;
-            long laneMask = 0xFFFFL << (lane << 4);
-            unionMask &= ~laneMask;
-            int kA = aCr.getKind(sy);
-            int kB = bCr.getKind(sy);
-            if (kA == ChunkRef.KIND_NONE || kB == ChunkRef.KIND_NONE) continue;
-            exchangeFaceExact(aCr, sy, kA, faceA, bCr, sy, kB, faceB);
-        }
-    }
-
-    static void exchangeFaceExact(ChunkRef crA, int syA, int kA, int faceA, ChunkRef crB, int syB, int kB, int faceB) {
-        if (kA == ChunkRef.KIND_UNI && kB == ChunkRef.KIND_UNI) {
-            double[] uniA = crA.uniformRads;
-            double[] uniB = crB.uniformRads;
-            double ra = uniA[syA];
-            double rb = uniB[syB];
-            if (ra == rb) return;
-            double avg = 0.5d * (ra + rb);
-            double delta = 0.5d * (ra - rb) * UU_E;
-            double na = avg + delta;
-            double nb = avg - delta;
-            uniA[syA] = na;
-            uniB[syB] = nb;
-            if (na != 0.0D) crA.setActive0(syA);
-            if (nb != 0.0D) crB.setActive0(syB);
-            crA.dirtyFlag = crB.dirtyFlag = true;
-            return;
-        }
-        boolean changed;
+    static boolean exchangeFaceExact(ChunkRef crA, int syA, int kA, int faceA, ChunkRef crB, int syB, int kB, int faceB) {
+        if (kA == ChunkRef.KIND_NONE || kB == ChunkRef.KIND_NONE) return false;
         if (kA == ChunkRef.KIND_UNI) {
-            changed = crB.sec[syB].exchangeWithUniform(crA, faceB, faceA, syA);
+            return crB.sec[syB].exchangeWithUniform(crA, faceB, faceA, syA);
         } else if (kB == ChunkRef.KIND_UNI) {
-            changed = crA.sec[syA].exchangeWithUniform(crB, faceA, faceB, syB);
+            return crA.sec[syA].exchangeWithUniform(crB, faceA, faceB, syB);
         } else {
             if (kB == ChunkRef.KIND_SINGLE)
-                changed = crA.sec[syA].exchangeWithSingle((SingleMaskedSectionRef) crB.sec[syB], faceA, faceB);
-            else changed = crA.sec[syA].exchangeWithMulti((MultiSectionRef) crB.sec[syB], faceA, faceB);
+                return crA.sec[syA].exchangeWithSingle((SingleMaskedSectionRef) crB.sec[syB], faceA, faceB);
+            else return crA.sec[syA].exchangeWithMulti((MultiSectionRef) crB.sec[syB], faceA, faceB);
         }
-        if (changed) crA.dirtyFlag = crB.dirtyFlag = true;
     }
 
     static boolean exchangeFaceExactY(ChunkRef cr, int syA, int kA, int syB, int kB) {
-        if (kA == ChunkRef.KIND_UNI && kB == ChunkRef.KIND_UNI) {
-            double[] uni = cr.uniformRads;
-            double ra = uni[syA];
-            double rb = uni[syB];
-            if (ra == rb) return false;
-            double avg = 0.5d * (ra + rb);
-            double delta = 0.5d * (ra - rb) * UU_E;
-            double na = avg + delta;
-            double nb = avg - delta;
-            uni[syA] = na;
-            uni[syB] = nb;
-            if (na != 0.0D) cr.setActive0(syA);
-            if (nb != 0.0D) cr.setActive0(syB);
-            return true;
-        }
+        if (kA == ChunkRef.KIND_NONE || kB == ChunkRef.KIND_NONE) return false;
         if (kA == ChunkRef.KIND_UNI) {
             SectionRef b = cr.sec[syB];
             assert b != null;
@@ -1105,24 +1059,10 @@ public final class RadiationSystemNT {
     }
 
     static final class ChunkRef {
-        static final long MASK_BASE;
         static final int KIND_NONE = 0;
         static final int KIND_UNI = 1;
         static final int KIND_SINGLE = 2;
         static final int KIND_MULTI = 3;
-
-        static {
-            if (ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN)
-                throw new AssertionError("Big-endian JVM not supported");
-            long off0 = fieldOffset(ChunkRef.class, "mask0");
-            long off1 = fieldOffset(ChunkRef.class, "mask1");
-            long off2 = fieldOffset(ChunkRef.class, "mask2");
-            long off3 = fieldOffset(ChunkRef.class, "mask3");
-            if (off1 - off0 != 8 || off2 - off1 != 8 || off3 - off2 != 8) {
-                throw new AssertionError("Critical memory layout mismatch. Expected 8-byte strides for mask fields, but got: " + off0 + ", " + off1 + ", " + off2 + ", " + off3);
-            }
-            MASK_BASE = off0;
-        }
 
         final long ck;
         final SectionRef[] sec = new SectionRef[16];
@@ -1131,18 +1071,15 @@ public final class RadiationSystemNT {
         @Nullable ChunkRef north, south, west, east;
         @Nullable PendingRad pending;
         int sectionKinds; // 2 bits per section
-        long mask0, mask1, mask2, mask3;
-        int parityBucket = -1;
+        // it is profiled that direct branchy field access is FASTER than four longs with U.getChar/putChar, LMAO HOW
+        // long mask0, mask1, mask2, mask3;
+        char c0, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15;
+        byte parityBucket = -1;
         int parityIndex = -1;
         boolean dirtyFlag;
 
         ChunkRef(long ck) {
             this.ck = ck;
-        }
-
-        void wakeUni(int sy) {
-            if (uniformRads[sy] == 0.0D) return;
-            setActive0(sy);
         }
 
         int getKind(int sy) {
@@ -1156,44 +1093,56 @@ public final class RadiationSystemNT {
             sectionKinds = (sectionKinds & clear) | set;
         }
 
+        int lane16(int sy) {
+            return switch (sy) {//@formatter:off
+                case 0 -> c0; case 1 -> c1; case 2 -> c2; case 3 -> c3;
+                case 4 -> c4; case 5 -> c5; case 6 -> c6; case 7 -> c7;
+                case 8 -> c8; case 9 -> c9; case 10 -> c10; case 11 -> c11;
+                case 12 -> c12; case 13 -> c13; case 14 -> c14; default -> c15;
+            };
+        }
+
+        void setLane16(int sy, char v) {
+            switch (sy) {
+                case 0 -> c0 = v; case 1 -> c1 = v; case 2 -> c2 = v; case 3 -> c3 = v;
+                case 4 -> c4 = v; case 5 -> c5 = v; case 6 -> c6 = v; case 7 -> c7 = v;
+                case 8 -> c8 = v; case 9 -> c9 = v; case 10 -> c10 = v; case 11 -> c11 = v;
+                case 12 -> c12 = v; case 13 -> c13 = v; case 14 -> c14 = v; default -> c15 = v;
+            }//@formatter:on
+        }
+
         boolean isInactive(int sy, int pi) {
-            long off = MASK_BASE + ((long) sy << 1);
-            int m = U.getChar(this, off);
-            return (m & (1 << pi)) == 0;
+            return (lane16(sy) & (1 << pi)) == 0;
         }
 
         void setActive0(int sy) {
-            long off = MASK_BASE + ((long) sy << 1);
-            int cur = U.getChar(this, off);
+            int cur = lane16(sy);
             if ((cur & 1) != 0) return;
-            U.putChar(this, off, (char) (cur | 1));
+            setLane16(sy, (char) (cur | 1));
         }
 
         void clearActive0(int sy) {
-            long off = MASK_BASE + ((long) sy << 1);
-            int cur = U.getChar(this, off);
+            int cur = lane16(sy);
             if ((cur & 1) == 0) return;
-            U.putChar(this, off, (char) (cur & ~1));
+            setLane16(sy, (char) (cur & ~1));
         }
 
         void setActiveBit(int sy, int pi) {
-            long off = MASK_BASE + ((long) sy << 1);
-            int cur = U.getChar(this, off);
-            int next = cur | 1 << pi;
+            int cur = lane16(sy);
+            int next = cur | (1 << pi);
             if (cur == next) return;
-            U.putChar(this, off, (char) next);
+            setLane16(sy, (char) next);
         }
 
         void clearActiveBit(int sy, int pi) {
-            long off = MASK_BASE + ((long) sy << 1);
-            int cur = U.getChar(this, off);
+            int cur = lane16(sy);
             int next = cur & ~(1 << pi);
             if (cur == next) return;
-            U.putChar(this, off, (char) next);
+            setLane16(sy, (char) next);
         }
 
-        void clearActiveBitMask(int sy) {
-            U.putChar(this, MASK_BASE + ((long) sy << 1), (char) 0);
+        void clearAllMasks() {
+            c0 = c1 = c2 = c3 = c4 = c5 = c6 = c7 = c8 = c9 = c10 = c11 = c12 = c13 = c14 = c15 = 0;
         }
     }
 
@@ -1302,7 +1251,11 @@ public final class RadiationSystemNT {
         protected void compute() {
             int n = hi - lo;
             if (n <= threshold) {
-                work(lo, hi);
+                for (int i = lo; i < hi; i++) {
+                    ChunkRef aCr = chunks[i];
+                    ChunkRef bCr = aCr.east;
+                    if (bCr != null) diffuseXZ(aCr, bCr, /*E*/ 5, /*W*/ 4);
+                }
                 return;
             }
             int mid = (lo + hi) >>> 1;
@@ -1311,20 +1264,6 @@ public final class RadiationSystemNT {
             left.join();
         }
 
-        void work(int start, int end) {
-            for (int i = start; i < end; i++) {
-                ChunkRef aCr = chunks[i];
-                ChunkRef bCr = aCr.east;
-                if (bCr == null) continue;
-                long a0 = aCr.mask0, a1 = aCr.mask1, a2 = aCr.mask2, a3 = aCr.mask3;
-                long b0 = bCr.mask0, b1 = bCr.mask1, b2 = bCr.mask2, b3 = bCr.mask3;
-                if (((a0 | a1 | a2 | a3) | (b0 | b1 | b2 | b3)) == 0L) continue;
-                processDiffuseGroup(aCr, bCr, a0 | b0, 0, 5, 4);
-                processDiffuseGroup(aCr, bCr, a1 | b1, 1, 5, 4);
-                processDiffuseGroup(aCr, bCr, a2 | b2, 2, 5, 4);
-                processDiffuseGroup(aCr, bCr, a3 | b3, 3, 5, 4);
-            }
-        }
     }
 
     static final class DiffuseZTask extends RecursiveAction {
@@ -1342,7 +1281,11 @@ public final class RadiationSystemNT {
         protected void compute() {
             int n = hi - lo;
             if (n <= threshold) {
-                work(lo, hi);
+                for (int i = lo; i < hi; i++) {
+                    ChunkRef aCr = chunks[i];
+                    ChunkRef bCr = aCr.south;
+                    if (bCr != null) diffuseXZ(aCr, bCr, /*S*/ 3, /*N*/ 2);
+                }
                 return;
             }
             int mid = (lo + hi) >>> 1;
@@ -1350,21 +1293,246 @@ public final class RadiationSystemNT {
             new DiffuseZTask(chunks, mid, hi, threshold).compute();
             left.join();
         }
+    }
 
-        void work(int start, int end) {
-            for (int i = start; i < end; i++) {
-                ChunkRef aCr = chunks[i];
-                ChunkRef bCr = aCr.south;
-                if (bCr == null) continue;
-                long a0 = aCr.mask0, a1 = aCr.mask1, a2 = aCr.mask2, a3 = aCr.mask3;
-                long b0 = bCr.mask0, b1 = bCr.mask1, b2 = bCr.mask2, b3 = bCr.mask3;
-                if (((a0 | a1 | a2 | a3) | (b0 | b1 | b2 | b3)) == 0L) continue;
-                processDiffuseGroup(aCr, bCr, a0 | b0, 0, 3, 2);
-                processDiffuseGroup(aCr, bCr, a1 | b1, 1, 3, 2);
-                processDiffuseGroup(aCr, bCr, a2 | b2, 2, 3, 2);
-                processDiffuseGroup(aCr, bCr, a3 | b3, 3, 3, 2);
+    static boolean exchangeUniExactXZ(double[] uniA, double[] uniB, int i) {
+        double ra = uniA[i], rb = uniB[i];
+        if (ra == rb) return false;
+        double avg = 0.5d * (ra + rb);
+        double delta = 0.5d * (ra - rb) * UU_E;
+        uniA[i] = avg + delta;
+        uniB[i] = avg - delta;
+        return true;
+    }
+
+    static void diffuseXZ(ChunkRef aCr, ChunkRef bCr, int faceA, int faceB) {
+        int ksA = aCr.sectionKinds, ksB = bCr.sectionKinds;
+        double[] uA = aCr.uniformRads, uB = bCr.uniformRads;
+        boolean d = false;
+
+        if ((aCr.c0 | bCr.c0) != 0) {
+            int kA = ksA & 3;
+            int kB = ksB & 3;
+            if (kA == ChunkRef.KIND_UNI && kB == ChunkRef.KIND_UNI) {
+                if (exchangeUniExactXZ(uA, uB, 0)) {
+                    // na == 0.0D || nb == 0.0D should be extremely rare (but not impossible); even if it happens, postSweep will clean it up.
+                    // same rationale for SectionRef exchangeWith* methods
+                    aCr.c0 = bCr.c0 = 1;
+                    d = true;
+                }
+            } else {
+                d |= exchangeFaceExact(aCr, 0, kA, faceA, bCr, 0, kB, faceB);
             }
         }
+        // I wish I had macros in java...
+        // <editor-fold defaultstate="collapsed" desc="sy 1~15 boilerplate to have branchless access to c0~15, same as above.">
+        if ((aCr.c1 | bCr.c1) != 0) {
+            int kA = (ksA >>> 2) & 3;
+            int kB = (ksB >>> 2) & 3;
+            if (kA == ChunkRef.KIND_UNI && kB == ChunkRef.KIND_UNI) {
+                if (exchangeUniExactXZ(uA, uB, 1)) {
+                    aCr.c1 = bCr.c1 = 1;
+                    d = true;
+                }
+            } else {
+                d |= exchangeFaceExact(aCr, 1, kA, faceA, bCr, 1, kB, faceB);
+            }
+        }
+
+        if ((aCr.c2 | bCr.c2) != 0) {
+            int kA = (ksA >>> 4) & 3;
+            int kB = (ksB >>> 4) & 3;
+            if (kA == ChunkRef.KIND_UNI && kB == ChunkRef.KIND_UNI) {
+                if (exchangeUniExactXZ(uA, uB, 2)) {
+                    aCr.c2 = bCr.c2 = 1;
+                    d = true;
+                }
+            } else {
+                d |= exchangeFaceExact(aCr, 2, kA, faceA, bCr, 2, kB, faceB);
+            }
+        }
+
+        if ((aCr.c3 | bCr.c3) != 0) {
+            int kA = (ksA >>> 6) & 3;
+            int kB = (ksB >>> 6) & 3;
+            if (kA == ChunkRef.KIND_UNI && kB == ChunkRef.KIND_UNI) {
+                if (exchangeUniExactXZ(uA, uB, 3)) {
+                    aCr.c3 = bCr.c3 = 1;
+                    d = true;
+                }
+            } else {
+                d |= exchangeFaceExact(aCr, 3, kA, faceA, bCr, 3, kB, faceB);
+            }
+        }
+
+        if ((aCr.c4 | bCr.c4) != 0) {
+            int kA = (ksA >>> 8) & 3;
+            int kB = (ksB >>> 8) & 3;
+            if (kA == ChunkRef.KIND_UNI && kB == ChunkRef.KIND_UNI) {
+                if (exchangeUniExactXZ(uA, uB, 4)) {
+                    aCr.c4 = bCr.c4 = 1;
+                    d = true;
+                }
+            } else {
+                d |= exchangeFaceExact(aCr, 4, kA, faceA, bCr, 4, kB, faceB);
+            }
+        }
+
+        if ((aCr.c5 | bCr.c5) != 0) {
+            int kA = (ksA >>> 10) & 3;
+            int kB = (ksB >>> 10) & 3;
+            if (kA == ChunkRef.KIND_UNI && kB == ChunkRef.KIND_UNI) {
+                if (exchangeUniExactXZ(uA, uB, 5)) {
+                    aCr.c5 = bCr.c5 = 1;
+                    d = true;
+                }
+            } else {
+                d |= exchangeFaceExact(aCr, 5, kA, faceA, bCr, 5, kB, faceB);
+            }
+        }
+
+        if ((aCr.c6 | bCr.c6) != 0) {
+            int kA = (ksA >>> 12) & 3;
+            int kB = (ksB >>> 12) & 3;
+            if (kA == ChunkRef.KIND_UNI && kB == ChunkRef.KIND_UNI) {
+                if (exchangeUniExactXZ(uA, uB, 6)) {
+                    aCr.c6 = bCr.c6 = 1;
+                    d = true;
+                }
+            } else {
+                d |= exchangeFaceExact(aCr, 6, kA, faceA, bCr, 6, kB, faceB);
+            }
+        }
+
+        if ((aCr.c7 | bCr.c7) != 0) {
+            int kA = (ksA >>> 14) & 3;
+            int kB = (ksB >>> 14) & 3;
+            if (kA == ChunkRef.KIND_UNI && kB == ChunkRef.KIND_UNI) {
+                if (exchangeUniExactXZ(uA, uB, 7)) {
+                    aCr.c7 = bCr.c7 = 1;
+                    d = true;
+                }
+            } else {
+                d |= exchangeFaceExact(aCr, 7, kA, faceA, bCr, 7, kB, faceB);
+            }
+        }
+
+        if ((aCr.c8 | bCr.c8) != 0) {
+            int kA = (ksA >>> 16) & 3;
+            int kB = (ksB >>> 16) & 3;
+            if (kA == ChunkRef.KIND_UNI && kB == ChunkRef.KIND_UNI) {
+                if (exchangeUniExactXZ(uA, uB, 8)) {
+                    aCr.c8 = bCr.c8 = 1;
+                    d = true;
+                }
+            } else {
+                d |= exchangeFaceExact(aCr, 8, kA, faceA, bCr, 8, kB, faceB);
+            }
+        }
+
+        if ((aCr.c9 | bCr.c9) != 0) {
+            int kA = (ksA >>> 18) & 3;
+            int kB = (ksB >>> 18) & 3;
+            if (kA == ChunkRef.KIND_UNI && kB == ChunkRef.KIND_UNI) {
+                if (exchangeUniExactXZ(uA, uB, 9)) {
+                    aCr.c9 = bCr.c9 = 1;
+                    d = true;
+                }
+            } else {
+                d |= exchangeFaceExact(aCr, 9, kA, faceA, bCr, 9, kB, faceB);
+            }
+        }
+
+        if ((aCr.c10 | bCr.c10) != 0) {
+            int kA = (ksA >>> 20) & 3;
+            int kB = (ksB >>> 20) & 3;
+            if (kA == ChunkRef.KIND_UNI && kB == ChunkRef.KIND_UNI) {
+                if (exchangeUniExactXZ(uA, uB, 10)) {
+                    aCr.c10 = bCr.c10 = 1;
+                    d = true;
+                }
+            } else {
+                d |= exchangeFaceExact(aCr, 10, kA, faceA, bCr, 10, kB, faceB);
+            }
+        }
+
+        if ((aCr.c11 | bCr.c11) != 0) {
+            int kA = (ksA >>> 22) & 3;
+            int kB = (ksB >>> 22) & 3;
+            if (kA == ChunkRef.KIND_UNI && kB == ChunkRef.KIND_UNI) {
+                if (exchangeUniExactXZ(uA, uB, 11)) {
+                    aCr.c11 = bCr.c11 = 1;
+                    d = true;
+                }
+            } else {
+                d |= exchangeFaceExact(aCr, 11, kA, faceA, bCr, 11, kB, faceB);
+            }
+        }
+
+        if ((aCr.c12 | bCr.c12) != 0) {
+            int kA = (ksA >>> 24) & 3;
+            int kB = (ksB >>> 24) & 3;
+            if (kA == ChunkRef.KIND_UNI && kB == ChunkRef.KIND_UNI) {
+                if (exchangeUniExactXZ(uA, uB, 12)) {
+                    aCr.c12 = bCr.c12 = 1;
+                    d = true;
+                }
+            } else {
+                d |= exchangeFaceExact(aCr, 12, kA, faceA, bCr, 12, kB, faceB);
+            }
+        }
+
+        if ((aCr.c13 | bCr.c13) != 0) {
+            int kA = (ksA >>> 26) & 3;
+            int kB = (ksB >>> 26) & 3;
+            if (kA == ChunkRef.KIND_UNI && kB == ChunkRef.KIND_UNI) {
+                if (exchangeUniExactXZ(uA, uB, 13)) {
+                    aCr.c13 = bCr.c13 = 1;
+                    d = true;
+                }
+            } else {
+                d |= exchangeFaceExact(aCr, 13, kA, faceA, bCr, 13, kB, faceB);
+            }
+        }
+
+        if ((aCr.c14 | bCr.c14) != 0) {
+            int kA = (ksA >>> 28) & 3;
+            int kB = (ksB >>> 28) & 3;
+            if (kA == ChunkRef.KIND_UNI && kB == ChunkRef.KIND_UNI) {
+                if (exchangeUniExactXZ(uA, uB, 14)) {
+                    aCr.c14 = bCr.c14 = 1;
+                    d = true;
+                }
+            } else {
+                d |= exchangeFaceExact(aCr, 14, kA, faceA, bCr, 14, kB, faceB);
+            }
+        }
+
+        if ((aCr.c15 | bCr.c15) != 0) {
+            int kA = (ksA >>> 30) & 3;
+            int kB = (ksB >>> 30) & 3;
+            if (kA == ChunkRef.KIND_UNI && kB == ChunkRef.KIND_UNI) {
+                if (exchangeUniExactXZ(uA, uB, 15)) {
+                    aCr.c15 = bCr.c15 = 1;
+                    d = true;
+                }
+            } else {
+                d |= exchangeFaceExact(aCr, 15, kA, faceA, bCr, 15, kB, faceB);
+            }
+        }
+        // </editor-fold>
+        if (d) aCr.dirtyFlag = bCr.dirtyFlag = true;
+    }
+
+    static boolean exchangeUniExactY(double[] uni, int a, int b) {
+        double ra = uni[a];
+        double rb = uni[b];
+        if (ra == rb) return false;
+        double avg = 0.5d * (ra + rb);
+        double delta = 0.5d * (ra - rb) * UU_E;
+        uni[a] = avg + delta;
+        uni[b] = avg - delta;
+        return true;
     }
 
     static final class DiffuseYTask extends RecursiveAction {
@@ -1395,16 +1563,165 @@ public final class RadiationSystemNT {
         void work(int start, int end) {
             for (int i = start; i < end; i++) {
                 ChunkRef cr = chunks[i];
-                long m0 = cr.mask0, m1 = cr.mask1, m2 = cr.mask2, m3 = cr.mask3;
-                if ((m0 | m1 | m2 | m3) == 0L) continue;
-                boolean anyChanged = false;
-                for (int sy = parity; sy < 15; sy += 2) {
-                    int kA = cr.getKind(sy);
-                    int kB = cr.getKind(sy + 1);
-                    if (kA == ChunkRef.KIND_NONE || kB == ChunkRef.KIND_NONE) continue;
-                    anyChanged |= exchangeFaceExactY(cr, sy, kA, sy + 1, kB);
+                boolean d = false;
+                int k = cr.sectionKinds;
+                double[] u = cr.uniformRads;
+                // <editor-fold defaultstate="collapsed" desc="unrolled boilerplate">
+                if (parity == 0) {
+                    if ((cr.c0 | cr.c1) != 0) {
+                        int k0 = k & 3;
+                        int k1 = (k >>> 2) & 3;
+                        if (k0 == ChunkRef.KIND_UNI && k1 == ChunkRef.KIND_UNI) {
+                            if (exchangeUniExactY(u, 0, 1)) {
+                                cr.c0 = cr.c1 = 1;
+                                d = true;
+                            }
+                        } else d |= exchangeFaceExactY(cr, 0, k0, 1, k1);
+                    }
+                    if ((cr.c2 | cr.c3) != 0) {
+                        int k2 = (k >>> 4) & 3;
+                        int k3 = (k >>> 6) & 3;
+                        if (k2 == ChunkRef.KIND_UNI && k3 == ChunkRef.KIND_UNI) {
+                            if (exchangeUniExactY(u, 2, 3)) {
+                                cr.c2 = cr.c3 = 1;
+                                d = true;
+                            }
+                        } else d |= exchangeFaceExactY(cr, 2, k2, 3, k3);
+                    }
+                    if ((cr.c4 | cr.c5) != 0) {
+                        int k4 = (k >>> 8) & 3;
+                        int k5 = (k >>> 10) & 3;
+                        if (k4 == ChunkRef.KIND_UNI && k5 == ChunkRef.KIND_UNI) {
+                            if (exchangeUniExactY(u, 4, 5)) {
+                                cr.c4 = cr.c5 = 1;
+                                d = true;
+                            }
+                        } else d |= exchangeFaceExactY(cr, 4, k4, 5, k5);
+                    }
+                    if ((cr.c6 | cr.c7) != 0) {
+                        int k6 = (k >>> 12) & 3;
+                        int k7 = (k >>> 14) & 3;
+                        if (k6 == ChunkRef.KIND_UNI && k7 == ChunkRef.KIND_UNI) {
+                            if (exchangeUniExactY(u, 6, 7)) {
+                                cr.c6 = cr.c7 = 1;
+                                d = true;
+                            }
+                        } else d |= exchangeFaceExactY(cr, 6, k6, 7, k7);
+                    }
+                    if ((cr.c8 | cr.c9) != 0) {
+                        int k8 = (k >>> 16) & 3;
+                        int k9 = (k >>> 18) & 3;
+                        if (k8 == ChunkRef.KIND_UNI && k9 == ChunkRef.KIND_UNI) {
+                            if (exchangeUniExactY(u, 8, 9)) {
+                                cr.c8 = cr.c9 = 1;
+                                d = true;
+                            }
+                        } else d |= exchangeFaceExactY(cr, 8, k8, 9, k9);
+                    }
+                    if ((cr.c10 | cr.c11) != 0) {
+                        int k10 = (k >>> 20) & 3;
+                        int k11 = (k >>> 22) & 3;
+                        if (k10 == ChunkRef.KIND_UNI && k11 == ChunkRef.KIND_UNI) {
+                            if (exchangeUniExactY(u, 10, 11)) {
+                                cr.c10 = cr.c11 = 1;
+                                d = true;
+                            }
+                        } else d |= exchangeFaceExactY(cr, 10, k10, 11, k11);
+                    }
+                    if ((cr.c12 | cr.c13) != 0) {
+                        int k12 = (k >>> 24) & 3;
+                        int k13 = (k >>> 26) & 3;
+                        if (k12 == ChunkRef.KIND_UNI && k13 == ChunkRef.KIND_UNI) {
+                            if (exchangeUniExactY(u, 12, 13)) {
+                                cr.c12 = cr.c13 = 1;
+                                d = true;
+                            }
+                        } else d |= exchangeFaceExactY(cr, 12, k12, 13, k13);
+                    }
+                    if ((cr.c14 | cr.c15) != 0) {
+                        int k14 = (k >>> 28) & 3;
+                        int k15 = (k >>> 30) & 3;
+                        if (k14 == ChunkRef.KIND_UNI && k15 == ChunkRef.KIND_UNI) {
+                            if (exchangeUniExactY(u, 14, 15)) {
+                                cr.c14 = cr.c15 = 1;
+                                d = true;
+                            }
+                        } else d |= exchangeFaceExactY(cr, 14, k14, 15, k15);
+                    }
+                } else {
+                    if ((cr.c1 | cr.c2) != 0) {
+                        int k1 = (k >>> 2) & 3;
+                        int k2 = (k >>> 4) & 3;
+                        if (k1 == ChunkRef.KIND_UNI && k2 == ChunkRef.KIND_UNI) {
+                            if (exchangeUniExactY(u, 1, 2)) {
+                                cr.c1 = cr.c2 = 1;
+                                d = true;
+                            }
+                        } else d |= exchangeFaceExactY(cr, 1, k1, 2, k2);
+                    }
+                    if ((cr.c3 | cr.c4) != 0) {
+                        int k3 = (k >>> 6) & 3;
+                        int k4 = (k >>> 8) & 3;
+                        if (k3 == ChunkRef.KIND_UNI && k4 == ChunkRef.KIND_UNI) {
+                            if (exchangeUniExactY(u, 3, 4)) {
+                                cr.c3 = cr.c4 = 1;
+                                d = true;
+                            }
+                        } else d |= exchangeFaceExactY(cr, 3, k3, 4, k4);
+                    }
+                    if ((cr.c5 | cr.c6) != 0) {
+                        int k5 = (k >>> 10) & 3;
+                        int k6 = (k >>> 12) & 3;
+                        if (k5 == ChunkRef.KIND_UNI && k6 == ChunkRef.KIND_UNI) {
+                            if (exchangeUniExactY(u, 5, 6)) {
+                                cr.c5 = cr.c6 = 1;
+                                d = true;
+                            }
+                        } else d |= exchangeFaceExactY(cr, 5, k5, 6, k6);
+                    }
+                    if ((cr.c7 | cr.c8) != 0) {
+                        int k7 = (k >>> 14) & 3;
+                        int k8 = (k >>> 16) & 3;
+                        if (k7 == ChunkRef.KIND_UNI && k8 == ChunkRef.KIND_UNI) {
+                            if (exchangeUniExactY(u, 7, 8)) {
+                                cr.c7 = cr.c8 = 1;
+                                d = true;
+                            }
+                        } else d |= exchangeFaceExactY(cr, 7, k7, 8, k8);
+                    }
+                    if ((cr.c9 | cr.c10) != 0) {
+                        int k9 = (k >>> 18) & 3;
+                        int k10 = (k >>> 20) & 3;
+                        if (k9 == ChunkRef.KIND_UNI && k10 == ChunkRef.KIND_UNI) {
+                            if (exchangeUniExactY(u, 9, 10)) {
+                                cr.c9 = cr.c10 = 1;
+                                d = true;
+                            }
+                        } else d |= exchangeFaceExactY(cr, 9, k9, 10, k10);
+                    }
+                    if ((cr.c11 | cr.c12) != 0) {
+                        int k11 = (k >>> 22) & 3;
+                        int k12 = (k >>> 24) & 3;
+                        if (k11 == ChunkRef.KIND_UNI && k12 == ChunkRef.KIND_UNI) {
+                            if (exchangeUniExactY(u, 11, 12)) {
+                                cr.c11 = cr.c12 = 1;
+                                d = true;
+                            }
+                        } else d |= exchangeFaceExactY(cr, 11, k11, 12, k12);
+                    }
+                    if ((cr.c13 | cr.c14) != 0) {
+                        int k13 = (k >>> 26) & 3;
+                        int k14 = (k >>> 28) & 3;
+                        if (k13 == ChunkRef.KIND_UNI && k14 == ChunkRef.KIND_UNI) {
+                            if (exchangeUniExactY(u, 13, 14)) {
+                                cr.c13 = cr.c14 = 1;
+                                d = true;
+                            }
+                        } else d |= exchangeFaceExactY(cr, 13, k13, 14, k14);
+                    }
                 }
-                if (anyChanged) cr.dirtyFlag = true;
+                // </editor-fold>
+                if (d) cr.dirtyFlag = true;
             }
         }
     }
@@ -1471,8 +1788,8 @@ public final class RadiationSystemNT {
             double rStar = (ra * invVb + rb * invVa) / denomInv;
             rad = rStar + (ra - rStar) * e;
             other.rad = rStar + (rb - rStar) * e;
-            wake();
-            other.wake();
+            owner.setActive0(sy);
+            other.owner.setActive0(other.sy);
             return true;
         }
 
@@ -1490,8 +1807,8 @@ public final class RadiationSystemNT {
             double rStar = (ra * invVb + rb * 2.44140625E-4) / denomInv;
             other.uniformRads[otherSy] = rStar + (ra - rStar) * e;
             rad = rStar + (rb - rStar) * e;
-            other.wakeUni(otherSy);
-            wake();
+            other.setActive0(otherSy);
+            owner.setActive0(sy);
             return true;
         }
 
@@ -1526,11 +1843,11 @@ public final class RadiationSystemNT {
                 myRad = rStar + (ra - rStar) * e;
                 otherData[idx] = rStar + (rb - rStar) * e;
                 changed = true;
-                other.wake(pi);
+                other.owner.setActiveBit(other.sy, pi);
             }
             if (changed) {
                 rad = myRad;
-                wake();
+                owner.setActive0(sy);
             }
             return changed;
         }
@@ -1550,11 +1867,6 @@ public final class RadiationSystemNT {
                 case 5 -> 15.5d - cx;
                 default -> throw new IllegalArgumentException("Invalid face ordinal: " + face);
             };
-        }
-
-        void wake() {
-            if (rad == 0.0D) return;
-            owner.setActive0(sy);
         }
 
         void updateConnections(int face, int value) {
@@ -1672,13 +1984,12 @@ public final class RadiationSystemNT {
                     double rStar = (ra * invVb + rb * invVa) / denomInv;
                     ra = rStar + (ra - rStar) * e;
                     otherData[idxB] = rStar + (rb - rStar) * e;
-                    changed = true;
-                    myChanged = true;
-                    other.wake(npi);
+                    changed = myChanged = true;
+                    other.owner.setActiveBit(other.sy, npi);
                 }
                 if (myChanged) {
                     myData[idxA] = ra;
-                    wake(pi);
+                    owner.setActiveBit(sy, pi);
                 }
             }
             return changed;
@@ -1714,11 +2025,11 @@ public final class RadiationSystemNT {
                 myData[idx] = rStar + (rb - rStar) * e;
                 changed = true;
                 otherChanged = true;
-                wake(pi);
+                owner.setActiveBit(sy, pi);
             }
             if (otherChanged) {
                 otherUni[otherSy] = ra;
-                other.wakeUni(otherSy);
+                other.setActive0(otherSy);
             }
             return changed;
         }
@@ -1751,18 +2062,13 @@ public final class RadiationSystemNT {
                 rb = rStar + (rb - rStar) * e;
                 changed = true;
                 otherChanged = true;
-                wake(pi);
+                owner.setActiveBit(sy, pi);
             }
             if (otherChanged) {
                 other.rad = rb;
-                other.wake();
+                other.owner.setActive0(other.sy);
             }
             return changed;
-        }
-
-        void wake(int pi) {
-            if (data[pi << 1] == 0.0D) return;
-            owner.setActiveBit(sy, pi);
         }
 
         @Override
@@ -1906,7 +2212,7 @@ public final class RadiationSystemNT {
     //      parity partitioning, and X/Z/Y sweeps do not overlap.
     //      In other words, a section is not exchanged by two tasks at once.
     // Given those, the simulation is allowed to use non-volatile fields and plain RMW:
-    // - ChunkRef mask words (mask0...mask3) are updated via U.getChar + U.putChar (Unsafe here for branchless access).
+    // - ChunkRef mask words (c0...c15)
     // - Radiation values (uniformRads / Single.rad / Multi.data) are also plain.
     // If scheduling is changed (overlap sweeps, allow multiple simultaneous neighbor exchanges per chunk, etc.),
     // these plain accesses are no longer justified and must become atomic or be redesigned.
@@ -2151,7 +2457,7 @@ public final class RadiationSystemNT {
         void addLoadedToBucket(ChunkRef cr) {
             assert cr.mcChunk != null && cr.mcChunk.loaded : "Adding to bucket requires loaded mcChunk";
             assert cr.parityIndex < 0 : "Double-add to parity bucket";
-            int b = (int) ((cr.ck & 1L) | ((cr.ck >>> 31) & 2L));
+            byte b = (byte) ((cr.ck & 1L) | ((cr.ck >>> 31) & 2L));
             int i = parityCounts[b]++;
             ensureParityBucketCapacity(b, parityCounts[b]);
             parityBuckets[b][i] = cr;
@@ -2507,7 +2813,7 @@ public final class RadiationSystemNT {
             cr.north = cr.south = cr.west = cr.east = null;
             cr.mcChunk = null;
             cr.dirtyFlag = false;
-            for (int sy = 0; sy < 16; sy++) cr.clearActiveBitMask(sy);
+            for (int sy = 0; sy < 16; sy++) cr.setLane16(sy, (char) 0);
         }
 
         void removeChunkRef(long ck) {
@@ -2778,7 +3084,7 @@ public final class RadiationSystemNT {
                     if (prev != null) pocketDataPool.recycle(prev.pocketData);
                     owner.sec[sy] = null;
                 }
-                owner.mask0 = owner.mask1 = owner.mask2 = owner.mask3 = 0L;
+                owner.clearAllMasks();
                 owner.sectionKinds = 0;
                 owner.pending = null;
             }
@@ -2807,7 +3113,7 @@ public final class RadiationSystemNT {
 
         void rebuildChunkPocketsLoaded(ChunkRef owner, long sectionKey, @Nullable ExtendedBlockStorage ebs, @Nullable EditTable edits) {
             int sy = Library.getSectionY(sectionKey);
-            owner.clearActiveBitMask(sy);
+            owner.setLane16(sy, (char) 0);
 
             int oldKind = owner.getKind(sy);
             SectionRef old = owner.sec[sy];
@@ -3271,22 +3577,9 @@ public final class RadiationSystemNT {
                     assert cr.mcChunk != null : "Bucket contains unloaded chunk";
                     assert cr.parityIndex >= 0;
                     boolean dirty = cr.dirtyFlag;
-                    long m0 = cr.mask0, m1 = cr.mask1, m2 = cr.mask2, m3 = cr.mask3;
-                    if ((m0 | m1 | m2 | m3) == 0L) {
-                        cr.dirtyFlag = false;
-                        if (dirty) cr.mcChunk.markDirty();
-                        continue;
-                    }
                     long baseSck = Library.sectionToLong(cr.ck, 0);
                     for (int sy = 0; sy < 16; sy++) {
-                        long w = switch (sy >>> 2) {
-                            case 0 -> m0;
-                            case 1 -> m1;
-                            case 2 -> m2;
-                            default -> m3;
-                        };
-                        int laneShift = (sy & 3) << 4;
-                        int lane = (int) ((w >>> laneShift) & 0xFFFFL);
+                        int lane = cr.lane16(sy);
                         if (lane == 0) continue;
 
                         int kind = cr.getKind(sy);
