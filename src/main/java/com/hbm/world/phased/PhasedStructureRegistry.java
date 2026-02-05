@@ -145,7 +145,12 @@ public final class PhasedStructureRegistry {
         }
     }
 
+    public static void onWorldSave() {
+        currentIdData.flush();
+    }
+
     public static void onServerStopped() {
+        onWorldSave();
         currentIdData = null;
         idToEntry = null;
         instanceToId = null;

@@ -589,6 +589,12 @@ public final class PhasedEventHandler {
         }
     }
 
+    @SubscribeEvent
+    public void onWorldSave(WorldEvent.Save e) {
+        // we don't really need to guard !world.isRemote here since this event is posted server-side
+        PhasedStructureRegistry.onWorldSave();
+    }
+
     private static void sweepStaleEntries(WorldServer world, DimensionState state, long now) {
         int startCount = 0;
         for (var bucket : state.structureMap.values()) {
