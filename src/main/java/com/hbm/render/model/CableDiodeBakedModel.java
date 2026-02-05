@@ -30,7 +30,7 @@ public class CableDiodeBakedModel extends AbstractBakedModel {
   private static final float MAX_XYZ = 0.5f + 0.375f;
 
   private final TextureAtlasSprite sprite;
-  private TextureAtlasSprite padSprite;
+  private final TextureAtlasSprite padSprite;
   private final boolean isInventory;
 
   @SuppressWarnings("unchecked")
