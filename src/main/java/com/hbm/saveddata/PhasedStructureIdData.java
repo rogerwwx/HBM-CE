@@ -5,6 +5,8 @@ import com.hbm.world.phased.PhasedStructureRegistry;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.world.WorldServer;
+import net.minecraftforge.common.DimensionManager;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
@@ -30,7 +32,6 @@ public class PhasedStructureIdData {
     private final Int2ObjectOpenHashMap<String> idToKey = new Int2ObjectOpenHashMap<>(64);
     private final Object2IntOpenHashMap<String> stringToId = new Object2IntOpenHashMap<>(128);
     private final Int2ObjectOpenHashMap<String> idToString = new Int2ObjectOpenHashMap<>(128);
-
     private int nextId = 0;
     private int nextStringId = 0;
     private int epoch = 0;
@@ -38,21 +39,29 @@ public class PhasedStructureIdData {
     private File saveFile;
     private boolean dirty = false;
 
-    private PhasedStructureIdData() {
+    /**
+     * Load or create ID mappings for the given server.
+     * <p>
+     * Load sequence:
+     * - WorldServer is constructed and registered in DimensionManager (WorldServer ctor).
+     * - WorldServer.initialize(...) runs before WorldEvent.Load.
+     * - WorldEvent.Load is posted for each dimension.
+     * - initialWorldChunkLoad() runs (spawn chunks load and NBT is read).
+     * <p>
+     * We must initialize before spawn chunk NBT deserializes, but after the overworld save handler exists.
+     * DimensionManager.getWorld(0, false) returns the already-constructed overworld without forcing a load.
+     */
+    public PhasedStructureIdData(MinecraftServer server) {
         keyToId.defaultReturnValue(-1);
         stringToId.defaultReturnValue(-1);
-    }
-
-    /**
-     * Load or create ID mappings for the given server. Dimension 0 (Overworld) must be loaded.
-     */
-    public static PhasedStructureIdData loadForServer(MinecraftServer server) {
-        PhasedStructureIdData data = new PhasedStructureIdData();
-        data.saveFile = new File(server.getWorld(0).getSaveHandler().getWorldDirectory(), FILE_NAME);
-        data.load();
-        data.ensureAllRegistered();
-        data.flush();
-        return data;
+        WorldServer world = DimensionManager.getWorld(0, false);
+        if (world == null) {
+            throw new IllegalStateException("PhasedStructureIdData accessed before overworld is loaded for " + server);
+        }
+        saveFile = new File(world.getSaveHandler().getWorldDirectory(), FILE_NAME);
+        loadFromDisk();
+        ensureAllRegistered();
+        flush();
     }
 
     public boolean isDirty() {
@@ -121,7 +130,7 @@ public class PhasedStructureIdData {
         }
     }
 
-    private void load() {
+    private void loadFromDisk() {
         if (saveFile == null) return;
 
         File dir = saveFile.getParentFile();

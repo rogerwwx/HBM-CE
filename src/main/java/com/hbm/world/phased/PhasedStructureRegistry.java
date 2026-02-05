@@ -13,7 +13,7 @@ import io.netty.buffer.Unpooled;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
-import net.minecraft.server.MinecraftServer;
+import net.minecraft.world.WorldServer;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Range;
@@ -107,9 +107,13 @@ public final class PhasedStructureRegistry {
         return key;
     }
 
-    public static void onServerStarting(MinecraftServer server) {
-        // at this time all worlds has been loaded so it's fine
-        currentIdData = PhasedStructureIdData.loadForServer(server);
+    /**
+     * Initialize ID/string mappings once the overworld save handler is available.
+     * WorldEvent.Load fires before the initial spawn chunk load.
+     */
+    public static void onOverworldLoad(WorldServer world) {
+        if (currentIdData != null) return;
+        currentIdData = new PhasedStructureIdData(world.getMinecraftServer());
         buildDirectMappings();
         epoch = currentIdData.getEpoch();
     }
@@ -146,7 +150,9 @@ public final class PhasedStructureRegistry {
     }
 
     public static void onWorldSave() {
-        currentIdData.flush();
+        if (currentIdData != null) {
+            currentIdData.flush();
+        }
     }
 
     public static void onServerStopped() {

@@ -3,6 +3,7 @@ package com.hbm.world.phased;
 import com.hbm.config.StructureConfig;
 import com.hbm.lib.Library;
 import com.hbm.main.MainRegistry;
+import com.hbm.saveddata.FluidIdRemapper;
 import com.hbm.util.BufferUtil;
 import com.hbm.world.phased.DynamicStructureDispatcher.PendingDynamicStructure;
 import com.hbm.world.phased.PhasedStructureGenerator.PhasedStructureStart;
@@ -560,6 +561,10 @@ public final class PhasedEventHandler {
     public void onWorldLoad(WorldEvent.Load event) {
         var world = event.getWorld();
         if (world.isRemote) return;
+        if (world.provider.getDimension() == 0) {
+            PhasedStructureRegistry.onOverworldLoad((WorldServer) world);
+            FluidIdRemapper.initialize();
+        }
         STATES.put(world.provider.getDimension(), new DimensionState(world.provider.getDimension(), (WorldServer) world));
     }
 

@@ -5,7 +5,6 @@ import com.hbm.inventory.fluid.Fluids;
 import com.hbm.world.phased.PhasedStructureRegistry;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.NotNullByDefault;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.UnknownNullability;
@@ -19,14 +18,14 @@ public final class FluidIdRemapper {
     private FluidIdRemapper() {
     }
 
-    public static void onServerStarting() {
+    public static void initialize() {
         FluidType[] allFluids = Fluids.getAll();
         fluidToStringId = new Reference2IntOpenHashMap<>(allFluids.length);
         fluidToStringId.defaultReturnValue(-1);
         stringIdToFluid = new Int2ObjectOpenHashMap<>(allFluids.length);
         for (FluidType fluid : allFluids) {
             int stringId = PhasedStructureRegistry.getStringId(fluid.getName());
-            if (stringId < 0) throw new IllegalStateException("FluidIdRemapper#onServerStarting called before PhasedStructureRegistry#onServerStarting");
+            if (stringId < 0) throw new IllegalStateException("FluidIdRemapper#initialize called before PhasedStructureRegistry#onOverworldLoad");
             fluidToStringId.put(fluid, stringId);
             stringIdToFluid.put(stringId, fluid);
         }
@@ -43,7 +42,7 @@ public final class FluidIdRemapper {
     }
 
     public static FluidType getFluid(int stringId) {
-        if (stringIdToFluid == null) throw new IllegalStateException("FluidIdRemapper#getStringId called before initialization");
+        if (stringIdToFluid == null) throw new IllegalStateException("FluidIdRemapper#getFluid called before initialization");
         FluidType fluid = stringIdToFluid.get(stringId);
         return fluid == null ? Fluids.NONE : fluid;
     }
