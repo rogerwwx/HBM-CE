@@ -56,8 +56,7 @@ public class ItemRenderCrucible extends TEISRBase {
         boolean depleted = ItemCrucible.getCharges(itemStackIn) == 0;
 
         switch (type) {
-            case FIRST_PERSON_LEFT_HAND:
-            case FIRST_PERSON_RIGHT_HAND: {
+            case FIRST_PERSON_LEFT_HAND, FIRST_PERSON_RIGHT_HAND -> {
                 EnumHand hand = type == TransformType.FIRST_PERSON_RIGHT_HAND ? EnumHand.MAIN_HAND : EnumHand.OFF_HAND;
 
                 GlStateManager.scale(5, 5, 5);
@@ -166,15 +165,12 @@ public class ItemRenderCrucible extends TEISRBase {
                             TrailRenderer2.color[2] = 0.2F;
                             TrailRenderer2.color[3] = 0.5F;
                             if (GeneralConfig.bloom) {
-                                // 修复：在渲染粒子 Bloom 时也保存 FBO
-                                int currentFBO = GL11.glGetInteger(0x8CA6); // GL_DRAW_FRAMEBUFFER_BINDING
                                 HbmShaderManager2.bloomData.bindFramebuffer(true);
                                 for (ParticleFirstPerson p : ModEventHandlerClient.firstPersonAuxParticles) {
                                     if (p.getType() == ParticleType.CRUCIBLE)
                                         p.renderParticle(Tessellator.getInstance().getBuffer(), entity, MainRegistry.proxy.partialTicks(), 0, 0, 0, 0, 0);
                                 }
-                                // 修复：切回保存的 FBO，而不是强制切回 MC 默认 FBO
-                                OpenGlHelper.glBindFramebuffer(OpenGlHelper.GL_FRAMEBUFFER, currentFBO);
+                                Minecraft.getMinecraft().getFramebuffer().bindFramebuffer(true);
                             }
 
                             TrailRenderer2.color[1] = 1F;
@@ -203,16 +199,11 @@ public class ItemRenderCrucible extends TEISRBase {
                             bladePrevDstA = RenderUtil.getBlendDstAlphaFactor();
 
                             if (!bladePrevBlend) GlStateManager.enableBlend();
-                            // 修复重点：使用标准的混合模式，避免破坏光影的 GBuffer 数据
                             GlStateManager.blendFunc(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA);
-
-                            // 修复重点：绝对不要 disableLighting！
-                            // 光影需要光照开启才能获取法线。如果不开启，法线缺失会导致计算结果为黑色。
-                            // if (bladePrevLighting) GlStateManager.disableLighting(); // 已注释
+                            if (bladePrevLighting) GlStateManager.disableLighting();
 
                             lastX = OpenGlHelper.lastBrightnessX;
                             lastY = OpenGlHelper.lastBrightnessY;
-                            // 修复重点：通过设置光照贴图为最大值来实现“发光”，而不是关闭光照
                             OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240F, 240F);
 
                             GlStateManager.color(1, 1, 1, 0.7F);
@@ -227,28 +218,18 @@ public class ItemRenderCrucible extends TEISRBase {
                     public void postRender(int prevFrame, int currentFrame, int model, float diffN, String modelName) {
                         if (modelName.equals("Blade")) {
                             GlStateManager.color(1F, 1F, 1F, 1);
-                            // Bloom 层可以使用叠加混合，但建议关闭深度写入以防止 Z-fighting
                             GlStateManager.blendFunc(SourceFactor.SRC_ALPHA, DestFactor.ONE);
-                            GlStateManager.depthMask(false);
                             Minecraft.getMinecraft().getTextureManager().bindTexture(ResourceManager.crucible_blade_bloom);
-
                             if (GeneralConfig.bloom) {
-                                // 修复重点：保存当前绑定的 Framebuffer (兼容光影)
-                                int currentFBO = GL11.glGetInteger(0x8CA6); // GL_DRAW_FRAMEBUFFER_BINDING
-
                                 HbmShaderManager2.bloomData.bindFramebuffer(true);
                                 GL11.glCallList(model);
-
-                                // 修复重点：恢复之前的 FBO，而不是 MC 的默认 FBO
-                                OpenGlHelper.glBindFramebuffer(OpenGlHelper.GL_FRAMEBUFFER, currentFBO);
+                                Minecraft.getMinecraft().getFramebuffer().bindFramebuffer(true);
                             }
-                            GlStateManager.depthMask(true); // 恢复深度写入
                             GlStateManager.disableBlend();
 
                             if (GeneralConfig.heatDistortion && diffN > 0.6) {
                                 GlStateManager.scale(1.15, 1.15, 1.05);
                                 GlStateManager.depthMask(false);
-                                // 注意：如果 distort 内部也切换了 FBO，可能还需要类似的修复，但这里假设 distort 是安全的
                                 HbmShaderManager2.distort(0.5F, () -> GL11.glCallList(model));
                                 GlStateManager.depthMask(true);
                             }
@@ -258,18 +239,12 @@ public class ItemRenderCrucible extends TEISRBase {
                             GlStateManager.color(1, 1, 1, 1);
                             GlStateManager.tryBlendFuncSeparate(bladePrevSrc, bladePrevDst, bladePrevSrcA, bladePrevDstA);
                             if (!bladePrevBlend) GlStateManager.disableBlend();
-
-                            // 之前没有 disableLighting，所以这里也不需要 enableLighting
-                            // if (bladePrevLighting) GlStateManager.enableLighting();
+                            if (bladePrevLighting) GlStateManager.enableLighting();
                         }
                     }
                 });
             }
-            case THIRD_PERSON_LEFT_HAND:
-            case THIRD_PERSON_RIGHT_HAND:
-            case HEAD:
-            case FIXED:
-            case GROUND: {
+            case THIRD_PERSON_LEFT_HAND, THIRD_PERSON_RIGHT_HAND, HEAD, FIXED, GROUND -> {
                 GlStateManager.translate(0.5, -0.3, 0.5);
                 GlStateManager.scale(0.4, 0.4, 0.4);
                 Minecraft.getMinecraft().renderEngine.bindTexture(ResourceManager.crucible_hilt);
@@ -285,8 +260,7 @@ public class ItemRenderCrucible extends TEISRBase {
                 final float prevLX = OpenGlHelper.lastBrightnessX;
                 final float prevLY = OpenGlHelper.lastBrightnessY;
 
-                // 第三方视角同理：不要关闭 Lighting，只改 Lightmap
-                // if (prevLighting) GlStateManager.disableLighting(); // 已注释
+                if (prevLighting) GlStateManager.disableLighting();
                 if (prevCull) GlStateManager.disableCull();
                 OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240F, 240F);
 
@@ -296,12 +270,11 @@ public class ItemRenderCrucible extends TEISRBase {
 
                 OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, prevLX, prevLY);
                 if (prevCull) GlStateManager.enableCull();
-                // if (prevLighting) GlStateManager.enableLighting(); // 已注释
+                if (prevLighting) GlStateManager.enableLighting();
 
                 GlStateManager.popMatrix();
-                break; // 原代码这里漏了break，虽然在switch最后没影响，但为了规范补上
             }
-            case GUI: {
+            case GUI -> {
                 GlStateManager.translate(0.15, 0.15, 0);
                 GlStateManager.rotate(-135 + 90, 0, 0, 1);
                 GlStateManager.rotate(90, 0, 1, 0);
@@ -316,10 +289,8 @@ public class ItemRenderCrucible extends TEISRBase {
                 GlStateManager.translate(0.005, 0, 0);
                 Minecraft.getMinecraft().renderEngine.bindTexture(ResourceManager.crucible_blade);
                 ResourceManager.crucible.renderPart("Blade");
-                break;
             }
-            case NONE: {
-                break;
+            case NONE -> {
             }
         }
         if (prevShade != GL11.GL_SMOOTH) GlStateManager.shadeModel(prevShade);
