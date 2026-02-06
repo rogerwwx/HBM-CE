@@ -2185,6 +2185,7 @@ hbm.key.dash=冲刺 (在config中解绑)
 hbm.key.gunPrimary=主手开火
 hbm.key.gunSecondary=副手开火
 hbm.key.gunTertitary=枪械瞄准镜
+hbm.key.qmaw=打开QMAW
 hbm.key.reload=装弹
 hbm.key.toggleBack=开关 喷气背包
 hbm.key.toggleHUD=开关 HUD

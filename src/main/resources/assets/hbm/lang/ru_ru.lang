@@ -6116,6 +6116,7 @@ key.categories.hbm.dash=Рывок
 key.categories.hbm.gunPrimary=Основной огонь
 key.categories.hbm.gunSecondary=Альтернативный огонь
 key.categories.hbm.gunTertitary=Переключить прицел
+key.categories.hbm.qmaw=Открыть краткое руководство
 key.categories.hbm.reload=Перезарядить
 key.categories.hbm.toggleBack=Включить ранец
 key.categories.hbm.toggleHUD=Включить HUD
