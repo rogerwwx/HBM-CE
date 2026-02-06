@@ -3,12 +3,14 @@ package com.hbm.world.phased;
 import com.hbm.config.StructureConfig;
 import com.hbm.lib.Library;
 import com.hbm.main.MainRegistry;
+import com.hbm.saveddata.FluidIdRemapper;
 import com.hbm.util.BufferUtil;
 import com.hbm.world.phased.DynamicStructureDispatcher.PendingDynamicStructure;
 import com.hbm.world.phased.PhasedStructureGenerator.PhasedStructureStart;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.longs.LongIterator;
 import it.unimi.dsi.fastutil.longs.LongList;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.objects.ReferenceLinkedOpenHashSet;
@@ -23,8 +25,10 @@ import net.minecraftforge.event.world.ChunkDataEvent;
 import net.minecraftforge.event.world.ChunkEvent;
 import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fml.common.gameevent.TickEvent;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 
 /**
  * Handles persistence and event routing for the phased worldgen system.
@@ -37,16 +41,12 @@ import java.util.ArrayList;
  *   </li>
  *   <li><b>Unload Sequence:</b>
  *     <ol>
- *       <li>{@link ChunkEvent.Unload} - Fired first. Chunk is marked for unload.</li>
- *       <li>{@link ChunkDataEvent.Save} - Fired after unload. Data is serialized.</li>
+ *       <li>Too complex; see comment at {@link com.hbm.handler.radiation.RadiationSystemNT#onChunkUnload}.</li>
  *     </ol>
  *   </li>
- *   <li><b>Periodic Save:</b>
- *     <ul>
- *       <li>{@link ChunkDataEvent.Save} fires <b>without</b> a preceding {@link ChunkEvent.Unload}.</li>
- *     </ul>
- *   </li>
  * </ul>
+ *
+ * @author mlbv
  */
 public final class PhasedEventHandler {
 
@@ -60,6 +60,10 @@ public final class PhasedEventHandler {
     private static final ByteBuf SHARED_DIRECT_BUF = Unpooled.directBuffer(4096);
     private static final Int2ObjectOpenHashMap<DimensionState> STATES = new Int2ObjectOpenHashMap<>();
     private static final Int2ObjectOpenHashMap<ArrayList<DynamicStructureDispatcher.PendingDynamicStructure>> DYNAMIC_GROUPS = new Int2ObjectOpenHashMap<>();
+    private static final int SWEEP_INTERVAL_TICKS = 20 * 60; // 1 minute
+    private static final int BASE_TTL_TICKS = 20 * 60 * 30; // 30 minutes
+    private static final int MIN_TTL_TICKS = 20 * 60 * 5; // 5 minutes
+    private static final int PRESSURE_SOFT_CAP = 10_000;
 
     private PhasedEventHandler() {
     }
@@ -91,12 +95,11 @@ public final class PhasedEventHandler {
         data.removeTag(TAG_DYNAMIC_LEGACY);
     }
 
-    private static int writePhasedSection(ByteBuf out, WorldServer world, long chunkKey) {
-        DimensionState state = getState(world);
-
+    private static int writePhasedSection(ByteBuf out, DimensionState state, long chunkKey) {
         ArrayList<PhasedStructureStart> bucket = state.structureMap.get(chunkKey);
         if (bucket == null || bucket.isEmpty()) return 0;
 
+        long now = state.world.getTotalWorldTime();
         var validCount = 0;
         for (PhasedStructureStart start : bucket) {
             if (start == null || !start.isSerializable()) continue;
@@ -107,6 +110,7 @@ public final class PhasedEventHandler {
         var startIndex = out.writerIndex();
         BufferUtil.writeVarInt(out, validCount);
 
+        ArrayList<PhasedStructureStart> written = new ArrayList<>(validCount);
         var actuallyWritten = 0;
         for (PhasedStructureStart start : bucket) {
             if (start == null || !start.isSerializable()) continue;
@@ -115,6 +119,7 @@ public final class PhasedEventHandler {
             try {
                 start.writeToBuf(out);
                 actuallyWritten++;
+                written.add(start);
             } catch (Exception e) {
                 out.writerIndex(entryStart);
                 MainRegistry.logger.warn("Failed to serialize phased structure: {}", e.getMessage());
@@ -124,6 +129,7 @@ public final class PhasedEventHandler {
         // If count mismatch, reset entire section
         if (actuallyWritten != validCount) {
             out.writerIndex(startIndex);
+            written.clear();
             if (actuallyWritten == 0) return 0;
 
             BufferUtil.writeVarInt(out, actuallyWritten);
@@ -131,12 +137,16 @@ public final class PhasedEventHandler {
                 if (start == null || !start.isSerializable()) continue;
                 try {
                     start.writeToBuf(out);
+                    written.add(start);
                 } catch (Exception e) {
                     MainRegistry.logger.warn("Failed to serialize phased structure in fallback loop: {}", e.getMessage());
                 }
             }
         }
 
+        for (PhasedStructureStart start : written) {
+            start.markSaved(now);
+        }
         return out.writerIndex() - startIndex;
     }
 
@@ -144,6 +154,7 @@ public final class PhasedEventHandler {
         if (!in.isReadable()) return;
 
         DimensionState state = getState(world);
+        long now = world.getTotalWorldTime();
 
         ArrayList<PhasedStructureStart> existing = state.structureMap.get(chunkKey);
         var skipLoad = existing != null && !existing.isEmpty();
@@ -197,6 +208,7 @@ public final class PhasedEventHandler {
                     continue;
                 }
 
+                start.markLoaded(now);
                 start.registerTasksForRemaining();
                 if (!start.isSerializable()) {
                     PhasedStructureStart.recycle(start);
@@ -264,12 +276,11 @@ public final class PhasedEventHandler {
         }
     }
 
-    private static int writeDynamicSection(ByteBuf out, WorldServer world, long chunkKey) {
-        DimensionState state = getState(world);
-
+    private static int writeDynamicSection(ByteBuf out, DimensionState state, long chunkKey) {
         ArrayList<PendingDynamicStructure> jobs = state.jobsByOriginChunk.get(chunkKey);
         if (jobs == null || jobs.isEmpty()) return 0;
 
+        long now = state.world.getTotalWorldTime();
         // Group jobs by structure ID
         DYNAMIC_GROUPS.clear();
         for (PendingDynamicStructure job : jobs) {
@@ -313,8 +324,10 @@ public final class PhasedEventHandler {
                 out.writeInt(0);
 
                 var payloadStart = out.writerIndex();
+                boolean wrote = false;
                 try {
                     PhasedStructureRegistry.serialize(job.getStructure(), out);
+                    wrote = true;
                 } catch (Exception ex) {
                     MainRegistry.logger.warn("Failed to serialize dynamic structure {} at {}: {}", job.getStructure().getClass().getSimpleName(), job.getOrigin(), ex.getMessage());
                     out.writerIndex(payloadStart);
@@ -322,9 +335,13 @@ public final class PhasedEventHandler {
 
                 var len = out.writerIndex() - payloadStart;
                 out.setInt(lenIndex, len);
+                if (wrote) {
+                    job.markSaved(now);
+                }
             }
         }
 
+        DYNAMIC_GROUPS.clear();
         return out.writerIndex() - startIndex;
     }
 
@@ -341,6 +358,7 @@ public final class PhasedEventHandler {
 
         var provider = world.getChunkProvider();
         long worldSeed = state.worldSeed;
+        long now = world.getTotalWorldTime();
 
         for (int g = 0; g < groupCount; g++) {
             var structureId = BufferUtil.readVarInt(in);
@@ -376,6 +394,8 @@ public final class PhasedEventHandler {
 
                 LongList watched = resolveOffsets(structure, absOrigin);
                 var job = PendingDynamicStructure.borrow(structure, absOrigin, worldSeed, layoutSeed, watched);
+                job.touch(now);
+                job.markSaved(now);
 
                 if (job.evaluate(provider)) {
                     job.run(world);
@@ -402,8 +422,10 @@ public final class PhasedEventHandler {
         ReferenceLinkedOpenHashSet<AbstractChunkWaitJob> waiters = state.waitingJobs.remove(chunkKey);
         if (waiters == null || waiters.isEmpty()) return;
 
+        long now = world.getTotalWorldTime();
         for (AbstractChunkWaitJob job : waiters) {
             job.waitingOn.remove(chunkKey);
+            job.touch(now);
 
             if (job.waitingOn.isEmpty()) {
                 job.onJobReady(state, world);
@@ -443,6 +465,7 @@ public final class PhasedEventHandler {
         World world = event.getWorld();
         if (world.isRemote) return;
         WorldServer server = (WorldServer) world;
+        DimensionState state = getState(server);
 
         NBTTagCompound data = event.getData();
         removeLegacyTags(data);
@@ -462,7 +485,7 @@ public final class PhasedEventHandler {
 
         // Now write phased data
         int phasedStart = out.writerIndex();
-        int phasedLen = writePhasedSection(out, server, chunkKey);
+        int phasedLen = writePhasedSection(out, state, chunkKey);
         if (phasedLen == 0) {
             out.writerIndex(phasedStart);
         }
@@ -470,12 +493,11 @@ public final class PhasedEventHandler {
 
         // Now write dynamic data
         int dynamicStart = out.writerIndex();
-        int dynamicLen = StructureConfig.enableDynamicStructureSaving ? writeDynamicSection(out, server, chunkKey) : 0;
+        int dynamicLen = StructureConfig.enableDynamicStructureSaving ? writeDynamicSection(out, state, chunkKey) : 0;
         if (dynamicLen == 0) {
             out.writerIndex(dynamicStart);
         }
         out.setInt(dynamicLenIndex, dynamicLen);
-
         if (phasedLen == 0 && dynamicLen == 0) {
             data.removeTag(TAG_DATA);
             return;
@@ -539,7 +561,27 @@ public final class PhasedEventHandler {
     public void onWorldLoad(WorldEvent.Load event) {
         var world = event.getWorld();
         if (world.isRemote) return;
+        if (world.provider.getDimension() == 0) {
+            PhasedStructureRegistry.onOverworldLoad((WorldServer) world);
+            FluidIdRemapper.initialize();
+        }
         STATES.put(world.provider.getDimension(), new DimensionState(world.provider.getDimension(), (WorldServer) world));
+    }
+
+    @SubscribeEvent
+    public void onWorldTick(TickEvent.WorldTickEvent event) {
+        if (event.phase != TickEvent.Phase.END) return;
+        if (event.world.isRemote) return;
+        WorldServer world = (WorldServer) event.world;
+        DimensionState state = STATES.get(world.provider.getDimension());
+        if (state == null) return;
+        if (state.processingTasks) return;
+        long now = world.getTotalWorldTime();
+        if (state.lastSweepTick != Long.MIN_VALUE && now - state.lastSweepTick < SWEEP_INTERVAL_TICKS) {
+            return;
+        }
+        state.lastSweepTick = now;
+        sweepStaleEntries(world, state, now);
     }
 
     @SubscribeEvent
@@ -552,9 +594,158 @@ public final class PhasedEventHandler {
         }
     }
 
+    @SubscribeEvent
+    public void onWorldSave(WorldEvent.Save e) {
+        // we don't really need to guard !world.isRemote here since this event is posted server-side
+        PhasedStructureRegistry.onWorldSave();
+    }
+
+    private static void sweepStaleEntries(WorldServer world, DimensionState state, long now) {
+        int startCount = 0;
+        for (var bucket : state.structureMap.values()) {
+            startCount += bucket.size();
+        }
+        int dynamicCount = 0;
+        for (var bucket : state.jobsByOriginChunk.values()) {
+            dynamicCount += bucket.size();
+        }
+        int waitingCount = 0;
+        for (var set : state.waitingJobs.values()) {
+            waitingCount += set.size();
+        }
+        int componentCount = 0;
+        for (var list : state.componentsByChunk.values()) {
+            componentCount += list.size();
+        }
+
+        int total = startCount + dynamicCount + waitingCount + componentCount;
+        long ttl = computeAdaptiveTtl(total);
+
+        var provider = world.getChunkProvider();
+
+        // Evict phased starts that are clean and inactive.
+        var startIter = state.structureMap.long2ObjectEntrySet().fastIterator();
+        while (startIter.hasNext()) {
+            var entry = startIter.next();
+            long originKey = entry.getLongKey();
+            ArrayList<PhasedStructureStart> bucket = entry.getValue();
+            if (bucket == null || bucket.isEmpty()) {
+                startIter.remove();
+                continue;
+            }
+
+            Chunk originChunk = provider.loadedChunks.get(originKey);
+            boolean originLoaded = originChunk != null && originChunk.loaded;
+            if (!originLoaded) {
+                for (int i = bucket.size() - 1; i >= 0; i--) {
+                    PhasedStructureStart start = bucket.get(i);
+                    if (start == null) {
+                        bucket.remove(i);
+                        continue;
+                    }
+                    if (start.isDirty()) continue;
+                    long lastTouched = start.getLastTouchedTick();
+                    if (lastTouched != Long.MIN_VALUE && now - lastTouched < ttl) continue;
+                    PhasedStructureGenerator.evictStart(state, start);
+                    PhasedStructureStart.recycle(start);
+                    bucket.remove(i);
+                }
+            }
+
+            if (bucket.isEmpty()) {
+                startIter.remove();
+            }
+        }
+
+        // Evict dynamic jobs once clean and inactive (or if saving is disabled).
+        var jobIter = state.jobsByOriginChunk.long2ObjectEntrySet().fastIterator();
+        while (jobIter.hasNext()) {
+            var entry = jobIter.next();
+            long originKey = entry.getLongKey();
+            ArrayList<PendingDynamicStructure> jobs = entry.getValue();
+            if (jobs == null || jobs.isEmpty()) {
+                jobIter.remove();
+                continue;
+            }
+
+            Chunk originChunk = provider.loadedChunks.get(originKey);
+            boolean originLoaded = originChunk != null && originChunk.loaded;
+            if (!originLoaded) {
+                for (int i = jobs.size() - 1; i >= 0; i--) {
+                    PendingDynamicStructure job = jobs.get(i);
+                    if (job == null) {
+                        jobs.remove(i);
+                        continue;
+                    }
+                    if (job.lastTouchedTick != Long.MIN_VALUE && now - job.lastTouchedTick < ttl) continue;
+                    if (StructureConfig.enableDynamicStructureSaving && job.isDirty()) continue;
+                    unregisterWaitJob(state, job);
+                    PendingDynamicStructure.recycle(job);
+                    jobs.remove(i);
+                }
+            }
+
+            if (jobs.isEmpty()) {
+                jobIter.remove();
+            }
+        }
+
+        // Evict stale pending validation jobs to prevent unbounded retention.
+        HashSet<AbstractChunkWaitJob> toEvict = null;
+        for (var set : state.waitingJobs.values()) {
+            if (set == null || set.isEmpty()) continue;
+            for (AbstractChunkWaitJob job : set) {
+                if (!(job instanceof PhasedStructureGenerator.PendingValidationJob)) continue;
+                if (job.lastTouchedTick != Long.MIN_VALUE && now - job.lastTouchedTick < ttl) continue;
+                long originKey = job.getOriginChunkKey();
+                Chunk originChunk = provider.loadedChunks.get(originKey);
+                if (originChunk != null && originChunk.loaded) continue;
+                if (toEvict == null) toEvict = new HashSet<>();
+                toEvict.add(job);
+            }
+        }
+        if (toEvict != null) {
+            for (AbstractChunkWaitJob job : toEvict) {
+                unregisterWaitJob(state, job);
+                job.recycle();
+            }
+        }
+    }
+
+    private static long computeAdaptiveTtl(int total) {
+        if (total <= PRESSURE_SOFT_CAP) {
+            return BASE_TTL_TICKS;
+        }
+        long scaled = (long) BASE_TTL_TICKS * (long) PRESSURE_SOFT_CAP / Math.max(1, total);
+        return Math.max(MIN_TTL_TICKS, scaled);
+    }
+
+    static void unregisterWaitJob(DimensionState state, AbstractChunkWaitJob job) {
+        LongIterator iterator = job.waitingOn.iterator();
+        while (iterator.hasNext()) {
+            long key = iterator.nextLong();
+            ReferenceLinkedOpenHashSet<AbstractChunkWaitJob> waiters = state.waitingJobs.get(key);
+            if (waiters == null) continue;
+            waiters.remove(job);
+            if (waiters.isEmpty()) {
+                state.waitingJobs.remove(key);
+            }
+        }
+        job.waitingOn.clear();
+    }
+
     static abstract class AbstractChunkWaitJob {
         final LongOpenHashSet waitingOn = new LongOpenHashSet(16);
+        long lastTouchedTick = Long.MIN_VALUE;
+
+        void touch(long now) {
+            lastTouchedTick = now;
+        }
 
         abstract void onJobReady(DimensionState state, WorldServer world);
+
+        abstract long getOriginChunkKey();
+
+        abstract void recycle();
     }
 }

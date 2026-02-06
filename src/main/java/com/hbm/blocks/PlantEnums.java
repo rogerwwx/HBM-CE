@@ -2,7 +2,7 @@ package com.hbm.blocks;
 
 public class PlantEnums {
 
-    public static enum EnumDeadPlantType {
+    public enum EnumDeadPlantType {
         GENERIC,
         GRASS,
         FLOWER,
@@ -12,7 +12,7 @@ public class PlantEnums {
         public static final EnumDeadPlantType[] VALUES = values();
     }
 
-    public static enum EnumFlowerPlantType {
+    public enum EnumFlowerPlantType {
         FOXGLOVE,
         HEMP,
         MUSTARD_WILLOW_0(true),
@@ -28,7 +28,7 @@ public class PlantEnums {
         EnumFlowerPlantType(){ this.needsOil = false;}
     }
 
-    public static enum EnumTallPlantType {
+    public enum EnumTallPlantType {
         HEMP_LOWER(false),
         HEMP_UPPER(false),
         MUSTARD_WILLOW_2_LOWER,

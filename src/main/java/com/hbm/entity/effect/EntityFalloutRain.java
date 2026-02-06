@@ -7,8 +7,10 @@ import com.hbm.config.FalloutConfigJSON;
 import com.hbm.config.FalloutConfigJSON.FalloutEntry;
 import com.hbm.config.WorldConfig;
 import com.hbm.entity.logic.EntityExplosionChunkloading;
+import com.hbm.handler.threading.BombForkJoinPool;
 import com.hbm.interfaces.AutoRegister;
 import com.hbm.lib.Library;
+import com.hbm.lib.maps.NonBlockingHashMapLong;
 import com.hbm.lib.maps.NonBlockingLong2LongHashMap;
 import com.hbm.lib.queues.MpmcUnboundedXaddArrayLongQueue;
 import com.hbm.lib.queues.MpscUnboundedXaddArrayLongQueue;
@@ -41,75 +43,82 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.LockSupport;
 
 import static com.hbm.config.BombConfig.safeCommit;
 import static com.hbm.lib.internal.UnsafeHolder.U;
 import static com.hbm.lib.internal.UnsafeHolder.fieldOffset;
 
 @AutoRegister(name = "entity_fallout_rain", trackingRange = 1000)
-public class EntityFalloutRain extends EntityExplosionChunkloading {
+public class EntityFalloutRain extends EntityExplosionChunkloading implements BombForkJoinPool.IJobCancellable {
 
-    private static final DataParameter<Integer> SCALE = EntityDataManager.createKey(EntityFalloutRain.class, DataSerializers.VARINT);
-    private static final int MAX_SOLID_DEPTH = 3;
-    private static final int MIN_ANGLE_STEPS = 18;
-    private static final int SPOKE_STEP_BLOCKS = 8;
+    static final DataParameter<Integer> SCALE = EntityDataManager.createKey(EntityFalloutRain.class, DataSerializers.VARINT);
+    static final int MAX_SOLID_DEPTH = 3;
+    static final int MIN_ANGLE_STEPS = 18;
+    static final int SPOKE_STEP_BLOCKS = 8;
 
-    private static final ThreadLocal<MutableBlockPos> TL_POS = ThreadLocal.withInitial(MutableBlockPos::new);
-    private static final ThreadLocal<WorkerScratch> TL_WORKER = ThreadLocal.withInitial(WorkerScratch::new);
+    static final ThreadLocal<MutableBlockPos> TL_POS = ThreadLocal.withInitial(MutableBlockPos::new);
+    static final ThreadLocal<WorkerScratch> TL_WORKER = ThreadLocal.withInitial(WorkerScratch::new);
 
-    private static final long EMPTY_LONG = Long.MIN_VALUE;
-    private static final long WAIT_INNER = 1L;
-    private static final long WAIT_OUTER = 2L;
+    static final long EMPTY_LONG = Long.MIN_VALUE;
+    static final long WAIT_INNER = 1L;
+    static final long WAIT_OUTER = 2L;
 
-    private static final long OFF_PENDING_CHUNKS = fieldOffset(EntityFalloutRain.class, "pendingChunks");
-    private static final long OFF_PENDING_MAIN = fieldOffset(EntityFalloutRain.class, "pendingMainThreadNotifies");
-    private static final long OFF_MAP_ACQUIRED = fieldOffset(EntityFalloutRain.class, "mapAcquired");
-    private static final long OFF_FINISH_QUEUED = fieldOffset(EntityFalloutRain.class, "finishQueued");
-    private static final long OFF_FINISHED = fieldOffset(EntityFalloutRain.class, "finished");
-    private static final long OFF_INNER_CURSOR = fieldOffset(EntityFalloutRain.class, "innerCursor");
-    private static final long OFF_OUTER_CURSOR = fieldOffset(EntityFalloutRain.class, "outerCursor");
+    static final long OFF_PENDING_CHUNKS = fieldOffset(EntityFalloutRain.class, "pendingChunks");
+    static final long OFF_PENDING_MAIN = fieldOffset(EntityFalloutRain.class, "pendingMainThreadNotifies");
+    static final long OFF_MAP_ACQUIRED = fieldOffset(EntityFalloutRain.class, "mapAcquired");
+    static final long OFF_FINISH_QUEUED = fieldOffset(EntityFalloutRain.class, "finishQueued");
+    static final long OFF_FINISHED = fieldOffset(EntityFalloutRain.class, "finished");
+    static final long OFF_INNER_CURSOR = fieldOffset(EntityFalloutRain.class, "innerCursor");
+    static final long OFF_OUTER_CURSOR = fieldOffset(EntityFalloutRain.class, "outerCursor");
+    static final long OFF_POOL_ACQUIRED = fieldOffset(EntityFalloutRain.class, "poolAcquired");
+    static final long OFF_ACTIVE_WORKERS = fieldOffset(EntityFalloutRain.class, "activeWorkers");
+    static final long OFF_JOB_REGISTERED = fieldOffset(EntityFalloutRain.class, "jobRegistered");
+    static final int WORKER_BATCH = 32;
     public UUID detonator;
-    private LongArrayList chunksToProcess;
-    private LongArrayList outerChunksToProcess;
-    private MpmcUnboundedXaddArrayLongQueue qInner;
-    private MpmcUnboundedXaddArrayLongQueue qOuter;
-    private MpscUnboundedXaddArrayLongQueue chunkLoadQueue;
-    private MpscUnboundedXaddArrayQueue<Runnable> mainTasks;
-    private NonBlockingLong2LongHashMap waitingRoom;
-    private Long2IntOpenHashMap sectionMaskByChunk;
-    private MainScratch mainScratch;
+    NonBlockingHashMapLong<Chunk> mirror;
+    LongArrayList chunksToProcess;
+    LongArrayList outerChunksToProcess;
+    MpmcUnboundedXaddArrayLongQueue qInner;
+    MpmcUnboundedXaddArrayLongQueue qOuter;
+    MpscUnboundedXaddArrayLongQueue chunkLoadQueue;
+    MpscUnboundedXaddArrayQueue<Runnable> mainTasks;
+    NonBlockingLong2LongHashMap waitingRoom;
+    Long2IntOpenHashMap sectionMaskByChunk;
+    MainScratch mainScratch;
     @SuppressWarnings("unused")
-    private volatile int pendingChunks, pendingMainThreadNotifies, finished, mapAcquired, finishQueued;
+    volatile int pendingChunks, pendingMainThreadNotifies, finished, mapAcquired, finishQueued, poolAcquired, activeWorkers, jobRegistered;
     @SuppressWarnings("unused")
-    private volatile int innerCursor, outerCursor;
+    volatile int innerCursor, outerCursor;
 
-    private ForkJoinPool pool;
-    private final Runnable finishRunnable = this::secondPassAndFinish;
+    ForkJoinPool pool;
+    int workerScale;
+    int workerInnerSize;
+    int workerOuterSize;
+    int workerTarget;
+    int jobDimension = Integer.MIN_VALUE;
 
-    private int tickDelay = BombConfig.falloutDelay;
-    private boolean biomeChange = true;
+    int tickDelay = BombConfig.falloutDelay;
+    boolean biomeChange = true;
 
     public EntityFalloutRain(World worldIn) {
         super(worldIn);
-        this.setSize(4.0F, 20.0F);
-        this.ignoreFrustumCheck = true;
-        this.isImmuneToFire = true;
+        setSize(4.0F, 20.0F);
+        ignoreFrustumCheck = true;
+        isImmuneToFire = true;
     }
 
     public EntityFalloutRain(World worldIn, int ignored) {
         this(worldIn);
     }
 
-    private static int ceilPow2(int x) {
+    static int ceilPow2(int x) {
         if (x <= 1) return 1;
         int hb = Integer.highestOneBit(x - 1);
         int r = hb << 1;
         return r > 0 ? r : (1 << 30);
     }
 
-    private static int chooseChunkSizeForSegments(int peakDepth, int targetSegments, int minPow2, int maxPow2) {
+    static int chooseChunkSizeForSegments(int peakDepth, int targetSegments, int minPow2, int maxPow2) {
         if (peakDepth <= 0) return minPow2;
         int want = (peakDepth + targetSegments - 1) / targetSegments;
         int cs = ceilPow2(want);
@@ -118,7 +127,7 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
         return cs;
     }
 
-    private static Biome getBiomeChange(double distPercent, int scale, Biome original) {
+    static Biome getBiomeChange(double distPercent, int scale, Biome original) {
         if (!WorldConfig.enableCraterBiomes) return null;
         if (scale >= 150 && distPercent < 15) return BiomeGenCraterBase.craterInnerBiome;
         if (scale >= 100 && distPercent < 55 && original != BiomeGenCraterBase.craterInnerBiome) return BiomeGenCraterBase.craterBiome;
@@ -127,12 +136,12 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
         return null;
     }
 
-    private static void addAllFromPairs(LongList out, int[] data) {
+    static void addAllFromPairs(LongList out, int[] data) {
         if (data == null || data.length == 0) return;
         for (int i = 0; i + 1 < data.length; i += 2) out.add(ChunkPos.asLong(data[i], data[i + 1]));
     }
 
-    private static int[] toPairsArray(LongList coords) {
+    static int[] toPairsArray(LongList coords) {
         if (coords == null || coords.isEmpty()) return new int[0];
         int[] data = new int[coords.size() * 2];
         int i = 0;
@@ -145,18 +154,18 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
         return data;
     }
 
-    private static boolean isEmpty(LongArrayList l) {
+    static boolean isEmpty(LongArrayList l) {
         return l == null || l.isEmpty();
     }
 
-    private void initWorkStructuresIfNeeded(int innerSize, int outerSize) {
+    void initWorkStructuresIfNeeded(int innerSize, int outerSize) {
         if (qInner != null) return;
 
-        final int total = innerSize + outerSize;
-        final int csRetryInner = chooseChunkSizeForSegments(Math.max(innerSize, 1024), 32, 1024, 8192);
-        final int csRetryOuter = chooseChunkSizeForSegments(Math.max(outerSize, 1024), 32, 1024, 4096);
-        final int csLoad = chooseChunkSizeForSegments(Math.max(total, 1024), 32, 1024, 8192);
-        final int csTasks = chooseChunkSizeForSegments(Math.max(total, 1024), 64, 1024, 4096);
+        int total = innerSize + outerSize;
+        int csRetryInner = chooseChunkSizeForSegments(Math.max(innerSize, 1024), 32, 1024, 8192);
+        int csRetryOuter = chooseChunkSizeForSegments(Math.max(outerSize, 1024), 32, 1024, 4096);
+        int csLoad = chooseChunkSizeForSegments(Math.max(total, 1024), 32, 1024, 8192);
+        int csTasks = chooseChunkSizeForSegments(Math.max(total, 1024), 64, 1024, 4096);
         final int pooledLong = 4;
         qInner = new MpmcUnboundedXaddArrayLongQueue(csRetryInner, pooledLong);
         qOuter = new MpmcUnboundedXaddArrayLongQueue(csRetryOuter, pooledLong);
@@ -172,7 +181,7 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
     public void onUpdate() {
         if (!world.isRemote) {
             if (!CompatibilityConfig.isWarDim(world)) {
-                this.setDead();
+                setDead();
             } else {
                 if (firstUpdate) {
                     if (isEmpty(chunksToProcess) && isEmpty(outerChunksToProcess)) {
@@ -190,10 +199,10 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
         super.onUpdate();
     }
 
-    private void runServerThreadBudget(int timeBudgetMs) {
+    void runServerThreadBudget(int timeBudgetMs) {
         if (mainTasks == null || chunkLoadQueue == null) return;
 
-        final long deadline = System.nanoTime() + (long) timeBudgetMs * 1_000_000L;
+        long deadline = System.nanoTime() + (long) timeBudgetMs * 1_000_000L;
         while (System.nanoTime() < deadline) {
             Runnable r = mainTasks.relaxedPoll();
             if (r == null) break;
@@ -202,86 +211,140 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
         loadMissingChunksUntil(deadline);
     }
 
-    private void startWorkersIfNeeded() {
-        if (this.finished != 0) return;
-        final LongArrayList innerList = this.chunksToProcess;
-        final LongArrayList outerList = this.outerChunksToProcess;
-        final int innerSize = innerList == null ? 0 : innerList.size();
-        final int outerSize = outerList == null ? 0 : outerList.size();
-        final int total = innerSize + outerSize;
+    void startWorkersIfNeeded() {
+        if (finished != 0) return;
+        LongArrayList innerList = chunksToProcess;
+        LongArrayList outerList = outerChunksToProcess;
+        int innerSize = innerList == null ? 0 : innerList.size();
+        int outerSize = outerList == null ? 0 : outerList.size();
+        int total = innerSize + outerSize;
         if (total == 0) {
-            this.finished = 1;
+            finished = 1;
             clearChunkLoader();
             setDead();
             return;
         }
 
         initWorkStructuresIfNeeded(innerSize, outerSize);
-        this.innerCursor = 0;
-        this.outerCursor = 0;
-        this.pendingChunks = total;
-        ChunkUtil.acquireMirrorMap((WorldServer) world);
-        this.mapAcquired = 1;
-        int processors = Runtime.getRuntime().availableProcessors();
-        int workers = BombConfig.maxThreads <= 0 ? Math.max(1, processors + BombConfig.maxThreads) : Math.min(BombConfig.maxThreads, processors);
-        pool = new ForkJoinPool(Math.max(1, workers));
-        final int scale = getScale();
-        final MpmcUnboundedXaddArrayLongQueue retryInner = this.qInner;
-        final MpmcUnboundedXaddArrayLongQueue retryOuter = this.qOuter;
+        innerCursor = 0;
+        outerCursor = 0;
+        activeWorkers = 0;
+        pendingChunks = total;
+        mirror = ChunkUtil.acquireMirrorMap((WorldServer) world);
+        mapAcquired = 1;
+        if (U.compareAndSetInt(this, OFF_POOL_ACQUIRED, 0, 1)) {
+            pool = BombForkJoinPool.acquire();
+        }
+        ForkJoinPool p = pool;
+        int workers = p == null ? 1 : Math.max(1, p.getParallelism());
+        if (p == null) {
+            finished = 1;
+            clearChunkLoader();
+            setDead();
+            return;
+        }
+        workerScale = getScale();
+        workerInnerSize = innerSize;
+        workerOuterSize = outerSize;
+        workerTarget = Math.max(1, Math.min(workers, total));
+        registerJobIfNeeded();
+        maybeScheduleWorkers();
+    }
 
-        for (int i = 0; i < workers; i++) {
-            pool.submit(() -> {
-                int spins = 0;
-
-                while (!Thread.currentThread().isInterrupted()) {
-                    if (this.finished != 0) return;
-
-                    long cp = retryInner.poll();
-                    boolean clamp = false;
-
-                    if (cp == EMPTY_LONG) {
-                        int idx = U.getAndAddInt(this, OFF_INNER_CURSOR, 1);
-                        if (idx < innerSize) {
-                            cp = innerList.getLong(idx);
-                        } else {
-                            cp = retryOuter.poll();
-                            clamp = true;
-                            if (cp == EMPTY_LONG) {
-                                int oidx = U.getAndAddInt(this, OFF_OUTER_CURSOR, 1);
-                                if (oidx < outerSize) {
-                                    cp = outerList.getLong(oidx);
-                                } else {
-                                    cp = EMPTY_LONG;
-                                }
-                            }
-                        }
-                    }
-
-                    if (cp != EMPTY_LONG) {
-                        spins = 0;
-                        processChunkOffThread(cp, scale, clamp);
-                        continue;
-                    }
-
-                    if (this.pendingChunks == 0) return;
-
-                    if (++spins < 256) {
-                        Library.onSpinWait();
-                    } else {
-                        spins = 0;
-                        LockSupport.parkNanos(1_000_000L);
-                    }
-                }
-            });
+    void releasePool() {
+        unregisterJobIfNeeded();
+        if (U.getAndSetInt(this, OFF_POOL_ACQUIRED, 0) != 0) {
+            BombForkJoinPool.release();
+            pool = null;
         }
     }
 
-    private void enqueueWork(long cp, boolean clamp) {
-        if (clamp) qOuter.offer(cp);
-        else qInner.offer(cp);
+    void registerJobIfNeeded() {
+        if (U.compareAndSetInt(this, OFF_JOB_REGISTERED, 0, 1)) {
+            int dim = world == null ? Integer.MIN_VALUE : world.provider.getDimension();
+            jobDimension = dim;
+            BombForkJoinPool.register(dim, this);
+        }
     }
 
-    private void loadMissingChunksUntil(long deadlineNanos) {
+    void unregisterJobIfNeeded() {
+        if (U.getAndSetInt(this, OFF_JOB_REGISTERED, 0) != 0) {
+            int dim = jobDimension;
+            jobDimension = Integer.MIN_VALUE;
+            if (dim != Integer.MIN_VALUE) BombForkJoinPool.unregister(dim, this);
+        }
+    }
+
+    void enqueueWork(long cp, boolean clamp) {
+        if (clamp) qOuter.offer(cp);
+        else qInner.offer(cp);
+        maybeScheduleWorkers();
+    }
+
+    void maybeScheduleWorkers() {
+        if (finished != 0) return;
+        ForkJoinPool p = pool;
+        if (p == null || p.isShutdown()) return;
+        int target = workerTarget <= 0 ? 1 : workerTarget;
+        while (true) {
+            if (!hasImmediateWork()) return;
+            int cur = activeWorkers;
+            if (cur >= target) return;
+            if (U.compareAndSetInt(this, OFF_ACTIVE_WORKERS, cur, cur + 1)) {
+                p.submit(this::workerDrain);
+            }
+        }
+    }
+
+    boolean hasImmediateWork() {
+        MpmcUnboundedXaddArrayLongQueue retryInner = qInner;
+        if (retryInner != null && !retryInner.isEmpty()) return true;
+        MpmcUnboundedXaddArrayLongQueue retryOuter = qOuter;
+        if (retryOuter != null && !retryOuter.isEmpty()) return true;
+        if (innerCursor < workerInnerSize) return true;
+        return outerCursor < workerOuterSize;
+    }
+
+    void workerDrain() {
+        try {
+            int processed = 0;
+            while (processed < WORKER_BATCH) {
+                if (finished != 0) return;
+                long cp = EMPTY_LONG;
+                boolean clamp = false;
+                MpmcUnboundedXaddArrayLongQueue retryInner = qInner;
+                if (retryInner != null) cp = retryInner.poll();
+                if (cp == EMPTY_LONG) {
+                    int idx = U.getAndAddInt(this, OFF_INNER_CURSOR, 1);
+                    if (idx < workerInnerSize) {
+                        LongArrayList innerList = chunksToProcess;
+                        if (innerList != null) cp = innerList.getLong(idx);
+                    } else {
+                        clamp = true;
+                        MpmcUnboundedXaddArrayLongQueue retryOuter = qOuter;
+                        if (retryOuter != null) {
+                            cp = retryOuter.poll();
+                        }
+                        if (cp == EMPTY_LONG) {
+                            int oidx = U.getAndAddInt(this, OFF_OUTER_CURSOR, 1);
+                            if (oidx < workerOuterSize) {
+                                LongArrayList outerList = outerChunksToProcess;
+                                if (outerList != null) cp = outerList.getLong(oidx);
+                            }
+                        }
+                    }
+                }
+                if (cp == EMPTY_LONG) return;
+                processChunkOffThread(cp, workerScale, clamp);
+                processed++;
+            }
+        } finally {
+            U.getAndAddInt(this, OFF_ACTIVE_WORKERS, -1);
+            if (finished == 0) maybeScheduleWorkers();
+        }
+    }
+
+    void loadMissingChunksUntil(long deadlineNanos) {
         while (System.nanoTime() < deadlineNanos) {
             long ck = chunkLoadQueue.relaxedPoll();
             if (ck == EMPTY_LONG) break;
@@ -295,10 +358,10 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
         }
     }
 
-    private void processChunkOffThread(long cpLong, int scale, boolean clampToRadius) {
-        if (this.finished != 0) return;
+    void processChunkOffThread(long cpLong, int scale, boolean clampToRadius) {
+        if (finished != 0) return;
 
-        ExtendedBlockStorage[] ebs = ChunkUtil.getLoadedEBS((WorldServer) world, cpLong);
+        ExtendedBlockStorage[] ebs = ChunkUtil.getLoadedEBS(mirror, cpLong);
         if (ebs == null) {
             long v = clampToRadius ? WAIT_OUTER : WAIT_INNER;
             long prev = waitingRoom.putIfAbsent(cpLong, v);
@@ -306,29 +369,29 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
             return;
         }
 
-        final int chunkX = Library.getChunkPosX(cpLong);
-        final int chunkZ = Library.getChunkPosZ(cpLong);
-        final int minX = (chunkX << 4);
-        final int minZ = (chunkZ << 4);
+        int chunkX = Library.getChunkPosX(cpLong);
+        int chunkZ = Library.getChunkPosZ(cpLong);
+        int minX = (chunkX << 4);
+        int minZ = (chunkZ << 4);
 
-        final WorkerScratch s = TL_WORKER.get();
+        WorkerScratch s = TL_WORKER.get();
         s.clearWorkerPhase();
 
-        final Long2ObjectOpenHashMap<IBlockState> updates = s.updates;
-        final Long2IntOpenHashMap biomeChanges = s.biomeChanges;
-        final Long2ObjectOpenHashMap<IBlockState> spawnFalling = s.spawnFalling;
+        Long2ObjectOpenHashMap<IBlockState> updates = s.updates;
+        Long2IntOpenHashMap biomeChanges = s.biomeChanges;
+        Long2ObjectOpenHashMap<IBlockState> spawnFalling = s.spawnFalling;
 
-        final ThreadLocalRandom rand = ThreadLocalRandom.current();
-        final double cx = this.posX, cz = this.posZ;
+        ThreadLocalRandom rand = ThreadLocalRandom.current();
+        double cx = posX, cz = posZ;
 
         for (int lx = 0; lx < 16; lx++) {
             int x = minX + lx;
             for (int lz = 0; lz < 16; lz++) {
                 int z = minZ + lz;
-                final double distance = Math.hypot(x - cx, z - cz);
+                double distance = Math.hypot(x - cx, z - cz);
                 if (clampToRadius && distance > (double) scale) continue;
 
-                final double percent = (double) scale <= 0 ? 100.0 : (distance * 100.0 / (double) scale);
+                double percent = (double) scale <= 0 ? 100.0 : (distance * 100.0 / (double) scale);
 
                 Biome target = getBiomeChange(percent, scale, world.getBiome(TL_POS.get().setPos(x, 0, z)));
                 if (biomeChange && target != null) biomeChanges.put(ChunkPos.asLong(x, z), Biome.getIdForBiome(target));
@@ -343,7 +406,7 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
         }
 
         if (!safeCommit) {
-            Chunk chunk = ChunkUtil.getLoadedChunk((WorldServer) world, cpLong);
+            Chunk chunk = ChunkUtil.getLoadedChunk(mirror, cpLong);
             if (chunk == null) {
                 long v = clampToRadius ? WAIT_OUTER : WAIT_INNER;
                 long prev = waitingRoom.putIfAbsent(cpLong, v);
@@ -351,13 +414,13 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
                 return;
             }
 
-            final Long2ObjectOpenHashMap<IBlockState> changed = new Long2ObjectOpenHashMap<>();
+            Long2ObjectOpenHashMap<IBlockState> changed = new Long2ObjectOpenHashMap<>();
 
             Chunk old;
             do {
                 old = chunk;
                 ChunkUtil.applyAndSwap(chunk, c -> updates, changed);
-                chunk = ChunkUtil.getLoadedChunk((WorldServer) world, cpLong);
+                chunk = ChunkUtil.getLoadedChunk(mirror, cpLong);
                 if (chunk == null) {
                     long v = clampToRadius ? WAIT_OUTER : WAIT_INNER;
                     long prev = waitingRoom.putIfAbsent(cpLong, v);
@@ -379,9 +442,9 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
                 mask |= 1 << (y >>> 4);
             }
 
-            final Long2IntOpenHashMap biomeCopy = biomeChanges.isEmpty() ? null : new Long2IntOpenHashMap(biomeChanges);
-            final Long2ObjectOpenHashMap<IBlockState> fallingCopy = spawnFalling.isEmpty() ? null : new Long2ObjectOpenHashMap<>(spawnFalling);
-            final int finalMask = mask;
+            Long2IntOpenHashMap biomeCopy = biomeChanges.isEmpty() ? null : new Long2IntOpenHashMap(biomeChanges);
+            Long2ObjectOpenHashMap<IBlockState> fallingCopy = spawnFalling.isEmpty() ? null : new Long2ObjectOpenHashMap<>(spawnFalling);
+            int finalMask = mask;
 
             U.getAndAddInt(this, OFF_PENDING_MAIN, 1);
             mainTasks.offer(() -> {
@@ -399,10 +462,10 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
         ObjectIterator<Long2ObjectMap.Entry<IBlockState>> itUp = updates.long2ObjectEntrySet().fastIterator();
         while (itUp.hasNext()) {
             Long2ObjectMap.Entry<IBlockState> e = itUp.next();
-            final long p = e.getLongKey();
-            final int x = Library.getBlockPosX(p);
-            final int y = Library.getBlockPosY(p);
-            final int z = Library.getBlockPosZ(p);
+            long p = e.getLongKey();
+            int x = Library.getBlockPosX(p);
+            int y = Library.getBlockPosY(p);
+            int z = Library.getBlockPosZ(p);
             if ((x >> 4) != chunkX || (z >> 4) != chunkZ || y < 0 || y >= 256) continue;
             s.bucketBySub(y >>> 4).put(Library.blockPosToLocal(x, y, z), e.getValue());
         }
@@ -410,18 +473,18 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
         SubUpdate[] tasks = null;
         int taskCount = 0;
 
-        final boolean hasSky = world.provider.hasSkyLight();
+        boolean hasSky = world.provider.hasSkyLight();
 
         for (int subY = 0; subY < 16; subY++) {
-            final Int2ObjectOpenHashMap<IBlockState> bucketScratch = s.bucketBySub[subY];
+            Int2ObjectOpenHashMap<IBlockState> bucketScratch = s.bucketBySub[subY];
             if (bucketScratch == null || bucketScratch.isEmpty()) continue;
 
-            final Int2ObjectOpenHashMap<IBlockState> bucket = new Int2ObjectOpenHashMap<>(bucketScratch.size());
+            Int2ObjectOpenHashMap<IBlockState> bucket = new Int2ObjectOpenHashMap<>(bucketScratch.size());
             bucket.putAll(bucketScratch);
 
-            final ExtendedBlockStorage expected = ebs[subY];
+            ExtendedBlockStorage expected = ebs[subY];
 
-            final Long2ObjectOpenHashMap<IBlockState> oldSub = new Long2ObjectOpenHashMap<>();
+            Long2ObjectOpenHashMap<IBlockState> oldSub = new Long2ObjectOpenHashMap<>();
             Optional<ExtendedBlockStorage> mod = ChunkUtil.copyAndModify(chunkX, chunkZ, subY, hasSky, expected, bucket, oldSub);
             //noinspection OptionalAssignedToNull
             if (mod == null) continue;
@@ -435,16 +498,16 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
             return;
         }
 
-        final Long2IntOpenHashMap biomeCopy = biomeChanges.isEmpty() ? null : new Long2IntOpenHashMap(biomeChanges);
-        final Long2ObjectOpenHashMap<IBlockState> fallingCopy = spawnFalling.isEmpty() ? null : new Long2ObjectOpenHashMap<>(spawnFalling);
-        final SubUpdate[] finalTasks = tasks;
-        final int finalTaskCount = taskCount;
+        Long2IntOpenHashMap biomeCopy = biomeChanges.isEmpty() ? null : new Long2IntOpenHashMap(biomeChanges);
+        Long2ObjectOpenHashMap<IBlockState> fallingCopy = spawnFalling.isEmpty() ? null : new Long2ObjectOpenHashMap<>(spawnFalling);
+        SubUpdate[] finalTasks = tasks;
+        int finalTaskCount = taskCount;
 
         U.getAndAddInt(this, OFF_PENDING_MAIN, 1);
         mainTasks.offer(() -> {
             try {
-                final int mask = applyPreparedOnMainInto(chunkX, chunkZ, finalTasks, finalTaskCount);
-                final Long2ObjectOpenHashMap<IBlockState> oldStates = mainScratch.oldMerged.isEmpty() ? null : mainScratch.oldMerged;
+                int mask = applyPreparedOnMainInto(chunkX, chunkZ, finalTasks, finalTaskCount);
+                Long2ObjectOpenHashMap<IBlockState> oldStates = mainScratch.oldMerged.isEmpty() ? null : mainScratch.oldMerged;
                 doNotifyOnMain(cpLong, oldStates, mask, biomeCopy, fallingCopy);
             } finally {
                 mainScratch.oldMerged.clear();
@@ -455,7 +518,7 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
         if (U.getAndAddInt(this, OFF_PENDING_CHUNKS, -1) - 1 == 0) maybeFinish();
     }
 
-    private void doNotifyOnMain(long cpLong, Long2ObjectOpenHashMap<IBlockState> oldStates, int mask, Long2IntOpenHashMap biomeChanges,
+    void doNotifyOnMain(long cpLong, Long2ObjectOpenHashMap<IBlockState> oldStates, int mask, Long2IntOpenHashMap biomeChanges,
                                 Long2ObjectOpenHashMap<IBlockState> spawnFalling) {
 
         int cx = Library.getChunkPosX(cpLong);
@@ -464,7 +527,7 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 
         if (mask != 0) sectionMaskByChunk.put(cpLong, sectionMaskByChunk.get(cpLong) | mask);
 
-        final MutableBlockPos mutableBlockPos = TL_POS.get();
+        MutableBlockPos mutableBlockPos = TL_POS.get();
 
         if (oldStates != null && !oldStates.isEmpty()) {
             ObjectIterator<Long2ObjectMap.Entry<IBlockState>> iterator1 = oldStates.long2ObjectEntrySet().fastIterator();
@@ -514,16 +577,16 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
         loadedChunk.markDirty();
     }
 
-    private int applyPreparedOnMainInto(int chunkX, int chunkZ, SubUpdate[] tasks, int taskCount) {
+    int applyPreparedOnMainInto(int chunkX, int chunkZ, SubUpdate[] tasks, int taskCount) {
         if (taskCount == 0 || tasks == null) return 0;
 
-        final WorldServer ws = (WorldServer) world;
-        final boolean hasSky = ws.provider.hasSkyLight();
+        WorldServer ws = (WorldServer) world;
+        boolean hasSky = ws.provider.hasSkyLight();
 
         Chunk chunk = world.getChunk(chunkX, chunkZ);
         ExtendedBlockStorage[] storages = chunk.getBlockStorageArray();
 
-        final MainScratch ms = this.mainScratch;
+        MainScratch ms = mainScratch;
         ms.oldMerged.clear();
 
         int mask = 0;
@@ -532,7 +595,7 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
             SubUpdate t = tasks[i];
             if (t == null) continue;
 
-            final int subY = t.subY;
+            int subY = t.subY;
             ExtendedBlockStorage cur = storages[subY];
 
             if (cur == t.expected) {
@@ -560,32 +623,33 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
         return mask;
     }
 
-    private void maybeFinish() {
-        if (this.finished != 0) return;
+    void maybeFinish() {
+        if (finished != 0) return;
         boolean waitingEmpty = (waitingRoom == null) || waitingRoom.isEmpty();
-        if (this.pendingChunks == 0 && waitingEmpty && this.pendingMainThreadNotifies == 0) {
+        if (pendingChunks == 0 && waitingEmpty && pendingMainThreadNotifies == 0) {
             if (U.compareAndSetInt(this, OFF_FINISH_QUEUED, 0, 1)) {
-                mainTasks.offer(finishRunnable);
+                mainTasks.offer(this::secondPassAndFinish);
             }
         }
     }
 
-    private void secondPassAndFinish() {
-        this.finishQueued = 0;
+    void secondPassAndFinish() {
+        finishQueued = 0;
 
-        if (this.finished != 0) return;
-        if (this.pendingChunks != 0) return;
+        if (finished != 0) return;
+        if (pendingChunks != 0) return;
         if (waitingRoom != null && !waitingRoom.isEmpty()) return;
-        if (this.pendingMainThreadNotifies != 0) return;
+        if (pendingMainThreadNotifies != 0) return;
 
         if (sectionMaskByChunk != null) {
+            var loaded = ((WorldServer) world).getChunkProvider().loadedChunks;
             ObjectIterator<Long2IntMap.Entry> iterator = sectionMaskByChunk.long2IntEntrySet().fastIterator();
             while (iterator.hasNext()) {
                 Long2IntMap.Entry e = iterator.next();
                 long cp = e.getLongKey();
                 int changedMask = e.getIntValue();
                 if (changedMask == 0) continue;
-                Chunk chunk = ChunkUtil.getLoadedChunk((WorldServer) world, cp);
+                Chunk chunk = loaded.get(cp);
                 if (chunk == null) continue;
                 chunk.generateSkylightMap();
                 chunk.resetRelightChecks();
@@ -593,43 +657,39 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
             sectionMaskByChunk.clear();
         }
 
-        this.finished = 1;
+        finished = 1;
 
-        if (pool != null) {
-            pool.shutdown();
-            try {
-                pool.awaitTermination(100, TimeUnit.MILLISECONDS);
-            } catch (InterruptedException ignored) {
-            }
+        releasePool();
+
+        if (U.getAndSetInt(this, OFF_MAP_ACQUIRED, 0) != 0) {
+            ChunkUtil.releaseMirrorMap((WorldServer) world);
         }
-
-        if (U.getAndSetInt(this, OFF_MAP_ACQUIRED, 0) != 0) ChunkUtil.releaseMirrorMap((WorldServer) world);
         clearChunkLoader();
         setDead();
     }
 
-    private void stompColumnToUpdates(ExtendedBlockStorage[] ebs, int x, int z, double distPercent, Long2ObjectOpenHashMap<IBlockState> updates,
+    void stompColumnToUpdates(ExtendedBlockStorage[] ebs, int x, int z, double distPercent, Long2ObjectOpenHashMap<IBlockState> updates,
                                       Long2ObjectOpenHashMap<IBlockState> spawnFalling, ThreadLocalRandom rand) {
 
         int solidDepth = 0;
-        final int lx = x & 15;
-        final int lz = z & 15;
-        final MutableBlockPos pos = TL_POS.get();
-        final float stonebrickRes = Blocks.STONEBRICK.getExplosionResistance(null);
+        int lx = x & 15;
+        int lz = z & 15;
+        MutableBlockPos pos = TL_POS.get();
+        float stonebrickRes = Blocks.STONEBRICK.getExplosionResistance(null);
 
         for (int y = 255; y >= 0; y--) {
             if (solidDepth >= MAX_SOLID_DEPTH) return;
 
-            final int subY = y >>> 4;
+            int subY = y >>> 4;
             ExtendedBlockStorage s = ebs[subY];
-            final IBlockState state = s == Chunk.NULL_BLOCK_STORAGE || s.isEmpty() ? Blocks.AIR.getDefaultState() : s.get(lx, y & 15, lz);
-            final Block block = state.getBlock();
+            IBlockState state = s == Chunk.NULL_BLOCK_STORAGE || s.isEmpty() ? Blocks.AIR.getDefaultState() : s.get(lx, y & 15, lz);
+            Block block = state.getBlock();
             if (block.isAir(state, world, pos.setPos(x, y, z)) || block == ModBlocks.fallout) continue;
 
             IBlockState stateUp = null;
-            final int upY = y + 1;
+            int upY = y + 1;
             if (solidDepth == 0 && upY < 256) {
-                final int upSub = upY >>> 4;
+                int upSub = upY >>> 4;
                 ExtendedBlockStorage su = ebs[upSub];
                 stateUp = su == Chunk.NULL_BLOCK_STORAGE || su.isEmpty() ? Blocks.AIR.getDefaultState() : su.get(lx, upY & 15, lz);
                 pos.setPos(x, upY, z);
@@ -646,7 +706,7 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 
             if (distPercent < 65 && block.isFlammable(world, pos.setPos(x, y, z), EnumFacing.UP)) {
                 if (upY < 256) {
-                    final int upSub = upY >>> 4;
+                    int upSub = upY >>> 4;
                     if (stateUp == null) {
                         ExtendedBlockStorage su = ebs[upSub];
                         stateUp = su == Chunk.NULL_BLOCK_STORAGE || su.isEmpty() ? Blocks.AIR.getDefaultState() : su.get(lx, upY & 15, lz);
@@ -674,9 +734,9 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
             }
 
             if (!transformed && distPercent < 65 && y > 0) {
-                final int yBelow = y - 1;
+                int yBelow = y - 1;
                 ExtendedBlockStorage sb = ebs[yBelow >>> 4];
-                final IBlockState below = (sb == Chunk.NULL_BLOCK_STORAGE || sb.isEmpty()) ? Blocks.AIR.getDefaultState() : sb.get(lx, yBelow & 15,
+                IBlockState below = (sb == Chunk.NULL_BLOCK_STORAGE || sb.isEmpty()) ? Blocks.AIR.getDefaultState() : sb.get(lx, yBelow & 15,
                         lz);
                 if (below.getBlock().isAir(below, world, pos.setPos(x, yBelow, z))) {
                     float hardnessHere = state.getBlockHardness(world, pos.setPos(x, y, z));
@@ -684,9 +744,9 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
                         for (int i = 0; i <= solidDepth; i++) {
                             int yy = y + i;
                             if (yy >= 256) break;
-                            final int sub = yy >>> 4;
+                            int sub = yy >>> 4;
                             ExtendedBlockStorage ss = ebs[sub];
-                            final IBlockState sAt = ss == Chunk.NULL_BLOCK_STORAGE || ss.isEmpty() ? Blocks.AIR.getDefaultState() : ss.get(lx,
+                            IBlockState sAt = ss == Chunk.NULL_BLOCK_STORAGE || ss.isEmpty() ? Blocks.AIR.getDefaultState() : ss.get(lx,
                                     yy & 15, lz);
                             if (sAt.getBlock().isAir(sAt, world, pos.setPos(x, yy, z))) continue;
                             float h = sAt.getBlockHardness(world, pos);
@@ -706,7 +766,7 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
     @Override
     protected void entityInit() {
         super.entityInit();
-        this.dataManager.register(SCALE, 1);
+        dataManager.register(SCALE, 1);
     }
 
     @Override
@@ -719,8 +779,8 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
         addAllFromPairs(in, tag.getIntArray("chunks"));
         addAllFromPairs(out, tag.getIntArray("outerChunks"));
 
-        this.chunksToProcess = in;
-        this.outerChunksToProcess = out;
+        chunksToProcess = in;
+        outerChunksToProcess = out;
     }
 
     @Override
@@ -733,61 +793,80 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
     @Override
     public void setDead() {
         try {
-            U.putIntRelease(this, OFF_FINISHED, 1);
-            if (pool != null) pool.shutdownNow();
-            if (U.getAndSetInt(this, OFF_MAP_ACQUIRED, 0) != 0) {
-                ChunkUtil.releaseMirrorMap((WorldServer) world);
-            }
+            abort();
         } finally {
             super.setDead();
         }
     }
 
+    private void abort() {
+        U.putIntRelease(this, OFF_FINISHED, 1);
+        releasePool();
+        if (U.getAndSetInt(this, OFF_MAP_ACQUIRED, 0) != 0) {
+            ChunkUtil.releaseMirrorMap((WorldServer) world);
+        }
+        clearChunkLoader();
+    }
+
+    @Override
+    public void onRemovedFromWorld() {
+        try {
+            abort();
+        } finally {
+            super.onRemovedFromWorld();
+        }
+    }
+
+    @Override
+    public void cancelJob() {
+        abort();
+    }
+
     public int getScale() {
-        Integer scale = this.dataManager.get(SCALE);
+        Integer scale = dataManager.get(SCALE);
         return scale <= 0 ? 1 : scale;
     }
 
     public void setScale(int i) {
-        this.dataManager.set(SCALE, i);
+        dataManager.set(SCALE, i);
     }
 
     public void setScale(int i, int ignored) {
-        this.dataManager.set(SCALE, i);
+        dataManager.set(SCALE, i);
     }
 
     public void noBiomeChange() {
-        this.biomeChange = false;
+        biomeChange = false;
     }
 
-    private void gatherChunks() {
-        final int radius = getScale();
+    void gatherChunks() {
+        int radius = getScale();
         int angleSteps = 20 * radius / 32;
         if (angleSteps < MIN_ANGLE_STEPS) angleSteps = MIN_ANGLE_STEPS;
 
-        final int steps = angleSteps + 1;
-        final LongOpenHashSet outer = new LongOpenHashSet(steps);
-        final int radialSteps = radius / SPOKE_STEP_BLOCKS + 1;
-        final int candidateUpper = radialSteps * steps;
-        final double rc = (radius + 16.0) / 16.0;
-        final int diskUpper = (int) Math.ceil(Math.PI * rc * rc + 2.0 * Math.PI * rc + 32.0);
-        final int innerExpected = Math.min(candidateUpper, diskUpper);
-        final LongOpenHashSet inner = new LongOpenHashSet(innerExpected);
+        int steps = angleSteps + 1;
+        LongOpenHashSet outer = new LongOpenHashSet(steps);
+        int radialSteps = radius / SPOKE_STEP_BLOCKS + 1;
+        int candidateUpper = radialSteps * steps;
+        double rc = (radius + 16.0) / 16.0;
+        int diskUpper = (int) Math.ceil(Math.PI * rc * rc + 2.0 * Math.PI * rc + 32.0);
+        int innerExpected = Math.min(candidateUpper, diskUpper);
+        LongOpenHashSet inner = new LongOpenHashSet(innerExpected);
 
-        final double px = this.posX;
-        final double pz = this.posZ;
+        double px = posX;
+        double pz = posZ;
 
-        final double[] cos = new double[steps];
-        final double[] sin = new double[steps];
+        double[] cos = new double[steps];
+        double[] sin = new double[steps];
         for (int step = 0; step <= angleSteps; step++) {
-            final double theta = step * (2.0 * Math.PI) / angleSteps;
+            double theta = step * (2.0 * Math.PI) / angleSteps;
             cos[step] = Math.cos(theta);
             sin[step] = Math.sin(theta);
         }
 
         for (int step = 0; step <= angleSteps; step++) {
-            final double dx = radius * cos[step];
-            final double dz = -radius * sin[step];
+            double dx = radius * cos[step];
+            double dz = -radius * sin[step];
             int cx = ((int) Math.floor(px + dx)) >> 4;
             int cz = ((int) Math.floor(pz + dz)) >> 4;
             outer.add(ChunkPos.asLong(cx, cz));
@@ -795,8 +874,8 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 
         for (int d = 0; d <= radius; d += SPOKE_STEP_BLOCKS) {
             for (int step = 0; step <= angleSteps; step++) {
-                final double dx = d * cos[step];
-                final double dz = -d * sin[step];
+                double dx = d * cos[step];
+                double dz = -d * sin[step];
                 int cx = ((int) Math.floor(px + dx)) >> 4;
                 int cz = ((int) Math.floor(pz + dz)) >> 4;
                 long packed = ChunkPos.asLong(cx, cz);
@@ -807,15 +886,15 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
         for (LongIterator it = inner.iterator(); it.hasNext(); ) in.add(it.nextLong());
         LongArrayList out = new LongArrayList(outer.size());
         for (LongIterator it = outer.iterator(); it.hasNext(); ) out.add(it.nextLong());
-        this.chunksToProcess = in;
-        this.outerChunksToProcess = out;
+        chunksToProcess = in;
+        outerChunksToProcess = out;
     }
 
-    private record SubUpdate(int subY, Int2ObjectOpenHashMap<IBlockState> toUpdate, ExtendedBlockStorage expected, ExtendedBlockStorage prepared,
+    record SubUpdate(int subY, Int2ObjectOpenHashMap<IBlockState> toUpdate, ExtendedBlockStorage expected, ExtendedBlockStorage prepared,
                              Long2ObjectOpenHashMap<IBlockState> oldStates) {
     }
 
-    private static final class WorkerScratch {
+    static final class WorkerScratch {
         final Long2ObjectOpenHashMap<IBlockState> updates = new Long2ObjectOpenHashMap<>(1024);
         final Long2IntOpenHashMap biomeChanges = new Long2IntOpenHashMap(256);
         final Long2ObjectOpenHashMap<IBlockState> spawnFalling = new Long2ObjectOpenHashMap<>(512);
@@ -839,7 +918,7 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
         }
     }
 
-    private static final class MainScratch {
+    static final class MainScratch {
         final Long2ObjectOpenHashMap<IBlockState> oldMerged = new Long2ObjectOpenHashMap<>(1024);
         final Long2ObjectOpenHashMap<IBlockState> oldSub = new Long2ObjectOpenHashMap<>(256);
     }

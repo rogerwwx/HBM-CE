@@ -252,6 +252,12 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
         super.setDead();
     }
 
+    @Override
+    public void onRemovedFromWorld() {
+        if (explosion != null) explosion.cancel();
+        super.onRemovedFromWorld();
+    }
+
     public EntityNukeExplosionMK5 moreFallout(int fallout) {
         falloutAdd = fallout;
         return this;

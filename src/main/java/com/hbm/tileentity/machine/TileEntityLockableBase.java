@@ -102,6 +102,17 @@ public class TileEntityLockableBase extends TileEntity implements IBufPacketRece
         return tryPick(player);
     }
 
+    public boolean canToggleRedstone(EntityPlayer player) {
+        if (!isLocked) {
+            return true;
+        }
+        if (player == null) {
+            return false;
+        }
+        ItemStack offhand = player.getHeldItemOffhand();
+        return offhand.getItem() instanceof ItemKeyPin && ItemKeyPin.getPins(offhand) == this.lock;
+    }
+
     public static int hasLockPickTools(EntityPlayer player){
         ItemStack stackR = player.getHeldItemMainhand();
         ItemStack stackL = player.getHeldItemOffhand();

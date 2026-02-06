@@ -6,6 +6,7 @@ import com.hbm.interfaces.AutoRegister;
 import com.hbm.inventory.fluid.FluidType;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.lib.ForgeDirection;
+import com.hbm.saveddata.FluidIdRemapper;
 import com.hbm.tileentity.IFluidCopiable;
 import com.hbm.tileentity.TileEntityLoadedBase;
 import com.hbm.uninos.UniNodespace;
@@ -13,7 +14,6 @@ import net.minecraft.block.state.IBlockState;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.play.server.SPacketUpdateTileEntity;
-import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ITickable;
 import net.minecraft.world.WorldServer;
 
@@ -50,7 +50,6 @@ public class TileEntityPipeBaseNT extends TileEntityLoadedBase implements IFluid
     }
 
     public void setType(FluidType type) {
-        FluidType prev = this.type;
         this.type = type;
         this.markDirty();
 
@@ -126,13 +125,17 @@ public class TileEntityPipeBaseNT extends TileEntityLoadedBase implements IFluid
     @Override
     public void readFromNBT(NBTTagCompound nbt) {
         super.readFromNBT(nbt);
-        this.type = Fluids.fromID(nbt.getInteger("type"));
+        if (nbt.hasKey("type_v1")) {
+            this.type = FluidIdRemapper.getFluid(nbt.getInteger("type_v1"));
+        } else {
+            this.type = FluidIdRemapper.remapLegacyId(nbt.getInteger("type"));
+        }
     }
 
     @Override
     public NBTTagCompound writeToNBT(NBTTagCompound nbt) {
         super.writeToNBT(nbt);
-        nbt.setInteger("type", this.type.getID());
+        nbt.setInteger("type_v1", FluidIdRemapper.getStringId(type));
         return nbt;
     }
 }

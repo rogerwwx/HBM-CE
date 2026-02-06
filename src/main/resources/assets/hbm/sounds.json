@@ -171,6 +171,7 @@
     "weapon.dartShoot": {"category": "player", "sounds": [{"name": "hbm:weapon/dartShoot", "stream": false}]},
     "weapon.mukeExplosion": {"subtitle": "subtitles.weapon.mukeExplosion", "category": "player", "sounds": [{"name": "hbm:weapon/mukeExplosion", "stream": false}]},
     "weapon.explosion_medium": {"category": "player", "sounds": [{"name": "hbm:weapon/explosion_medium", "stream": false}]},
+    "weapon.robin_explosion": {"category": "player", "sounds": [{"name": "hbm:weapon/robin_explosion", "stream": false}]},
     "weapon.gluonstart": {"category": "player", "sounds": [{"name": "hbm:weapon/gluon/start", "stream": false}]},
     "weapon.gluonloop": {"category": "player", "sounds": [{"name": "hbm:weapon/gluon/loop", "stream": false}]},
     "weapon.gluonend": {"category": "player", "sounds": [{"name": "hbm:weapon/gluon/end", "stream": false}]},

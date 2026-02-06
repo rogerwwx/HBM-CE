@@ -19,6 +19,7 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.NonNullList;
 import net.minecraft.world.World;
 import net.minecraftforge.event.ForgeEventFactory;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -328,19 +329,20 @@ public class ArmorUtil {
 		if(mask.getTagCompound().isEmpty())
 			mask.setTagCompound(null);
 	}
-	
+
+	@NotNull
 	public static ItemStack getGasMaskFilter(ItemStack mask) {
 		
 		if(mask == null)
-			return null;
+			return ItemStack.EMPTY;
 		
 		if(!mask.hasTagCompound())
-			return null;
+			return ItemStack.EMPTY;
 		
 		NBTTagCompound attach = mask.getTagCompound().getCompoundTag(FILTERK_KEY);
 		ItemStack filter = new ItemStack(attach);
 		if(filter.isEmpty())
-			return null;
+			return ItemStack.EMPTY;
 		return filter;
 	}
 	

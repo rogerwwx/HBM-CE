@@ -34,7 +34,7 @@ import java.util.function.LongConsumer;
 import static com.hbm.lib.internal.UnsafeHolder.U;
 import static com.hbm.lib.internal.UnsafeHolder.fieldOffset;
 
-public final class NonBlockingHashSetLong extends AbstractLongSet implements LongSet, Cloneable, Serializable {
+public class NonBlockingHashSetLong extends AbstractLongSet implements LongSet, Cloneable, Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -81,6 +81,10 @@ public final class NonBlockingHashSetLong extends AbstractLongSet implements Lon
     public NonBlockingHashSetLong(int initialCapacity, boolean optForSpace) {
         _opt_for_space = optForSpace;
         initialize(initialCapacity);
+    }
+
+    protected int hash(long key) {
+        return (int) HashCommon.mix(key);
     }
 
     private static long offLong(int physIdx) {
@@ -616,7 +620,7 @@ public final class NonBlockingHashSetLong extends AbstractLongSet implements Lon
         }
 
         boolean get_impl(final long key) {
-            final int h = (int) HashCommon.mix(key);
+            final int h = _set.hash(key);
             final int cap = capacity();
             final int mask = cap - 1;
             int idx = (h & mask);
@@ -651,7 +655,7 @@ public final class NonBlockingHashSetLong extends AbstractLongSet implements Lon
         }
 
         int putIfMatch(final long key, final int putState, final int exp) {
-            final int h = (int) HashCommon.mix(key);
+            final int h = _set.hash(key);
             final int cap = capacity();
             final int mask = cap - 1;
             int idx = (h & mask);

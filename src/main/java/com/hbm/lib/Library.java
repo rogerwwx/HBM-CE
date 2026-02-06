@@ -2234,6 +2234,20 @@ public class Library {
         return (int) (ck >>> 32);
     }
 
+    public static long shiftChunkPos(long ck, int dx, int dz) {
+        return ((ck + ((dz & 0xFFFF_FFFFL) << 32)) & 0xFFFF_FFFF_0000_0000L) | ((ck +  (dx & 0xFFFF_FFFFL))     & 0xFFFF_FFFFL);
+    }
+
+    public static long shiftChunkPosX(long ck, int dx) {
+        return (ck & 0xFFFF_FFFF_0000_0000L)
+                | ((ck + (dx & 0xFFFF_FFFFL)) & 0xFFFF_FFFFL);
+    }
+
+    public static long shiftChunkPosZ(long ck, int dz) {
+        return ((ck + ((dz & 0xFFFF_FFFFL) << 32)) & 0xFFFF_FFFF_0000_0000L)
+                |  (ck & 0xFFFF_FFFFL);
+    }
+
     /**
      * Identical to {@link net.minecraft.world.chunk.BlockStateContainer#getIndex(int, int, int)}
      */
@@ -2282,14 +2296,15 @@ public class Library {
     /**
      * chunkX, chunkZ ∈ [-2_097_152, 2_097_151] (±33.5M blocks)
      * subY ∈ [-524_288, 524_287] (±8.3M blocks)
+     * Its codec is X22 | Z22 | Y20, which has poor avalanche if using HashCommon#mix for hashcode
+     * or any other finalizer with only one multiplication. SectionKeyHash#hash is recommended.
      */
     public static long sectionToLong(int chunkX, @Range(from = -524_288, to = 524_287) int subY, int chunkZ) {
-        // put subY at most MSB to avoid trailing zeros, this makes HashCommon.mix more uniform
-        return ((((long) subY) & 0xFFFFFL) << 44) | ((((long) chunkZ) & 0x3FFFFFL) << 22) | (((long) chunkX) & 0x3FFFFFL);
+        return ((((long) chunkX) & 0x3FFFFFL) << 42) | ((((long) chunkZ) & 0x3FFFFFL) << 20) | (((long) subY) & 0xFFFFFL);
     }
 
     public static long sectionToLong(long ck, @Range(from = -524_288, to = 524_287) int subY) {
-        return ((((long) subY) & 0xFFFFFL) << 44) | (((ck >>> 32) & 0x3FFFFFL) << 22) | (ck & 0x3FFFFFL);
+        return (ck << 42) | ((ck >>> 12) & 0x0000_03FF_FFF0_0000L) | (((long) subY) & 0xFFFFFL);
     }
 
     public static long sectionToLong(ChunkPos pos, @Range(from = -524_288, to = 524_287) int subY) {
@@ -2297,33 +2312,55 @@ public class Library {
     }
 
     public static int getSectionX(long key) {
-        return (int) (key << 42 >> 42);
+        return (int) (key >> 42);
     }
 
     public static int getSectionY(long key) {
-        return (int) (key >> 44);
+        return (int) (key << 44 >> 44);
     }
 
     public static int getSectionZ(long key) {
-        return (int) (key << 20 >> 42);
+        return (int) (key << 22 >> 42);
     }
 
     public static long setSectionX(long key, int chunkX) {
-        return (key & ~0x3FFFFFL) | (((long) chunkX) & 0x3FFFFFL);
+        return (key & ~(0x3FFFFFL << 42)) | ((((long) chunkX) & 0x3FFFFFL) << 42);
     }
 
     public static long setSectionY(long key, @Range(from = -524_288, to = 524_287) int subY) {
-        return (key & 0x00000FFFFFFFFFFFL) | ((((long) subY) & 0xFFFFFL) << 44);
+        return (key & ~0xFFFFFL) | (((long) subY) & 0xFFFFFL);
     }
 
     public static long setSectionZ(long key, int chunkZ) {
-        return (key & ~(0x3FFFFFL << 22)) | ((((long) chunkZ) & 0x3FFFFFL) << 22);
+        return (key & ~(0x3FFFFFL << 20)) | ((((long) chunkZ) & 0x3FFFFFL) << 20);
+    }
+
+    public static long shiftSection(long key, int dx, int dy, int dz) {
+        return ((((key >>> 42) + (long) dx) & 0x3FFFFFL) << 42)
+                | ((((((key >>> 20) & 0x3FFFFFL) + (long) dz) & 0x3FFFFFL) << 20))
+                | ((((key & 0xFFFFFL) + ((long) dy & 0xFFFFFL)) & 0xFFFFFL));
+    }
+
+    public static long shiftSection(long key, long delta) {
+        return ((((key >>> 42) + (delta >>> 42)) & 0x3FFFFFL) << 42)
+                | ((((((key >>> 20) & 0x3FFFFFL) + ((delta >>> 20) & 0x3FFFFFL)) & 0x3FFFFFL) << 20))
+                | ((((key & 0xFFFFFL) + (delta & 0xFFFFFL)) & 0xFFFFFL));
+    }
+
+    public static long shiftSectionX(long key, int dx) {
+        return (key & ~(0x3FFFFFL << 42)) | (((key >>> 42) + dx & 0x3FFFFFL) << 42);
+    }
+
+    public static long shiftSectionY(long key, int dy) {
+        return (key & ~0xFFFFFL) | (key & 0xFFFFFL) + dy & 0xFFFFFL;
+    }
+
+    public static long shiftSectionZ(long key, int dz) {
+        return (key & ~(0x3FFFFFL << 20)) | ((((key >>> 20) & 0x3FFFFFL) + dz & 0x3FFFFFL) << 20);
     }
 
     public static long sectionToChunkLong(long sck) {
-        int x = (int) (sck << 42 >> 42);
-        int z = (int) (sck << 20 >> 42);
-        return ((long) z << 32) | (x & 0xFFFFFFFFL);
+        return (((sck << 22) >> 10) & 0xFFFF_FFFF_0000_0000L) | ((sck >> 42) & 0xFFFF_FFFFL);
     }
 
     public static long blockPosToSectionLong(int x, int y, int z) {
@@ -2331,7 +2368,7 @@ public class Library {
     }
 
     public static long blockPosToSectionLong(long serialized) {
-        return ((((serialized << 26) >> 56) & 0xFFFFFL) << 44) | ((serialized & 0x03FF_FFF0L) << 18) | (serialized >>> 42);
+        return (((serialized >>> 42) & 0x3FFFFFL) << 42) | (((serialized >>> 4) & 0x3FFFFFL) << 20) | (serialized << 26 >> 56) & 0xFFFFFL;
     }
 
     public static long blockPosToSectionLong(BlockPos pos) {

@@ -8,6 +8,7 @@ import com.hbm.items.weapon.sedna.factory.XFactoryDrill;
 import com.hbm.packet.PermaSyncHandler;
 import com.hbm.render.amlfrom1710.Vec3;
 import com.hbm.render.item.weapon.sedna.ItemRenderWeaponBase;
+import com.hbm.util.ShaderHelper;
 import com.hbm.world.biome.BiomeGenCraterBase;
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
@@ -115,7 +116,9 @@ public class ModEventHandlerRenderer {
 
 	@SubscribeEvent(priority = EventPriority.HIGHEST)
 	public void onRenderHand(RenderHandEvent event) {
-
+		if (ShaderHelper.isShadowPass()) {
+			return;
+		}
 		//can't use plaxer.getHeldItem() here because the item rendering persists for a few frames after hitting the switch key
 		ItemRenderer itemRenderer = Minecraft.getMinecraft().entityRenderer.itemRenderer;
 		ItemStack toRender = itemRenderer.itemStackMainHand;

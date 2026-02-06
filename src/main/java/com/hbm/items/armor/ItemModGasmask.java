@@ -24,6 +24,7 @@ import net.minecraft.world.World;
 import net.minecraftforge.client.event.RenderPlayerEvent.Pre;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 import java.util.List;
@@ -115,7 +116,7 @@ public class ItemModGasmask extends ItemArmorMod implements IGasMask {
 	}
 
 	@Override
-	public ItemStack getFilter(ItemStack stack) {
+	public @NotNull ItemStack getFilter(ItemStack stack) {
 		return ArmorUtil.getGasMaskFilter(stack);
 	}
 

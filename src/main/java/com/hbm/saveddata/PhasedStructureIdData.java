@@ -5,6 +5,8 @@ import com.hbm.world.phased.PhasedStructureRegistry;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.world.WorldServer;
+import net.minecraftforge.common.DimensionManager;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
@@ -23,12 +25,13 @@ public class PhasedStructureIdData {
     private static final int VERSION = 2;
     private static final String BACKUP_SUFFIX = ".bak";
     private static final String TEMP_SUFFIX = ".tmp";
+    private static final int MAX_KEYS = 10_000_000;
+    private static final int MAX_STRINGS = 1_000_000;
 
     private final Object2IntOpenHashMap<String> keyToId = new Object2IntOpenHashMap<>(64);
     private final Int2ObjectOpenHashMap<String> idToKey = new Int2ObjectOpenHashMap<>(64);
     private final Object2IntOpenHashMap<String> stringToId = new Object2IntOpenHashMap<>(128);
     private final Int2ObjectOpenHashMap<String> idToString = new Int2ObjectOpenHashMap<>(128);
-
     private int nextId = 0;
     private int nextStringId = 0;
     private int epoch = 0;
@@ -36,21 +39,33 @@ public class PhasedStructureIdData {
     private File saveFile;
     private boolean dirty = false;
 
-    private PhasedStructureIdData() {
+    /**
+     * Load or create ID mappings for the given server.
+     * <p>
+     * Load sequence:
+     * - WorldServer is constructed and registered in DimensionManager (WorldServer ctor).
+     * - WorldServer.initialize(...) runs before WorldEvent.Load.
+     * - WorldEvent.Load is posted for each dimension.
+     * - initialWorldChunkLoad() runs (spawn chunks load and NBT is read).
+     * <p>
+     * We must initialize before spawn chunk NBT deserializes, but after the overworld save handler exists.
+     * DimensionManager.getWorld(0, false) returns the already-constructed overworld without forcing a load.
+     */
+    public PhasedStructureIdData(MinecraftServer server) {
         keyToId.defaultReturnValue(-1);
         stringToId.defaultReturnValue(-1);
+        WorldServer world = DimensionManager.getWorld(0, false);
+        if (world == null) {
+            throw new IllegalStateException("PhasedStructureIdData accessed before overworld is loaded for " + server);
+        }
+        saveFile = new File(world.getSaveHandler().getWorldDirectory(), FILE_NAME);
+        loadFromDisk();
+        ensureAllRegistered();
+        flush();
     }
 
-    /**
-     * Load or create ID mappings for the given server. Dimension 0 (Overworld) must be loaded.
-     */
-    public static PhasedStructureIdData loadForServer(MinecraftServer server) {
-        PhasedStructureIdData data = new PhasedStructureIdData();
-        data.saveFile = new File(server.getWorld(0).getSaveHandler().getWorldDirectory(), FILE_NAME);
-        data.load();
-        data.ensureAllRegistered();
-        data.save();
-        return data;
+    public boolean isDirty() {
+        return dirty;
     }
 
     private static ReadResult readFile(File file) {
@@ -68,7 +83,7 @@ public class PhasedStructureIdData {
             loadedEpoch = in.readInt();
 
             int count = in.readInt();
-            if (count < 0 || count > 10_000_000) {
+            if (count < 0 || count > MAX_KEYS) {
                 return ReadResult.failed(loadedEpoch);
             }
 
@@ -84,7 +99,7 @@ public class PhasedStructureIdData {
             }
 
             int stringCount = in.readInt();
-            if (stringCount < 0 || stringCount > 10_000_000) {
+            if (stringCount < 0 || stringCount > MAX_STRINGS) {
                 return ReadResult.failed(loadedEpoch);
             }
 
@@ -115,11 +130,25 @@ public class PhasedStructureIdData {
         }
     }
 
-    private void load() {
+    private void loadFromDisk() {
         if (saveFile == null) return;
 
-        File backupFile = new File(saveFile.getParentFile(), FILE_NAME + BACKUP_SUFFIX);
-        if (!saveFile.exists() && !backupFile.exists()) return;
+        File dir = saveFile.getParentFile();
+        File backupFile = new File(dir, FILE_NAME + BACKUP_SUFFIX);
+        File tempFile = new File(dir, FILE_NAME + TEMP_SUFFIX);
+
+        if (!saveFile.exists() && !backupFile.exists() && !tempFile.exists()) return;
+        ReadResult temp = tempFile.exists() ? readFile(tempFile) : ReadResult.missing();
+        if (temp.ok) {
+            applyResult(temp);
+            dirty = true;
+            try {
+                Files.deleteIfExists(tempFile.toPath());
+            } catch (IOException _) {
+            }
+            MainRegistry.logger.warn("[PhasedStructureIdData] Recovered ID mappings from temp file, will rewrite canonical.");
+            return;
+        }
 
         ReadResult primary = saveFile.exists() ? readFile(saveFile) : ReadResult.missing();
         if (primary.ok) {
@@ -149,14 +178,14 @@ public class PhasedStructureIdData {
         MainRegistry.logger.warn("[PhasedStructureIdData] Failed to load registry, starting fresh with epoch {}.", epoch);
     }
 
-    private void save() {
+    public void flush() {
         if (saveFile == null || !dirty) return;
 
         File dir = saveFile.getParentFile();
         try {
             writeFileAtomicGzip(new File(dir, FILE_NAME + TEMP_SUFFIX), saveFile, new File(dir, FILE_NAME + BACKUP_SUFFIX));
             dirty = false;
-            MainRegistry.logger.debug("[PhasedStructureIdData] Saved {} ID mappings (epoch={})", nextId, epoch);
+            MainRegistry.logger.debug("[PhasedStructureIdData] Saved {} ID mappings, {} string mappings (epoch={})", nextId, nextStringId, epoch);
         } catch (Exception e) {
             MainRegistry.logger.warn("[PhasedStructureIdData] Failed to save: {}", e.getMessage());
         }
@@ -281,7 +310,8 @@ public class PhasedStructureIdData {
         }
 
         static ReadResult failed(int epoch) {
-            return new ReadResult(false, epoch, 0, 0, new Object2IntOpenHashMap<>(0), new Int2ObjectOpenHashMap<>(0), new Object2IntOpenHashMap<>(0), new Int2ObjectOpenHashMap<>(0));
+            return new ReadResult(false, epoch, 0, 0, new Object2IntOpenHashMap<>(0), new Int2ObjectOpenHashMap<>(0), new Object2IntOpenHashMap<>(0),
+                    new Int2ObjectOpenHashMap<>(0));
         }
 
         static ReadResult missing() {

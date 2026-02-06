@@ -70,6 +70,7 @@ public final class DynamicStructureDispatcher {
         AbstractPhasedStructure structure = (AbstractPhasedStructure) ready.pending.structure;
         LongList watchedOffsets = resolveOffsets(structure, ready.finalOrigin);
         PendingDynamicStructure job = PendingDynamicStructure.borrow(structure, ready.finalOrigin, ready.pending.worldSeed, ready.pending.layoutSeed, watchedOffsets);
+        job.touch(server.getTotalWorldTime());
 
         int originChunkX = Library.getBlockPosX(ready.finalOrigin) >> 4;
         int originChunkZ = Library.getBlockPosZ(ready.finalOrigin) >> 4;
@@ -112,6 +113,8 @@ public final class DynamicStructureDispatcher {
         private long layoutSeed;
         private long typeKeyHash;
         private LongList watchedOffsets;
+        private long lastSavedTick = Long.MIN_VALUE;
+        private boolean dirty;
 
         private PendingDynamicStructure() {
         }
@@ -131,6 +134,8 @@ public final class DynamicStructureDispatcher {
                 job.typeKeyHash = 0L;
             }
             job.watchedOffsets = watchedOffsets;
+            job.dirty = true;
+            job.lastSavedTick = Long.MIN_VALUE;
             return job;
         }
 
@@ -147,6 +152,9 @@ public final class DynamicStructureDispatcher {
             layoutSeed = 0L;
             typeKeyHash = 0L;
             waitingOn.clear();
+            lastTouchedTick = Long.MIN_VALUE;
+            lastSavedTick = Long.MIN_VALUE;
+            dirty = false;
         }
 
         AbstractPhasedStructure getStructure() {
@@ -163,6 +171,20 @@ public final class DynamicStructureDispatcher {
 
         long getLayoutSeed() {
             return layoutSeed;
+        }
+
+        void markSaved(long now) {
+            dirty = false;
+            lastSavedTick = now;
+            lastTouchedTick = now;
+        }
+
+        boolean isDirty() {
+            return dirty;
+        }
+
+        long getLastSavedTick() {
+            return lastSavedTick;
         }
 
 
@@ -208,6 +230,7 @@ public final class DynamicStructureDispatcher {
 
         @Override
         void onJobReady(DimensionState state, WorldServer world) {
+            touch(world.getTotalWorldTime());
             ChunkProviderServer provider = world.getChunkProvider();
             // Re-check in case chunks unloaded since we were scheduled or if something weird happened.
             if (!evaluate(provider)) {
@@ -228,6 +251,18 @@ public final class DynamicStructureDispatcher {
                 onJobFinished(world, this);
                 recycle(this);
             }
+        }
+
+        @Override
+        long getOriginChunkKey() {
+            int originChunkX = Library.getBlockPosX(origin) >> 4;
+            int originChunkZ = Library.getBlockPosZ(origin) >> 4;
+            return ChunkPos.asLong(originChunkX, originChunkZ);
+        }
+
+        @Override
+        void recycle() {
+            recycle(this);
         }
     }
 }

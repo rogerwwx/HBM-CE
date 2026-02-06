@@ -63,6 +63,25 @@ public class PhasedStructureGenerator implements IWorldGenerator {
         state.recycleAllStarts();
     }
 
+    static void evictStart(DimensionState state, PhasedStructureStart start) {
+        LongIterator iterator = start.remainingChunks.iterator();
+        while (iterator.hasNext()) {
+            long key = iterator.nextLong();
+            ArrayList<PhasedChunkTask> list = state.componentsByChunk.get(key);
+            if (list == null || list.isEmpty()) continue;
+            for (int i = list.size() - 1; i >= 0; i--) {
+                PhasedChunkTask task = list.get(i);
+                if (task == null || task.parent != start) continue;
+                list.remove(i);
+                PhasedChunkTask.recycle(task);
+            }
+            if (list.isEmpty()) {
+                state.componentsByChunk.remove(key);
+                DimensionState.recycleTaskList(list);
+            }
+        }
+    }
+
     static void forceGenerateStructure(World world, Random rand, long originSerialized, IPhasedStructure structure, Long2ObjectOpenHashMap<Long2ObjectOpenHashMap<Object>> layout) {
         for (var blocks : layout.values()) {
             structure.generateForChunk(world, rand, originSerialized, blocks);
@@ -217,6 +236,7 @@ public class PhasedStructureGenerator implements IWorldGenerator {
                 if (chunk == null || !chunk.isTerrainPopulated()) {
                     if (job == null) {
                         job = PendingValidationJob.borrow(pending, dynamic);
+                        job.touch(server.getTotalWorldTime());
                     }
                     job.waitingOn.add(absKey);
                     continue;
@@ -295,7 +315,8 @@ public class PhasedStructureGenerator implements IWorldGenerator {
     }
 
     private static void scheduleValidated(DimensionState state, ReadyToGenerateStructure ready) {
-        PhasedStructureStart start = PhasedStructureStart.borrow(state, ready);
+        long now = state.world.getTotalWorldTime();
+        PhasedStructureStart start = PhasedStructureStart.borrow(state, ready, now);
         long key = ChunkPos.asLong(start.chunkPosX, start.chunkPosZ);
         ArrayList<PhasedStructureStart> bucket = state.structureMap.get(key);
         if (bucket == null) {
@@ -358,10 +379,12 @@ public class PhasedStructureGenerator implements IWorldGenerator {
             pending = null;
             dynamic = false;
             waitingOn.clear();
+            lastTouchedTick = Long.MIN_VALUE;
         }
 
         @Override
         void onJobReady(DimensionState state, WorldServer world) {
+            touch(world.getTotalWorldTime());
             if (!pending.hasCachedHeight()) {
                 if (!pending.cacheHeightFromLoadedChunks(world)) {
                     if (!rebuildHeightPointWaits(world, pending, waitingOn)) {
@@ -400,6 +423,19 @@ public class PhasedStructureGenerator implements IWorldGenerator {
                 }
                 list.add(this);
             }
+        }
+
+        @Override
+        long getOriginChunkKey() {
+            if (pending == null) return 0L;
+            int chunkX = Library.getBlockPosX(pending.origin) >> 4;
+            int chunkZ = Library.getBlockPosZ(pending.origin) >> 4;
+            return ChunkPos.asLong(chunkX, chunkZ);
+        }
+
+        @Override
+        void recycle() {
+            recycle(this);
         }
     }
 
@@ -506,6 +542,9 @@ public class PhasedStructureGenerator implements IWorldGenerator {
         private Long2ObjectOpenHashMap<Long2ObjectOpenHashMap<Object>> layout;
         private boolean postGenerated;
         private boolean completionQueued;
+        private long lastTouchedTick = Long.MIN_VALUE;
+        private long lastSavedTick = Long.MIN_VALUE;
+        private boolean dirty;
         private int minX;
         private int maxX;
         private int minZ;
@@ -521,9 +560,9 @@ public class PhasedStructureGenerator implements IWorldGenerator {
             return start;
         }
 
-        static PhasedStructureStart borrow(DimensionState state, ReadyToGenerateStructure ready) {
+        static PhasedStructureStart borrow(DimensionState state, ReadyToGenerateStructure ready, long now) {
             PhasedStructureStart start = borrow(state);
-            start.init(ready, state);
+            start.init(ready, state, now);
             return start;
         }
 
@@ -551,13 +590,16 @@ public class PhasedStructureGenerator implements IWorldGenerator {
             maxZ = 0;
             completionQueued = false;
             components.clear();
+            lastTouchedTick = Long.MIN_VALUE;
+            lastSavedTick = Long.MIN_VALUE;
+            dirty = false;
         }
 
         boolean isSerializable() {
             return structure != null && !remainingChunks.isEmpty();
         }
 
-        void init(ReadyToGenerateStructure ready, DimensionState state) {
+        void init(ReadyToGenerateStructure ready, DimensionState state, long now) {
             resetState();
             dimension = state.dimension;
             chunkPosX = Library.getBlockPosX(ready.finalOrigin) >> 4;
@@ -569,6 +611,32 @@ public class PhasedStructureGenerator implements IWorldGenerator {
             layout = ready.pending.layout;
             recomputeSeeds();
             buildComponentsFromLayout();
+            markDirty(now);
+        }
+
+        void markDirty(long now) {
+            dirty = true;
+            lastTouchedTick = now;
+        }
+
+        void markSaved(long now) {
+            dirty = false;
+            lastSavedTick = now;
+            lastTouchedTick = now;
+        }
+
+        void markLoaded(long now) {
+            dirty = false;
+            lastSavedTick = now;
+            lastTouchedTick = now;
+        }
+
+        boolean isDirty() {
+            return dirty;
+        }
+
+        long getLastTouchedTick() {
+            return lastTouchedTick;
         }
 
         private void recomputeSeeds() {
@@ -884,6 +952,7 @@ public class PhasedStructureGenerator implements IWorldGenerator {
             remainingChunks.remove(key);
             DimensionState state = PhasedEventHandler.getState(dimension);
             onChunkProcessed(state, key, task, fullCleanup);
+            markDirty(world.getTotalWorldTime());
 
             if (remainingChunks.isEmpty() && !postGenerated && structure != null) {
                 postGenerated = true;

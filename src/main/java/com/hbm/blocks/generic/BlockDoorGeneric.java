@@ -1,5 +1,6 @@
 package com.hbm.blocks.generic;
 
+import com.hbm.api.block.IToolable.ToolType;
 import com.hbm.blocks.BlockDummyable;
 import com.hbm.handler.radiation.RadiationSystemNT;
 import com.hbm.interfaces.IBomb;
@@ -7,6 +8,7 @@ import com.hbm.interfaces.IDoor;
 import com.hbm.interfaces.IRadResistantBlock;
 import com.hbm.items.ModItems;
 import com.hbm.items.tool.ItemLock;
+import com.hbm.items.tool.ItemTooling;
 import com.hbm.lib.ForgeDirection;
 import com.hbm.tileentity.DoorDecl;
 import com.hbm.tileentity.TileEntityDoorGeneric;
@@ -20,6 +22,7 @@ import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
@@ -88,16 +91,30 @@ public class BlockDoorGeneric extends BlockDummyable implements IRadResistantBlo
 	public boolean onBlockActivated(World world, BlockPos pos, IBlockState state, EntityPlayer player, EnumHand hand, EnumFacing facing, float hitX, float hitY, float hitZ){
 		if(world.isRemote) {
 			return true;
-		} else if(player.getHeldItem(hand).getItem() instanceof ItemLock || player.getHeldItem(hand).getItem() == ModItems.key_kit) {
+        }
+
+        TileEntity te = findCoreTE(world, pos);
+        if (!(te instanceof TileEntityDoorGeneric door)) return false;
+
+        Item hold = player.getHeldItem(hand).getItem();
+        if (hold instanceof ItemTooling tool && tool.getType() == ToolType.SCREWDRIVER) {
+            if (door.getConfiguredMode() == IDoor.Mode.TOOLABLE) {
+                if (!door.canToggleRedstone(player)) {
+                    return false;
+                }
+                door.toggleRedstoneMode();
+                return true;
+            }
+        }
+
+        if (hold instanceof ItemLock || hold == ModItems.key_kit) {
 			return false;
+        }
 
-		} if(!player.isSneaking()) {
-			int[] pos1 = findCore(world, pos.getX(), pos.getY(), pos.getZ());
-			if(pos1 == null)
-				return false;
-			TileEntityDoorGeneric door = (TileEntityDoorGeneric) world.getTileEntity(new BlockPos(pos1[0], pos1[1], pos1[2]));
+        if (door.isRedstoneOnly()) return false;
 
-			if(door != null && door.canAccess(player)) {
+        if (!player.isSneaking()) {
+            if (door.canAccess(player)) {
 				return door.tryToggle(player);
 			}
 		}

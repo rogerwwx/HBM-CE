@@ -172,6 +172,7 @@ public class ResourceManager {
     public static final IModelCustom missileStealth = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/missile_stealth.obj")).asVBO();
     public static final IModelCustom missileCarrier = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/missileCarrier.obj"));
     public static final IModelCustom missileBooster = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/missileBooster.obj"));
+    public static final IModelCustom missileShuttle = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/missile_shuttle.obj")).asVBO();
     public static final IModelCustom minerRocket = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/minerRocket.obj"));
     public static final IModelCustom soyuz_lander = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/soyuz_lander.obj")).asVBO();
     public static final IModelCustom soyuz_module = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/soyuz_module.obj")).asVBO();
@@ -1381,6 +1382,7 @@ public class ResourceManager {
     public static final ResourceLocation missileN2_tex = new ResourceLocation(Tags.MODID, "textures/models/missiles/missileN2.png");
     public static final ResourceLocation missileEndo_tex = new ResourceLocation(Tags.MODID, "textures/models/missiles/missileEndo.png");
     public static final ResourceLocation missileExo_tex = new ResourceLocation(Tags.MODID, "textures/models/missiles/missileExo.png");
+    public static final ResourceLocation missileShuttle_tex = new ResourceLocation(Tags.MODID, "textures/models/missiles/missile_shuttle.png");
     public static final ResourceLocation missileTaint_tex = new ResourceLocation(Tags.MODID, "textures/models/missiles/missile_micro_taint.png");
     public static final ResourceLocation missileMicro_tex = new ResourceLocation(Tags.MODID, "textures/models/missiles/missile_micro.png");
     public static final ResourceLocation missileCarrier_tex = new ResourceLocation(Tags.MODID, "textures/models/missiles/missileCarrier.png");

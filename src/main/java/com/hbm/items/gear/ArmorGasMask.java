@@ -204,7 +204,7 @@ public class ArmorGasMask extends ItemArmor implements IGasMask {
 		}
 	}
 
-	@Override
+	@Override @NotNull
 	public ItemStack getFilter(ItemStack stack) {
 		return ArmorUtil.getGasMaskFilter(stack);
 	}

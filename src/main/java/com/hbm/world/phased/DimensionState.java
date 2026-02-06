@@ -28,6 +28,7 @@ final class DimensionState {
     long currentlyProcessingChunk = Long.MIN_VALUE;
     boolean processingTasks;
     int processingDepth;
+    long lastSweepTick = Long.MIN_VALUE;
 
     DimensionState(int dimension, WorldServer world) {
         this.dimension = dimension;

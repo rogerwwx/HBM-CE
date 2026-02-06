@@ -51,6 +51,7 @@ public final class HBMSoundHandler {
     public static SoundEvent tauShoot;
     public static SoundEvent oldExplosion;
     public static SoundEvent nuclearExplosion;
+    public static SoundEvent robinExplosion;
     public static SoundEvent ciwsSpindown;
     public static SoundEvent ciwsSpinup;
     public static SoundEvent ciwsFiringLoop;
@@ -455,6 +456,7 @@ public final class HBMSoundHandler {
         tauShoot = register("weapon.tauShoot");
         oldExplosion = register("entity.oldExplosion");
         nuclearExplosion = register("weapon.nuclearExplosion");
+        robinExplosion = register("weapon.robin_explosion");
         boiler = register("block.boiler");
         boiler_groan1 = register("block.boilerGroan0");
         boiler_groan2 = register("block.boilerGroan1");

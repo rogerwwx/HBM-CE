@@ -86,6 +86,7 @@ public class CommonConfig {
         if (type == Integer.class) return Integer.parseInt(value);
         if (type == Long.class) return Long.parseLong(value);
         if (type == Double.class) return Double.parseDouble(value);
+        if (type.isEnum()) return Enum.valueOf((Class<Enum>) type, value);
         return value;
 	}
 

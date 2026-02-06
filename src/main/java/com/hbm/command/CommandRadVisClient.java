@@ -28,13 +28,15 @@ public class CommandRadVisClient extends CommandBase implements IClientCommand {
                 Usage:
                  /radvis on|off
                  /radvis radius <rChunks>
-                 /radvis mode <wire|slice|faces|state|errors>
+                 /radvis mode <wire|slice|sections|pockets|state|errors>
                  /radvis y <auto|0-255>
                  /radvis depth <on|off>
                  /radvis alpha <0.0-1.0>
                  /radvis verify <on|off>
                  /radvis verifyInterval <ticks>
-                 /radvis here
+                 /radvis anchor <auto|here|x y z>
+                 /radvis reset
+                 /radvis clearcaches
                  /radvis filterBox <dx> <dy> <dz>
                 """;
     }
@@ -172,14 +174,43 @@ public class CommandRadVisClient extends CommandBase implements IClientCommand {
                 cfg.verifyInterval = v;
                 sender.sendMessage(new TextComponentString("RadVis verifyInterval set to " + v + " ticks."));
             }
-            case "here" -> {
-                if (sender instanceof EntityPlayer player) {
-                    cfg.focusAnchor = player.getPosition();
-                    cfg.focusEnabled = true;
-                    sender.sendMessage(new TextComponentString("RadVis focus anchor set to your position."));
-                } else {
-                    sender.sendMessage(new TextComponentString("RadVis focus anchor requires a player."));
+            case "anchor" -> {
+                if (args.length < 2) {
+                    sender.sendMessage(new TextComponentString(getUsage(sender)));
+                    return;
                 }
+                String subMode = args[1].toLowerCase();
+                if ("auto".equals(subMode)) {
+                    cfg.focusAnchor = null;
+                    sender.sendMessage(new TextComponentString("RadVis anchor set to auto (player)."));
+                } else if ("here".equals(subMode)) {
+                    if (sender instanceof EntityPlayer player) {
+                        cfg.focusAnchor = player.getPosition();
+                        cfg.focusEnabled = true;
+                        sender.sendMessage(new TextComponentString("RadVis anchor set to your position."));
+                    } else {
+                        sender.sendMessage(new TextComponentString("RadVis anchor requires a player."));
+                    }
+                } else {
+                    try {
+                       int x = Integer.parseInt(args[1]);
+                       int y = Integer.parseInt(args[2]);
+                       int z = Integer.parseInt(args[3]);
+                       cfg.focusAnchor = new BlockPos(x, y, z);
+                       cfg.focusEnabled = true;
+                       sender.sendMessage(new TextComponentString("RadVis anchor set to " + x + " " + y + " " + z + "."));
+                    } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
+                        sender.sendMessage(new TextComponentString("Invalid anchor arguments. Usage: /radvis anchor <auto|here|x y z>"));
+                    }
+                }
+            }
+            case "reset" -> {
+                cfg.reset();
+                sender.sendMessage(new TextComponentString("RadVis configuration reset to defaults."));
+            }
+            case "clearcaches" -> {
+                RadVisOverlay.clearCaches();
+                sender.sendMessage(new TextComponentString("RadVis caches cleared."));
             }
             case "filterbox" -> {
                 if (args.length < 4) {
@@ -212,14 +243,17 @@ public class CommandRadVisClient extends CommandBase implements IClientCommand {
     @Override
     public List<String> getTabCompletions(MinecraftServer server, ICommandSender sender, String[] args, BlockPos targetPos) {
         if (args.length == 1) {
-            return getListOfStringsMatchingLastWord(args, "on", "off", "radius", "mode", "y", "depth", "alpha", "verify", "verifyInterval", "here",
-                    "filterBox");
+            return getListOfStringsMatchingLastWord(args, "on", "off", "radius", "mode", "y", "depth", "alpha", "verify", "verifyInterval", "anchor",
+                    "filterBox", "reset", "clearcaches");
         }
         if (args.length == 2 && "mode".equalsIgnoreCase(args[0])) {
-            return getListOfStringsMatchingLastWord(args, "wire", "slice", "faces", "state", "errors");
+            return getListOfStringsMatchingLastWord(args, "wire", "slice", "sections", "pockets", "state", "errors");
         }
         if (args.length == 2 && ("depth".equalsIgnoreCase(args[0]) || "verify".equalsIgnoreCase(args[0]))) {
             return getListOfStringsMatchingLastWord(args, "on", "off");
+        }
+        if (args.length == 2 && "anchor".equalsIgnoreCase(args[0])) {
+            return getListOfStringsMatchingLastWord(args, "auto", "here");
         }
         if (args.length == 2 && "y".equalsIgnoreCase(args[0])) {
             return getListOfStringsMatchingLastWord(args, "auto");
@@ -253,7 +287,8 @@ public class CommandRadVisClient extends CommandBase implements IClientCommand {
         return switch (s.toLowerCase()) {
             case "wire" -> RadVisOverlay.Mode.WIRE;
             case "slice" -> RadVisOverlay.Mode.SLICE;
-            case "faces" -> RadVisOverlay.Mode.FACES;
+            case "sections" -> RadVisOverlay.Mode.SECTIONS;
+            case "pockets" -> RadVisOverlay.Mode.POCKETS;
             case "state" -> RadVisOverlay.Mode.STATE;
             case "errors" -> RadVisOverlay.Mode.ERRORS;
             default -> null;

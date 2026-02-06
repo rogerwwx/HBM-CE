@@ -19,11 +19,11 @@ import java.io.IOException;
 
 public class GUIMachineChemicalPlant extends GuiInfoContainer {
 
-    private static ResourceLocation texture = new ResourceLocation(Tags.MODID + ":textures/gui/processing/gui_chemplant.png");
-    private TileEntityMachineChemicalPlant chemplant;
+    private static final ResourceLocation texture = new ResourceLocation(Tags.MODID + ":textures/gui/processing/gui_chemplant.png");
+    private final TileEntityMachineChemicalPlant chemplant;
 
     public GUIMachineChemicalPlant(InventoryPlayer invPlayer, TileEntityMachineChemicalPlant tedf) {
-        super(new ContainerMachineChemicalPlant(invPlayer, tedf.getCheckedInventory()));
+        super(new ContainerMachineChemicalPlant(invPlayer, tedf.getCheckedInventory(), tedf));
         chemplant = tedf;
 
         this.xSize = 176;

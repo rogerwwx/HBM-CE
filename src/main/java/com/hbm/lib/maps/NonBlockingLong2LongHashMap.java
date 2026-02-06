@@ -77,6 +77,10 @@ public class NonBlockingLong2LongHashMap extends AbstractLong2LongMap implements
         initialize(initial_sz);
     }
 
+    protected int hash(long key) {
+        return (int) HashCommon.mix(key);
+    }
+
     private static boolean isDataEnc(long enc) {
         return (enc & ~VTOMBPRIME) != 0; // anything except 0,1,2,3
     }
@@ -588,7 +592,7 @@ public class NonBlockingLong2LongHashMap extends AbstractLong2LongMap implements
         }
 
         private long get_impl(final long key) {
-            final int h = (int) HashCommon.mix(key);
+            final int h = _nbhmll.hash(key);
             final int len = _keys.length;
             int idx = (h & (len - 1));
 
@@ -802,7 +806,7 @@ public class NonBlockingLong2LongHashMap extends AbstractLong2LongMap implements
 
         private long putIfMatch(final long key, final long putEnc, final int expKind, final long expEnc, final boolean adjustSize) {
 
-            final int h = (int) HashCommon.mix(key);
+            final int h = _nbhmll.hash(key);
             final int len = _keys.length;
             int idx = (h & (len - 1));
 

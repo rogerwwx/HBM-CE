@@ -25,6 +25,7 @@ import com.hbm.handler.*;
 import com.hbm.handler.imc.IMCHandler;
 import com.hbm.handler.pollution.PollutionHandler;
 import com.hbm.handler.radiation.RadiationSystemNT;
+import com.hbm.handler.threading.BombForkJoinPool;
 import com.hbm.handler.threading.PacketThreading;
 import com.hbm.hazard.HazardData;
 import com.hbm.hazard.HazardRegistry;
@@ -48,6 +49,7 @@ import com.hbm.lib.HbmWorld;
 import com.hbm.packet.PacketDispatcher;
 import com.hbm.potion.HbmDetox;
 import com.hbm.potion.HbmPotion;
+import com.hbm.saveddata.FluidIdRemapper;
 import com.hbm.saveddata.satellites.Satellite;
 import com.hbm.tileentity.bomb.TileEntityLaunchPadBase;
 import com.hbm.tileentity.bomb.TileEntityNukeCustom;
@@ -155,6 +157,7 @@ public class MainRegistry {
         StructureConfig.loadFromConfig(config);
         reloadCompatConfig();
         BedrockOreJsonConfig.init();
+        CassetteJsonConfig.init();
         config.save();
     }
 
@@ -174,10 +177,10 @@ public class MainRegistry {
             IMCHandler handler = IMCHandler.getHandler(message.key);
 
             if (handler != null) {
-                MainRegistry.logger.info("Received IMC of type >" + message.key + "< from " + message.getSender() + "!");
+                MainRegistry.logger.info("Received IMC of type >{}< from {}!", message.key, message.getSender());
                 handler.process(message);
             } else {
-                MainRegistry.logger.error("Could not process unknown IMC type \"" + message.key + "\"");
+                MainRegistry.logger.error("Could not process unknown IMC type \"{}\"", message.key);
             }
         }
     }
@@ -194,9 +197,8 @@ public class MainRegistry {
         if (generalOverride > 0 && generalOverride < 19) {
             polaroidID = generalOverride;
         } else {
-            polaroidID = rand.nextInt(18) + 1;
-            while (polaroidID == 4 || polaroidID == 9)
-                polaroidID = rand.nextInt(18) + 1;
+            do polaroidID = rand.nextInt(18) + 1;
+            while (polaroidID == 4 || polaroidID == 9);
         }
 
         configDir = event.getModConfigurationDirectory();
@@ -360,6 +362,9 @@ public class MainRegistry {
         AdvGen.generate();
     }
 
+    /**
+     * After initial world & chunk loading, before FMLServerStartedEvent
+     */
     @EventHandler
     public void serverStarting(FMLServerStartingEvent evt) {
         RBMKDials.createDials(evt.getServer().getEntityWorld());
@@ -370,10 +375,11 @@ public class MainRegistry {
         AdvancementManager.init(evt.getServer());
         //MUST be initialized AFTER achievements!!
         BobmazonOfferFactory.init();
-
-        PhasedStructureRegistry.onServerStarting(evt.getServer());
     }
 
+    /**
+     * Immediately posted when the last tick before server stopping finishes. Worlds and Chunks are still loaded.
+     */
     @EventHandler
     public void serverStopping(FMLServerStoppingEvent evt) {
         RadiationSystemNT.onServerStopping();
@@ -382,15 +388,30 @@ public class MainRegistry {
         ModEventHandler.RBMK_COL_HEIGHT_MAP.clear();
     }
 
+    /**
+     * After FMLServerStoppingEvent, the following happens:
+     * - finalTick: handles exception
+     * - stopServer: handles saving & unloading
+     *      - network system is terminated
+     *      - Player data is saved and players are removed
+     *      - All worlds are saved
+     *      - POST WorldEvent.Unload and then saveHandler.flush() on all worlds
+     *      - Detach World strong references from DimensionManager
+     *  - POST FMLServerStoppedEvent
+     *  - If dedicated, the program is terminated
+     * @param evt
+     */
     @EventHandler
     public void serverStopped(FMLServerStoppedEvent evt) {
         RadiationSystemNT.onServerStopped();
         PhasedEventHandler.onServerStopped();
         PhasedStructureRegistry.onServerStopped();
+        FluidIdRemapper.onServerStopped();
+        BombForkJoinPool.onServerStopped();
     }
 
     @EventHandler
-    public void fMLLoadCompleteEvent(FMLLoadCompleteEvent evt) {
+    public void loadComplete(FMLLoadCompleteEvent evt) {
         proxy.onLoadComplete(evt);
         RadiationSystemNT.onLoadComplete();
         FalloutConfigJSON.initialize();

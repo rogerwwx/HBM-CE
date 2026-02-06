@@ -2,6 +2,7 @@ package com.hbm.api.item;
 
 import com.hbm.util.ArmorRegistry.HazardClass;
 import net.minecraft.item.ItemStack;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
@@ -20,6 +21,7 @@ public interface IGasMask {
 	 * @param entity
 	 * @return null if no filter is installed
 	 */
+	@NotNull
 	public ItemStack getFilter(ItemStack stack);
 	
 	/**

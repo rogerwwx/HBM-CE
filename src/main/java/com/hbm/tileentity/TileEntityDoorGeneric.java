@@ -10,11 +10,14 @@ import com.hbm.inventory.control_panel.ControlEventSystem;
 import com.hbm.inventory.control_panel.DataValueFloat;
 import com.hbm.inventory.control_panel.IControllable;
 import com.hbm.lib.ForgeDirection;
+import com.hbm.lib.Library;
 import com.hbm.main.MainRegistry;
 import com.hbm.packet.PacketDispatcher;
 import com.hbm.packet.toclient.TEDoorAnimationPacket;
 import com.hbm.sound.AudioWrapper;
 import com.hbm.tileentity.machine.TileEntityLockableBase;
+import it.unimi.dsi.fastutil.longs.LongIterable;
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumFacing;
@@ -48,6 +51,7 @@ public class TileEntityDoorGeneric extends TileEntityLockableBase implements ITi
     private AudioWrapper audio2;
     // For T flip-flop redstone behavior
     private boolean wasPowered = false;
+    private boolean redstoneOnly = false;
 
     public TileEntityDoorGeneric() {
     }
@@ -132,7 +136,7 @@ public class TileEntityDoorGeneric extends TileEntityLockableBase implements ITi
 
                 // With door finally closed, mark chunk for rad update since door is now rad resistant
                 // No need to update when open as well, as opening door should update
-                RadiationSystemNT.markSectionForRebuild(world, pos);
+                RadiationSystemNT.markSectionsForRebuild(world, getOccupiedSections());
             }
             PacketDispatcher.wrapper.sendToAllAround(new TEDoorAnimationPacket(pos, (byte) state.ordinal(), (byte) (shouldUseBB ? 1 : 0)),
                     new TargetPoint(world.provider.getDimension(), pos.getX(), pos.getY(), pos.getZ(), 100));
@@ -237,11 +241,11 @@ public class TileEntityDoorGeneric extends TileEntityLockableBase implements ITi
         if (state == DoorState.CLOSED) {
             state = DoorState.OPENING;
             // With door opening, mark chunk for rad update
-            RadiationSystemNT.markSectionForRebuild(world, pos);
+            RadiationSystemNT.markSectionsForRebuild(world, getOccupiedSections());
         } else if (state == DoorState.OPEN) {
             state = DoorState.CLOSING;
             // With door closing, mark chunk for rad update
-            RadiationSystemNT.markSectionForRebuild(world, pos);
+            RadiationSystemNT.markSectionsForRebuild(world, getOccupiedSections());
         }
     }
 
@@ -313,6 +317,7 @@ public class TileEntityDoorGeneric extends TileEntityLockableBase implements ITi
         this.redstonePower = tag.getInteger("redstoned");
         this.shouldUseBB = tag.getBoolean("shouldUseBB");
         this.wasPowered = tag.getBoolean("wasPowered");
+        this.redstoneOnly = tag.getBoolean("redstoneOnly");
         NBTTagCompound activatedBlocks = tag.getCompoundTag("activatedBlocks");
         this.activatedBlocks.clear();
         for (int i = 0; i < activatedBlocks.getKeySet().size() / 3; i++) {
@@ -330,6 +335,7 @@ public class TileEntityDoorGeneric extends TileEntityLockableBase implements ITi
         tag.setInteger("redstoned", redstonePower);
         tag.setBoolean("shouldUseBB", shouldUseBB);
         tag.setBoolean("wasPowered", this.wasPowered);
+        tag.setBoolean("redstoneOnly", this.redstoneOnly);
         NBTTagCompound activatedBlocks = new NBTTagCompound();
         int i = 0;
         for (BlockPos p : this.activatedBlocks) {
@@ -428,5 +434,83 @@ public class TileEntityDoorGeneric extends TileEntityLockableBase implements ITi
         this.doorType = doorType;
     }
 
+    public boolean getRedstoneOnly() {
+        return redstoneOnly;
+    }
 
+    public void setRedstoneOnly(boolean redstoneOnly) {
+        this.redstoneOnly = redstoneOnly;
+    }
+
+    public LongIterable getOccupiedSections() {
+        LongOpenHashSet sections = new LongOpenHashSet();
+        sections.add(Library.blockPosToSectionLong(pos));
+
+        if (getDoorType() == null) return sections;
+
+        int[][] ranges = getDoorType().getDoorOpenRanges();
+        ForgeDirection dir = ForgeDirection.getOrientation(getBlockMetadata() - BlockDummyable.offset);
+        Rotation r = dir.getBlockRotation();
+        if (dir.toEnumFacing().getAxis() == EnumFacing.Axis.X) r = r.add(Rotation.CLOCKWISE_180);
+
+        int ox = pos.getX();
+        int oy = pos.getY();
+        int oz = pos.getZ();
+
+        for (int[] range : ranges) {
+            int sx = range[0];
+            int sy = range[1];
+            int sz = range[2];
+            int absRange3 = Math.abs(range[3]);
+            int signRange3 = (int) Math.signum(range[3]);
+            int axisVal = range[5];
+
+            for (int j = 0; j < absRange3; j++) {
+                for (int k = 0; k < range[4]; k++) {
+                    int ax = 0;
+                    int ay = 0;
+                    int az = 0;
+
+                    // EnumFacing.Axis order: X, Y, Z
+                    switch (axisVal) {
+                        case 0 -> {
+                            ay = k;
+                            az = signRange3 * j;
+                        }
+                        case 1 -> {
+                            ax = k;
+                            ay = signRange3 * j;
+                        }
+                        case 2 -> {
+                            ax = signRange3 * j;
+                            ay = k;
+                        }
+                    }
+                    int rx = sx + ax;
+                    int ry = sy + ay;
+                    int rz = sz + az;
+                    int rotX = rx;
+                    int rotZ = rz;
+                    switch (r) {
+                        case CLOCKWISE_90:
+                            rotX = -rz;
+                            rotZ = rx;
+                            break;
+                        case CLOCKWISE_180:
+                            rotX = -rx;
+                            rotZ = -rz;
+                            break;
+                        case COUNTERCLOCKWISE_90:
+                            rotX = rz;
+                            rotZ = -rx;
+                            break;
+                        default:
+                            break;
+                    }
+                    sections.add(Library.blockPosToSectionLong(rotX + ox, ry + oy, rotZ + oz));
+                }
+            }
+        }
+        return sections;
+    }
 }
