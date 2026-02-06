@@ -6,7 +6,6 @@ import com.hbm.interfaces.AutoRegister;
 import com.hbm.inventory.fluid.FluidType;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.lib.ForgeDirection;
-import com.hbm.saveddata.FluidIdRemapper;
 import com.hbm.tileentity.IFluidCopiable;
 import com.hbm.tileentity.TileEntityLoadedBase;
 import com.hbm.uninos.UniNodespace;
@@ -50,6 +49,7 @@ public class TileEntityPipeBaseNT extends TileEntityLoadedBase implements IFluid
     }
 
     public void setType(FluidType type) {
+        FluidType prev = this.type;
         this.type = type;
         this.markDirty();
 
@@ -125,17 +125,13 @@ public class TileEntityPipeBaseNT extends TileEntityLoadedBase implements IFluid
     @Override
     public void readFromNBT(NBTTagCompound nbt) {
         super.readFromNBT(nbt);
-        if (nbt.hasKey("type_v1")) {
-            this.type = FluidIdRemapper.getFluid(nbt.getInteger("type_v1"));
-        } else {
-            this.type = FluidIdRemapper.remapLegacyId(nbt.getInteger("type"));
-        }
+        this.type = Fluids.fromID(nbt.getInteger("type"));
     }
 
     @Override
     public NBTTagCompound writeToNBT(NBTTagCompound nbt) {
         super.writeToNBT(nbt);
-        nbt.setInteger("type_v1", FluidIdRemapper.getStringId(type));
+        nbt.setInteger("type", this.type.getID());
         return nbt;
     }
 }

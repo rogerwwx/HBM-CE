@@ -23,6 +23,7 @@ import java.util.function.Function;
 
 /**
  * Registry of all phased/dynamic structures using stable string keys and compact binary codecs.
+ * IDS MUST NOT BE SYNC'd TO CLIENTS!!!
  */
 public final class PhasedStructureRegistry {
 
@@ -191,6 +192,7 @@ public final class PhasedStructureRegistry {
 
     /**
      * Get ID for a string from the global string table.
+     * This ID, and the NBT holding it, MUST NOT BE SENT TO THE CLIENTS
      */
     public static int getStringId(String s) {
         if (currentIdData == null) return -1;
@@ -199,6 +201,7 @@ public final class PhasedStructureRegistry {
 
     /**
      * Get string for an ID from the global string table.
+     * MUST NOT BE CALLED ON LOGICAL CLIENT
      */
     public static @Nullable String getString(int id) {
         if (currentIdData == null) return null;

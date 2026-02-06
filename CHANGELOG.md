@@ -6,9 +6,8 @@
 > Actually should be at least 2.0.0.0 due to major change in fluid id
 
 ### SUBSTANTIAL CHANGES
-**Changed the order of fluid ids. A remapper is added to remap FluidTankNTM(affect most machines) and fluid ducts' type,
-but ALL ITEMS, including tanks/barrels, will observe an ID shift! to mitigate, move your fluids into a fluid 
-tank(machine), or into a ForgerFluid fluid tank(e.g. Mekanism tanks) before updating!** 
+**Changed the order of fluid ids. NO ATTEMPTS ARE MADE TO AVOID FLUID ID SHIFTING ON NTM ITEMS/TANKS/MACHINES.  
+To mitigate, move your fluids into a ForgeFluid fluid tank(e.g. Mekanism tanks) before updating!** 
 ### Breaking Changes
 - Removed Watz pellets from NTM:Space fork
 - Removed `gas_mask_filter_radon`
