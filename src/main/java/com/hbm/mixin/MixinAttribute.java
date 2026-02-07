@@ -22,12 +22,12 @@ public abstract class MixinAttribute {
     private static void tweakAttributes(CallbackInfo ci) {
         // 修改最大生命值上限
         MAX_HEALTH = (RangedAttribute) new RangedAttribute(null, "generic.maxHealth",
-                20.0D, 0.0D, 10000.0D) // 改成 10000
+                20.0D, 0.0D, 10000.0D)
                 .setDescription("Max Health").setShouldWatch(true);
 
         // 修改护甲韧性上限
         ARMOR_TOUGHNESS = (RangedAttribute) new RangedAttribute(null, "generic.armorToughness",
-                0.0D, 0.0D, 100.0D) // 改成 100
+                0.0D, 0.0D, 200.0D)
                 .setDescription("Armor Toughness").setShouldWatch(true);
     }
 }

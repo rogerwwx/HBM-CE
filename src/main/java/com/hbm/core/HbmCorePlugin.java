@@ -13,7 +13,7 @@ import java.util.Map;
 
 @IFMLLoadingPlugin.MCVersion("1.12.2")
 @IFMLLoadingPlugin.TransformerExclusions({"com.hbm.core"})
-@IFMLLoadingPlugin.SortingIndex(6666) // >1000 after SRG
+@IFMLLoadingPlugin.SortingIndex(2077) // >1000 after SRG
 public class HbmCorePlugin implements IFMLLoadingPlugin, IEarlyMixinLoader {
 
     static final Logger coreLogger = LogManager.getLogger("HBM CoreMod");
@@ -97,7 +97,7 @@ public class HbmCorePlugin implements IFMLLoadingPlugin, IEarlyMixinLoader {
             return this == CAT_SERVER || this == MOHIST || this == MAGMA;
         }
     }
-
+    //Mixin
     @Override
     public List<String> getMixinConfigs() {
         return Arrays.asList(
