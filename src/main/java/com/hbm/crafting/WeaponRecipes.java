@@ -329,7 +329,7 @@ public class WeaponRecipes {
         CraftingManager.addRecipeAuto(new ItemStack(ModBlocks.lamp_demon, 1), " D ", "S S", 'D', ModItems.demon_core_closed, 'S', STEEL.ingot() );
 
         CraftingManager.addRecipeAuto(new ItemStack(ModItems.crucible, 1, 3), "MEM", "YDY", "YCY", 'M', ModItems.ingot_meteorite_forged, 'E', EUPH.ingot(), 'Y', ModItems.billet_yharonite, 'D', ModItems.demon_core_closed, 'C', ModItems.ingot_chainsteel );
-        CraftingManager.addRecipeAuto(new ItemStack(ModItems.hf_sword), "MEM", "YDY", "YCY", 'M', ModItems.blade_meteorite, 'E', ModItems.nothing, 'Y', ModItems.ingot_electronium, 'D', ModItems.particle_strange, 'C', ModItems.ingot_chainsteel);
-        CraftingManager.addRecipeAuto(new ItemStack(ModItems.hs_sword), "MEM", "YDY", "YCY", 'M', ModItems.blade_meteorite, 'E', GH336.ingot(), 'Y', ModItems.ingot_osmiridium, 'D', ModItems.particle_dark, 'C', ModItems.ingot_chainsteel);
+        CraftingManager.addRecipeAuto(new ItemStack(ModItems.hf_sword), "MEM", "YDY", "YCY", 'M', ModItems.blade_meteorite, 'E', ModItems.ingot_electronium, 'Y', ModItems.billet_unobtainium, 'D', ModItems.particle_strange, 'C', ModItems.ingot_chainsteel);
+        CraftingManager.addRecipeAuto(new ItemStack(ModItems.hs_sword), "MEM", "YDY", "YCY", 'M', ModItems.blade_meteorite, 'E', GH336.ingot(), 'Y', ModItems.billet_gh336, 'D', ModItems.particle_dark, 'C', ModItems.ingot_chainsteel);
     }
 }
