@@ -37,6 +37,7 @@ public class ResourceManager {
     public static final IModelCustom error = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/error.obj"));
 
     public static final IModelCustom cat = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/weapons/cat.obj"));
+    public static final IModelCustom horse = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/mobs/horse.obj")).asVBO();
 
     //Press
     public static final IModelCustom press_body = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/press_body.obj")).asVBO();

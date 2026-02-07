@@ -1,15 +1,13 @@
 package com.hbm.render.util;
 
 import com.hbm.Tags;
-import com.hbm.render.loader.HFRWavefrontObject;
-import com.hbm.render.loader.IModelCustom;
+import com.hbm.main.ResourceManager;
 import com.hbm.util.Vec3NT;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.client.renderer.GlStateManager;
 
 public class HorsePronter {
 
-    public static final IModelCustom horse = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/mobs/horse.obj")).asVBO();
 
     public static final ResourceLocation tex_demohorse = new ResourceLocation(Tags.MODID, "textures/models/horse/horse_demo.png");
 
@@ -88,7 +86,7 @@ public class HorsePronter {
         GlStateManager.disableCull();
         doTransforms(id_body);
 
-        horse.renderPart("Body");
+        ResourceManager.horse.renderPart("Body");
 
         if(horn) {
             renderWithTransform(id_head, "Head", "Mane", maleSnoot ? "NoseMale" : "NoseFemale", "HornPointy");
@@ -103,8 +101,8 @@ public class HorsePronter {
         renderWithTransform(id_tail, "Tail");
 
         if(wings) {
-            horse.renderPart("LeftWing");
-            horse.renderPart("RightWing");
+            ResourceManager.horse.renderPart("LeftWing");
+            ResourceManager.horse.renderPart("RightWing");
         }
 
         GlStateManager.enableCull();
@@ -124,7 +122,7 @@ public class HorsePronter {
     private static void renderWithTransform(int id, String... parts) {
         GlStateManager.pushMatrix();
         doTransforms(id);
-        for(String part : parts) horse.renderPart(part);
+        for(String part : parts) ResourceManager.horse.renderPart(part);
         GlStateManager.popMatrix();
     }
 }
