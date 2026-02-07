@@ -74,7 +74,7 @@ public class EntityAIMaskmanLasergun extends EntityAIBase {
 								0
 						);
 						// ORB 弹道上抬，适合近距离
-						orb.motionY += 0.5D;
+						orb.motionY += 0.2D + owner.getRNG().nextGaussian() * 0.1D;
 						owner.world.spawnEntity(orb);
 						owner.playSound(HBMSoundHandler.teslaShoot, 1.0F, 1.0F);
 						break;

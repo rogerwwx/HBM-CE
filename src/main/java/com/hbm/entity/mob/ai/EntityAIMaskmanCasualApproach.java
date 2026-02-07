@@ -7,6 +7,7 @@ import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.ai.EntityAIBase;
 import net.minecraft.pathfinding.Path;
 import net.minecraft.world.World;
+import net.minecraft.util.math.BlockPos;
 
 public class EntityAIMaskmanCasualApproach extends EntityAIBase {
 
@@ -84,12 +85,15 @@ public class EntityAIMaskmanCasualApproach extends EntityAIBase {
 
 		double dist = attacker.getDistance(target);
 
-		// ===== 敌方运动预测 =====
+		// ===== 敌方运动预测（平滑速度） =====
 		double tx = target.posX;
 		double tz = target.posZ;
 
 		double vx = tx - lastTX;
 		double vz = tz - lastTZ;
+
+		vx = 0.7 * vx + 0.3 * (tx - lastTX);
+		vz = 0.7 * vz + 0.3 * (tz - lastTZ);
 
 		lastTX = tx;
 		lastTZ = tz;
@@ -105,22 +109,30 @@ public class EntityAIMaskmanCasualApproach extends EntityAIBase {
 
 		Vec3 dir = toPred.normalize();
 		Vec3 side = Vec3.createVectorHelper(-dir.zCoord, 0, dir.xCoord);
-		Vec3 away = Vec3.createVectorHelper(-dir.xCoord, 0, -dir.zCoord);
+
+		// ===== 动态理想距离（血量感知） =====
+		double healthRatio = attacker.getHealth() / attacker.getMaxHealth();
+		double dynamicIdeal = IDEAL_DISTANCE;
+
+		if (healthRatio > 0.7) {
+			dynamicIdeal = IDEAL_MIN + 2; // 高血量 → 更靠近
+		} else if (healthRatio < 0.3) {
+			dynamicIdeal = IDEAL_MAX;     // 低血量 → 拉远
+		}
 
 		// ===== 计算距离误差 =====
 		double dx = attacker.posX - predictX;
 		double dz = attacker.posZ - predictZ;
 		double currentDist = Math.sqrt(dx * dx + dz * dz);
-		double error = currentDist - IDEAL_DISTANCE;  // 当前误差（目标距离 - 实际距离）
+		double error = currentDist - dynamicIdeal;
 
-		// ===== 修正移动方向 =====
 		Vec3 correction = Vec3.createVectorHelper(
-				dir.xCoord * error, // 根据误差修正
+				dir.xCoord * error,
 				0,
 				dir.zCoord * error
 		);
 
-		// ===== 加入随机微调（增加自然感） =====
+		// ===== 随机抖动 + 绕圈行为 =====
 		double wobble = attacker.getRNG().nextGaussian() * IDEAL_WOBBLE;
 		Vec3 finalMove = Vec3.createVectorHelper(
 				correction.xCoord + side.xCoord * wobble,
@@ -128,11 +140,24 @@ public class EntityAIMaskmanCasualApproach extends EntityAIBase {
 				correction.zCoord + side.zCoord * wobble
 		);
 
-		// ===== 得到新的目标位置 =====
+		if (attacker.getRNG().nextBoolean()) {
+			finalMove = Vec3.createVectorHelper(
+					finalMove.xCoord + side.xCoord * 0.5,
+					0,
+					finalMove.zCoord + side.zCoord * 0.5
+			);
+		}
+
 		double px = attacker.posX + finalMove.xCoord;
 		double pz = attacker.posZ + finalMove.zCoord;
 
-		// ===== 路径紧急打断机制 =====
+		// ===== 环境感知 =====
+		if (!worldObj.isAirBlock(new BlockPos(px, attacker.posY - 1, pz))) {
+			px = attacker.posX + attacker.getRNG().nextGaussian() * 2;
+			pz = attacker.posZ + attacker.getRNG().nextGaussian() * 2;
+		}
+
+		// ===== 路径紧急打断 =====
 		boolean emergencyDisengage = dist <= IDEAL_MIN + 4;
 		if (emergencyDisengage) {
 			attacker.getNavigator().clearPath();
@@ -143,17 +168,27 @@ public class EntityAIMaskmanCasualApproach extends EntityAIBase {
 		pathTimer--;
 
 		if (pathTimer <= 0) {
-			pathTimer = failedPathFindingPenalty + 6 + attacker.getRNG().nextInt(8);
-			// 确保移动速度控制
+			pathTimer = Math.min(failedPathFindingPenalty + 6 + attacker.getRNG().nextInt(8), 40);
+
 			double moveSpeed = speedTowardsTarget;
-			// 如果敌人靠近，增加移动速度
-			if (dist <= IDEAL_MIN) {
-				moveSpeed = 2.5 * speedTowardsTarget;  // 加快速度，1.5 倍是一个示例
+
+			// 血量高 → 更激进，靠近时加速
+			if (healthRatio > 0.7 && dist <= IDEAL_MIN) {
+				moveSpeed = 2.5 * speedTowardsTarget;
 			}
+			// 血量低 → 更保守，减速
+			else if (healthRatio < 0.3) {
+				moveSpeed = 0.6 * speedTowardsTarget;
+			}
+			// 原有逻辑：过远时减速
+			else if (dist > IDEAL_MAX) {
+				moveSpeed = 0.7 * speedTowardsTarget;
+			}
+
 			if (!attacker.getNavigator().tryMoveToXYZ(px, attacker.posY, pz, moveSpeed)) {
-				failedPathFindingPenalty += 10;
+				failedPathFindingPenalty = Math.min(failedPathFindingPenalty + 5, 40);
 			} else {
-				failedPathFindingPenalty = 0;
+				failedPathFindingPenalty = Math.max(failedPathFindingPenalty - 2, 0);
 			}
 		}
 	}

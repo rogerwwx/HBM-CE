@@ -457,7 +457,7 @@ public class Library {
         Vec3d vec32 = vec3.add(vec31.x * d, vec31.y * d, vec31.z * d);
         RayTraceResult result = rayTraceBlocks(player.world, vec3, vec32, false, true, true);
         if (result != null) vec32 = result.hitVec;
-        AxisAlignedBB box = new AxisAlignedBB(vec3.x, vec3.y, vec3.z, vec32.x, vec32.y, vec32.z).grow(1D);
+        AxisAlignedBB box = new AxisAlignedBB(vec3.x, vec3.y, vec3.z, vec32.x, vec32.y, vec32.z).grow(2D);
         List<Entity> ents = player.world.getEntitiesInAABBexcluding(player, box, Predicates.and(EntitySelectors.IS_ALIVE, entity -> entity instanceof EntityLiving && !(entity instanceof EntityPlayer p && p.isSpectator())));
 
         double sx = vec3.x;
@@ -815,7 +815,7 @@ public class Library {
 
     private static double clamp(double v, double min, double max) {
         if (v < min) return min;
-        return Math.min(v, max);
+        return v > max ? max : v;
     }
 
     private static boolean isBetterCandidate(double dist, double startDist, double bestDist, double bestStartDist) {
@@ -1422,7 +1422,7 @@ public class Library {
     @Nullable
     private static Chunk getChunkForBlockTrace(@NotNull World world, int cx, int cz) {
         IChunkProvider prov = world.getChunkProvider();
-        return world.isRemote ? prov.getLoadedChunk(cx, cz) : prov.provideChunk(cx, cz);
+        return prov.getLoadedChunk(cx, cz);
     }
 
     @Nullable
@@ -1431,21 +1431,28 @@ public class Library {
             return null;
         }
 
-        int endX = (int) Math.floor(endVec.x);
-        int endY = (int) Math.floor(endVec.y);
-        int endZ = (int) Math.floor(endVec.z);
+        // 使用 MathHelper 保证坐标转换与 MC 原版逻辑一致
+        int endX = MathHelper.floor(endVec.x);
+        int endY = MathHelper.floor(endVec.y);
+        int endZ = MathHelper.floor(endVec.z);
 
-        int x = (int) Math.floor(startVec.x);
-        int y = (int) Math.floor(startVec.y);
-        int z = (int) Math.floor(startVec.z);
+        int x = MathHelper.floor(startVec.x);
+        int y = MathHelper.floor(startVec.y);
+        int z = MathHelper.floor(startVec.z);
 
-        double startX = startVec.x;
-        double startY = startVec.y;
-        double startZ = startVec.z;
+        // --- 预计算部分 ---
+        double dirX = endVec.x - startVec.x;
+        double dirY = endVec.y - startVec.y;
+        double dirZ = endVec.z - startVec.z;
 
-        double dx = endVec.x - startX;
-        double dy = endVec.y - startY;
-        double dz = endVec.z - startZ;
+        boolean dirXZero = dirX == 0.0D;
+        boolean dirYZero = dirY == 0.0D;
+        boolean dirZZero = dirZ == 0.0D;
+
+        // 预先计算倒数，碰到 0 设为无穷大
+        double invDirX = dirXZero ? Double.POSITIVE_INFINITY : 1.0D / dirX;
+        double invDirY = dirYZero ? Double.POSITIVE_INFINITY : 1.0D / dirY;
+        double invDirZ = dirZZero ? Double.POSITIVE_INFINITY : 1.0D / dirZ;
 
         int stepX = Integer.compare(endX, x);
         int stepY = Integer.compare(endY, y);
@@ -1455,40 +1462,38 @@ public class Library {
         byte faceY = (byte) (1 - ((stepY + 1) >>> 1));
         byte faceZ = (byte) (3 - ((stepZ + 1) >>> 1));
 
-        double tDeltaX = (stepX == 0) ? Double.POSITIVE_INFINITY : (1.0D / Math.abs(dx));
-        double tDeltaY = (stepY == 0) ? Double.POSITIVE_INFINITY : (1.0D / Math.abs(dy));
-        double tDeltaZ = (stepZ == 0) ? Double.POSITIVE_INFINITY : (1.0D / Math.abs(dz));
+        double tDeltaX = (stepX == 0) ? Double.POSITIVE_INFINITY : (1.0D / Math.abs(dirX));
+        double tDeltaY = (stepY == 0) ? Double.POSITIVE_INFINITY : (1.0D / Math.abs(dirY));
+        double tDeltaZ = (stepZ == 0) ? Double.POSITIVE_INFINITY : (1.0D / Math.abs(dirZ));
 
-        double tMaxX = (stepX == 0) ? Double.POSITIVE_INFINITY : (((stepX > 0) ? ((x + 1.0D) - startX) : (startX - (double) x)) * tDeltaX);
-        double tMaxY = (stepY == 0) ? Double.POSITIVE_INFINITY : (((stepY > 0) ? ((y + 1.0D) - startY) : (startY - (double) y)) * tDeltaY);
-        double tMaxZ = (stepZ == 0) ? Double.POSITIVE_INFINITY : (((stepZ > 0) ? ((z + 1.0D) - startZ) : (startZ - (double) z)) * tDeltaZ);
+        double tMaxX = (stepX == 0) ? Double.POSITIVE_INFINITY : (((stepX > 0) ? ((x + 1.0D) - startVec.x) : (startVec.x - (double) x)) * tDeltaX);
+        double tMaxY = (stepY == 0) ? Double.POSITIVE_INFINITY : (((stepY > 0) ? ((y + 1.0D) - startVec.y) : (startVec.y - (double) y)) * tDeltaY);
+        double tMaxZ = (stepZ == 0) ? Double.POSITIVE_INFINITY : (((stepZ > 0) ? ((z + 1.0D) - startVec.z) : (startVec.z - (double) z)) * tDeltaZ);
 
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos(x, y, z);
 
+        // 缓存变量
         int cachedChunkX = Integer.MIN_VALUE;
         int cachedChunkZ = Integer.MIN_VALUE;
         ExtendedBlockStorage[] cachedEbsArr = null;
-
         int cachedSecY = Integer.MIN_VALUE;
         ExtendedBlockStorage cachedEbs = null;
         boolean cachedEbsEmpty = true;
 
+        // --- 起始点检查 ---
         IBlockState startState;
         if ((y & ~255) != 0) {
             startState = AIR_DEFAULT_STATE;
         } else {
             int cx = x >> 4;
             int cz = z >> 4;
-
             cachedChunkX = cx;
             cachedChunkZ = cz;
-
+            // 安全优化：只取已加载区块，不强制加载
             Chunk chunk = getChunkForBlockTrace(world, cx, cz);
             cachedEbsArr = (chunk != null) ? chunk.getBlockStorageArray() : null;
-
             int secY = y >> 4;
             cachedSecY = secY;
-
             if (cachedEbsArr == null) {
                 startState = AIR_DEFAULT_STATE;
             } else {
@@ -1499,28 +1504,42 @@ public class Library {
         }
 
         if (startState != AIR_DEFAULT_STATE) {
-            if ((!ignoreBlockWithoutBoundingBox || startState.getCollisionBoundingBox(world, pos) != Block.NULL_AABB) && startState.getBlock().canCollideCheck(startState, stopOnLiquid)) {
-                RayTraceResult hit = startState.collisionRayTrace(world, pos, startVec, endVec);
-                //noinspection ConstantValue
-                if (hit != null) {
-                    return hit;
+            AxisAlignedBB startAabb = startState.getCollisionBoundingBox(world, pos);
+            if ((!ignoreBlockWithoutBoundingBox || startAabb != Block.NULL_AABB) && startState.getBlock().canCollideCheck(startState, stopOnLiquid)) {
+
+                boolean hitAabb = true;
+                if (startAabb != Block.NULL_AABB) {
+                    // 安全气囊：EXPANSION
+                    // 稍微扩大 AABB 检测范围，防止浮点数精度误差导致的“擦边未命中”
+                    double expansion = 0.0001D;
+
+                    double t = intersectSegmentAabbHitTInv(
+                            startVec.x, startVec.y, startVec.z,
+                            dirXZero, dirYZero, dirZZero,
+                            invDirX, invDirY, invDirZ,
+                            startAabb.minX + x - expansion, startAabb.minY + y - expansion, startAabb.minZ + z - expansion,
+                            startAabb.maxX + x + expansion, startAabb.maxY + y + expansion, startAabb.maxZ + z + expansion
+                    );
+                    if (Double.isNaN(t)) hitAabb = false;
+                }
+
+                if (hitAabb) {
+                    RayTraceResult hit = startState.collisionRayTrace(world, pos, startVec, endVec);
+                    if (hit != null) return hit;
                 }
             }
         }
 
         boolean trackAirMiss = returnLastUncollidableBlock && !ignoreBlockWithoutBoundingBox;
-
         boolean hasLastMiss = false;
         int lastMissBx = 0, lastMissBy = 0, lastMissBz = 0;
         byte lastMissSide = 0;
         double lastMissHx = 0.0D, lastMissHy = 0.0D, lastMissHz = 0.0D;
 
-        double curX;
-        double curY;
-        double curZ;
-        MutableVec3d stepStart = new MutableVec3d();
+        double curX, curY, curZ;
         int stepsLeft = Math.max(0, maxSteps);
 
+        // --- 循环步进 ---
         while (stepsLeft-- >= 0) {
             if (x == endX && y == endY && z == endZ) {
                 if (!returnLastUncollidableBlock || !hasLastMiss) return null;
@@ -1535,19 +1554,17 @@ public class Library {
                     sideHit = faceX;
                     tNext = tMaxX;
                     tMaxX += tDeltaX;
-
                     x += stepX;
                     curX = (stepX > 0) ? (double) x : (double) (x + 1);
-                    curY = startY + dy * tNext;
-                    curZ = startZ + dz * tNext;
+                    curY = startVec.y + dirY * tNext;
+                    curZ = startVec.z + dirZ * tNext;
                 } else {
                     sideHit = faceZ;
                     tNext = tMaxZ;
                     tMaxZ += tDeltaZ;
-
                     z += stepZ;
-                    curX = startX + dx * tNext;
-                    curY = startY + dy * tNext;
+                    curX = startVec.x + dirX * tNext;
+                    curY = startVec.y + dirY * tNext;
                     curZ = (stepZ > 0) ? (double) z : (double) (z + 1);
                 }
             } else {
@@ -1555,90 +1572,106 @@ public class Library {
                     sideHit = faceY;
                     tNext = tMaxY;
                     tMaxY += tDeltaY;
-
                     y += stepY;
-                    curX = startX + dx * tNext;
+                    curX = startVec.x + dirX * tNext;
                     curY = (stepY > 0) ? (double) y : (double) (y + 1);
-                    curZ = startZ + dz * tNext;
+                    curZ = startVec.z + dirZ * tNext;
                 } else {
                     sideHit = faceZ;
                     tNext = tMaxZ;
                     tMaxZ += tDeltaZ;
-
                     z += stepZ;
-                    curX = startX + dx * tNext;
-                    curY = startY + dy * tNext;
+                    curX = startVec.x + dirX * tNext;
+                    curY = startVec.y + dirY * tNext;
                     curZ = (stepZ > 0) ? (double) z : (double) (z + 1);
                 }
             }
 
+            if ((y & ~255) != 0) {
+                if (trackAirMiss) {
+                    hasLastMiss = true;
+                    lastMissSide = sideHit;
+                    lastMissBx = x; lastMissBy = y; lastMissBz = z;
+                    lastMissHx = curX; lastMissHy = curY; lastMissHz = curZ;
+                }
+                continue;
+            }
+
             pos.setPos(x, y, z);
 
-            IBlockState state;
-            if ((y & ~255) != 0) {
-                state = AIR_DEFAULT_STATE;
-            } else {
-                int cx = x >> 4;
-                int cz = z >> 4;
+            // Chunk 缓存检查
+            int cx = x >> 4;
+            int cz = z >> 4;
+            if (cx != cachedChunkX || cz != cachedChunkZ) {
+                cachedChunkX = cx;
+                cachedChunkZ = cz;
+                Chunk chunk = getChunkForBlockTrace(world, cx, cz);
+                cachedEbsArr = (chunk != null) ? chunk.getBlockStorageArray() : null;
+                cachedSecY = Integer.MIN_VALUE;
+                cachedEbs = null;
+                cachedEbsEmpty = true;
+            }
 
-                if (cx != cachedChunkX || cz != cachedChunkZ) {
-                    cachedChunkX = cx;
-                    cachedChunkZ = cz;
-                    Chunk chunk = getChunkForBlockTrace(world, cx, cz);
-                    cachedEbsArr = (chunk != null) ? chunk.getBlockStorageArray() : null;
-                    cachedSecY = Integer.MIN_VALUE;
+            int secY = y >> 4;
+            if (secY != cachedSecY) {
+                cachedSecY = secY;
+                if (cachedEbsArr == null) {
                     cachedEbs = null;
                     cachedEbsEmpty = true;
+                } else {
+                    cachedEbs = cachedEbsArr[secY];
+                    cachedEbsEmpty = (cachedEbs == null) || cachedEbs.isEmpty();
                 }
-
-                int secY = y >> 4;
-                if (secY != cachedSecY) {
-                    cachedSecY = secY;
-                    if (cachedEbsArr == null) {
-                        cachedEbs = null;
-                        cachedEbsEmpty = true;
-                    } else {
-                        cachedEbs = cachedEbsArr[secY];
-                        cachedEbsEmpty = (cachedEbs == null) || cachedEbs.isEmpty();
-                    }
-                }
-
-                state = cachedEbsEmpty ? AIR_DEFAULT_STATE : cachedEbs.get(x & 15, y & 15, z & 15);
             }
+
+            IBlockState state = cachedEbsEmpty ? AIR_DEFAULT_STATE : cachedEbs.get(x & 15, y & 15, z & 15);
 
             if (state == AIR_DEFAULT_STATE) {
                 if (trackAirMiss) {
                     hasLastMiss = true;
                     lastMissSide = sideHit;
-                    lastMissBx = x;
-                    lastMissBy = y;
-                    lastMissBz = z;
-                    lastMissHx = curX;
-                    lastMissHy = curY;
-                    lastMissHz = curZ;
+                    lastMissBx = x; lastMissBy = y; lastMissBz = z;
+                    lastMissHx = curX; lastMissHy = curY; lastMissHz = curZ;
                 }
                 continue;
             }
 
-            if (!ignoreBlockWithoutBoundingBox || state.getMaterial() == Material.PORTAL || state.getCollisionBoundingBox(world, pos) != Block.NULL_AABB) {
+            AxisAlignedBB blockAabb = state.getCollisionBoundingBox(world, pos);
+
+            if (!ignoreBlockWithoutBoundingBox || state.getMaterial() == Material.PORTAL || blockAabb != Block.NULL_AABB) {
                 Block block = state.getBlock();
 
                 if (block.canCollideCheck(state, stopOnLiquid)) {
-                    stepStart.set(curX, curY, curZ);
-                    RayTraceResult hit = state.collisionRayTrace(world, pos, stepStart, endVec);
-                    //noinspection ConstantValue
-                    if (hit != null) {
-                        return hit;
+                    boolean hitAabb = true;
+
+                    if (blockAabb != Block.NULL_AABB) {
+                        // --- 安全气囊 (Inflation) ---
+                        // 我们在检测是否“可能”碰撞时，把盒子扩大 0.0001。
+                        // 这意味着：如果射线极其接近方块边缘，我们也会进去检查（collisionRayTrace）。
+                        // 这样就避免了“数学上没碰到，但游戏逻辑应该算碰到”的漏判。
+                        double expansion = 0.0001D;
+
+                        double t = intersectSegmentAabbHitTInv(
+                                startVec.x, startVec.y, startVec.z,
+                                dirXZero, dirYZero, dirZZero,
+                                invDirX, invDirY, invDirZ,
+                                blockAabb.minX + x - expansion, blockAabb.minY + y - expansion, blockAabb.minZ + z - expansion,
+                                blockAabb.maxX + x + expansion, blockAabb.maxY + y + expansion, blockAabb.maxZ + z + expansion
+                        );
+
+                        if (Double.isNaN(t)) hitAabb = false;
+                    }
+
+                    if (hitAabb) {
+                        // 只有通过了宽判定（Broad-phase），才进行昂贵的精准判定（Narrow-phase）
+                        RayTraceResult hit = state.collisionRayTrace(world, pos, startVec, endVec);
+                        if (hit != null) return hit;
                     }
                 } else if (returnLastUncollidableBlock) {
                     hasLastMiss = true;
                     lastMissSide = sideHit;
-                    lastMissBx = x;
-                    lastMissBy = y;
-                    lastMissBz = z;
-                    lastMissHx = curX;
-                    lastMissHy = curY;
-                    lastMissHz = curZ;
+                    lastMissBx = x; lastMissBy = y; lastMissBz = z;
+                    lastMissHx = curX; lastMissHy = curY; lastMissHz = curZ;
                 }
             }
         }
@@ -1685,21 +1718,17 @@ public class Library {
         double maxY = Math.max(sy, ey) + pad;
         double maxZ = Math.max(sz, ez) + pad;
 
-        int minSecYUnclamped = ((int) Math.floor(minY)) >> 4;
-        int maxSecYUnclamped = ((int) Math.floor(maxY)) >> 4;
+        // 优化：MathHelper
+        int minSecYUnclamped = MathHelper.floor(minY) >> 4;
+        int maxSecYUnclamped = MathHelper.floor(maxY) >> 4;
 
-        int minSec = minSecYUnclamped;
-        if (minSec < 0) minSec = 0;
-        else if (minSec > 15) minSec = 15;
+        int minSec = MathHelper.clamp(minSecYUnclamped, 0, 15);
+        int maxSec = MathHelper.clamp(maxSecYUnclamped, 0, 15);
 
-        int maxSec = maxSecYUnclamped;
-        if (maxSec < 0) maxSec = 0;
-        else if (maxSec > 15) maxSec = 15;
-
-        int cx = ((int) Math.floor(sx)) >> 4;
-        int cz = ((int) Math.floor(sz)) >> 4;
-        int endCx = ((int) Math.floor(ex)) >> 4;
-        int endCz = ((int) Math.floor(ez)) >> 4;
+        int cx = MathHelper.floor(sx) >> 4;
+        int cz = MathHelper.floor(sz) >> 4;
+        int endCx = MathHelper.floor(ex) >> 4;
+        int endCz = MathHelper.floor(ez) >> 4;
 
         int stepX = Integer.compare(endCx, cx);
         int stepZ = Integer.compare(endCz, cz);
@@ -1748,6 +1777,7 @@ public class Library {
                         continue;
                     }
 
+                    // 优化：仅使用 getLoadedChunk，避免加载区块
                     Chunk chunk = prov.getLoadedChunk(scx, scz);
                     if (chunk == null) {
                         continue;
@@ -1760,15 +1790,15 @@ public class Library {
                         if (map.isEmpty()) continue;
 
                         List<Entity> values = map.values;
-                        //noinspection ForLoopReplaceableByForEach
                         for (int i = 0, n = values.size(); i < n; i++) {
                             Entity e = values.get(i);
                             if (e == exclude) continue;
-                            if (e instanceof EntityPlayer p && p.isSpectator()) continue;
+                            if (e instanceof EntityPlayer && ((EntityPlayer)e).isSpectator()) continue;
                             if (hasFilter && !extraFilter.test(e)) continue;
                             if (e.noClip || !e.canBeCollidedWith()) continue;
 
                             AxisAlignedBB eb = e.getEntityBoundingBox();
+                            // 快速 AABB 排除
                             if (aabbNonIntersect(minX, minY, minZ, maxX, maxY, maxZ, eb)) continue;
 
                             double t = intersectSegmentAabbHitTInv(sx, sy, sz, dx0, dy0, dz0, invDx, invDy, invDz, eb.minX - inflate, eb.minY - inflate, eb.minZ - inflate, eb.maxX + inflate, eb.maxY + inflate, eb.maxZ + inflate);
@@ -1787,7 +1817,7 @@ public class Library {
                             if (parts != null) {
                                 for (Entity part : parts) {
                                     if (part == exclude) continue;
-                                    if (part instanceof EntityPlayer pp && pp.isSpectator()) continue;
+                                    if (part instanceof EntityPlayer && ((EntityPlayer)part).isSpectator()) continue;
                                     if (hasFilter && !extraFilter.test(part)) continue;
                                     if (part.noClip || !part.canBeCollidedWith()) continue;
 
@@ -1820,7 +1850,7 @@ public class Library {
                 break;
             }
 
-            // 2D DDA step, Z on tie
+            // 2D DDA step
             double tStep;
             if (tMaxX < tMaxZ) {
                 tStep = tMaxX;

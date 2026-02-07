@@ -35,7 +35,7 @@ public class GunNPCFactory {
 		BulletConfiguration bullet = new BulletConfiguration();
 
 		bullet.ammo = new RecipesCommon.ComparableStack(ModItems.coin_maskman);
-		bullet.velocity = 0.25F;
+		bullet.velocity = 0.3F;
 		bullet.spread = 0.000F;
 		bullet.wear = 10;
 		bullet.bulletsMin = 1;
@@ -53,7 +53,7 @@ public class GunNPCFactory {
 		bullet.doesBreakGlass = false;
 		bullet.style = BulletConfiguration.STYLE_ORB;
 		bullet.trail = 1;
-		bullet.explosive = 1.5F;
+		bullet.explosive = 2.5F;
 
 		bullet.bUpdate = new IBulletUpdateBehavior() {
 
@@ -158,7 +158,7 @@ public class GunNPCFactory {
 		bullet.gravity = 0.1F;
 		bullet.velocity = 1.0F;
 		bullet.dmgMin = 15;
-		bullet.dmgMax = 20;
+		bullet.dmgMax = 30;
 		bullet.blockDamage = false;
 		bullet.explosive = 5.0F;
 		bullet.style = BulletConfiguration.STYLE_ROCKET;
@@ -176,7 +176,7 @@ public class GunNPCFactory {
 		bullet.dmgMin = 20;
 		bullet.dmgMax = 30;
 		bullet.incendiary = 3;
-		bullet.explosive = 2.5F;
+		bullet.explosive = 3F;
 		bullet.style = BulletConfiguration.STYLE_METEOR;
 
 		bullet.bUpdate = new IBulletUpdateBehavior() {
