@@ -8,7 +8,6 @@ import com.hbm.inventory.fluid.FluidType;
 import com.hbm.items.machine.IItemFluidIdentifier;
 import com.hbm.tileentity.machine.TileEntityMachineAutosaw;
 import com.hbm.util.I18nUtil;
-import com.mojang.realmsclient.gui.ChatFormatting;
 import net.minecraft.block.BlockContainer;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
@@ -141,7 +140,7 @@ public class MachineAutosaw extends BlockContainer
 
     if (saw.isSuspended) {
       text.add(
-          ChatFormatting.RED
+          TextFormatting.RED
               + "! "
               + I18nUtil.resolveKey(getTranslationKey() + ".suspended")
               + " !");

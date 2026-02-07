@@ -6,8 +6,8 @@ import com.hbm.handler.pollution.PollutionHandler;
 import com.hbm.inventory.fluid.FluidType;
 import com.hbm.inventory.fluid.tank.FluidTankNTM;
 import com.hbm.util.I18nUtil;
-import com.mojang.realmsclient.gui.ChatFormatting;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 
 import java.io.IOException;
@@ -33,7 +33,7 @@ public class FT_Polluting extends FluidTrait {
 
     @Override
     public void addInfo(List<String> info) {
-        info.add(ChatFormatting.GOLD + "[" + I18nUtil.resolveKey("trait.polluting") + "]");
+        info.add(TextFormatting.GOLD + "[" + I18nUtil.resolveKey("trait.polluting") + "]");
     }
 
     @Override
@@ -41,12 +41,12 @@ public class FT_Polluting extends FluidTrait {
 
         if(!this.releaseMap.isEmpty()) {
             info.add(I18nUtil.resolveKey("trait.polluspill"));
-            for(Map.Entry<PollutionHandler.PollutionType, Float> entry : releaseMap.entrySet()) info.add(ChatFormatting.GREEN + " - " + entry.getValue() + " " + I18nUtil.resolveKey(entry.getKey().name) + " " + I18nUtil.resolveKey("desc.permb"));
+            for(Map.Entry<PollutionHandler.PollutionType, Float> entry : releaseMap.entrySet()) info.add(TextFormatting.GREEN + " - " + entry.getValue() + " " + I18nUtil.resolveKey(entry.getKey().name) + " " + I18nUtil.resolveKey("desc.permb"));
         }
 
         if(!this.burnMap.isEmpty()) {
             info.add(I18nUtil.resolveKey("trait.polluburn"));
-            for(Map.Entry<PollutionHandler.PollutionType, Float> entry : burnMap.entrySet()) info.add(ChatFormatting.RED + " - " + entry.getValue() + " " + I18nUtil.resolveKey(entry.getKey().name) + " " + I18nUtil.resolveKey("desc.permb"));
+            for(Map.Entry<PollutionHandler.PollutionType, Float> entry : burnMap.entrySet()) info.add(TextFormatting.RED + " - " + entry.getValue() + " " + I18nUtil.resolveKey(entry.getKey().name) + " " + I18nUtil.resolveKey("desc.permb"));
         }
     }
 

@@ -9,7 +9,6 @@ import com.hbm.lib.HBMSoundHandler;
 import com.hbm.tileentity.TileEntityProxyCombo;
 import com.hbm.tileentity.machine.TileEntitySawmill;
 import com.hbm.util.I18nUtil;
-import com.mojang.realmsclient.gui.ChatFormatting;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.util.ITooltipFlag;
@@ -25,6 +24,7 @@ import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
@@ -218,22 +218,22 @@ public class MachineSawmill extends BlockDummyable implements ILookOverlay, IToo
         text.add("&[" + color + "&]" + ((stirling.heat * 1000 / 300) / 10D) + "%");
 
         int limiter = stirling.progress * 26 / stirling.processingTime;
-        String bar = ChatFormatting.GREEN + "[ ";
+        String bar = TextFormatting.GREEN + "[ ";
         for(int i = 0; i < 25; i++) {
             if(i == limiter) {
-                bar += ChatFormatting.RESET;
+                bar += TextFormatting.RESET;
             }
 
             bar += "▏";
         }
 
-        bar += ChatFormatting.GREEN + " ]";
+        bar += TextFormatting.GREEN + " ]";
 
         text.add(bar);
 
         for(int i = 0; i < 3; i++) {
             if(!stirling.inventory.getStackInSlot(i).isEmpty()) {
-                text.add((i == 0 ? (ChatFormatting.GREEN + "-> ") : (ChatFormatting.RED + "<- ")) + ChatFormatting.RESET + stirling.inventory.getStackInSlot(i).getDisplayName() + (stirling.inventory.getStackInSlot(i).getCount() > 1 ? " x" + stirling.inventory.getStackInSlot(i).getCount() : ""));
+                text.add((i == 0 ? (TextFormatting.GREEN + "-> ") : (TextFormatting.RED + "<- ")) + TextFormatting.RESET + stirling.inventory.getStackInSlot(i).getDisplayName() + (stirling.inventory.getStackInSlot(i).getCount() > 1 ? " x" + stirling.inventory.getStackInSlot(i).getCount() : ""));
             }
         }
 

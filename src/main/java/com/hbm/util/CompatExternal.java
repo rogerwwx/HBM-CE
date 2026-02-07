@@ -2,11 +2,13 @@ package com.hbm.util;
 
 import com.hbm.api.energymk2.IEnergyHandlerMK2;
 import com.hbm.api.energymk2.IEnergyReceiverMK2;
+import com.hbm.api.fluidmk2.IFluidRegisterListener;
 import com.hbm.api.fluidmk2.IFluidUserMK2;
 import com.hbm.api.network.IPacketRegisterListener;
 import com.hbm.api.recipe.IRecipeRegisterListener;
 import com.hbm.blocks.BlockDummyable;
 import com.hbm.inventory.fluid.FluidType;
+import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.fluid.tank.FluidTankNTM;
 import com.hbm.inventory.recipes.loader.SerializableRecipe;
 import com.hbm.packet.PacketDispatcher;
@@ -185,6 +187,15 @@ public class CompatExternal {
      */
     public static void registerRecipeRegisterListener(IRecipeRegisterListener listener) {
         SerializableRecipe.additionalListeners.add(listener);
+    }
+
+    /**
+     * Registers an IFluidRegisterListener which is called every time the fluid list is loaded, either during startup or when the refresh command is used.
+     * Ensures that fluids are registered when they should, instead of being purged permanently when the system reloads.
+     * mlbv: call this at init, the first reload happens at NTM's postinit
+     */
+    public static void registerFluidRegisterListener(IFluidRegisterListener listener) {
+        Fluids.additionalListeners.add(listener);
     }
 
     /**

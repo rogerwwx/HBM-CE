@@ -31,7 +31,6 @@ import com.hbm.tileentity.TileEntityMachineBase;
 import com.hbm.util.CrucibleUtil;
 import com.hbm.util.I18nUtil;
 import com.hbm.util.MutableVec3d;
-import com.mojang.realmsclient.gui.ChatFormatting;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.entity.player.EntityPlayer;
@@ -42,7 +41,7 @@ import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ITickable;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.energy.CapabilityEnergy;
@@ -597,8 +596,8 @@ public class TileEntityMachineArcFurnaceLarge extends TileEntityMachineBase impl
     public void provideInfo(ItemMachineUpgrade.UpgradeType type, int level, List<String> info, boolean extendedInfo) {
         info.add(IUpgradeInfoProvider.getStandardLabel(ModBlocks.machine_arc_furnace));
         if(type == ItemMachineUpgrade.UpgradeType.SPEED) {
-            info.add(ChatFormatting.GREEN + I18nUtil.resolveKey(this.KEY_DELAY, "-" + (100 - 100 / (level * 2 + 1)) + "%"));
-            info.add(ChatFormatting.RED + I18nUtil.resolveKey(this.KEY_CONSUMPTION, "+" + ((int) Math.pow(5, level) * 100 - 100) + "%"));
+            info.add(TextFormatting.GREEN + I18nUtil.resolveKey(this.KEY_DELAY, "-" + (100 - 100 / (level * 2 + 1)) + "%"));
+            info.add(TextFormatting.RED + I18nUtil.resolveKey(this.KEY_CONSUMPTION, "+" + ((int) Math.pow(5, level) * 100 - 100) + "%"));
         }
     }
 

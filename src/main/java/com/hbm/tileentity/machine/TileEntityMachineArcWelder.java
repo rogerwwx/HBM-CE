@@ -26,7 +26,6 @@ import com.hbm.tileentity.IUpgradeInfoProvider;
 import com.hbm.tileentity.TileEntityMachineBase;
 import com.hbm.util.BobMathUtil;
 import com.hbm.util.I18nUtil;
-import com.mojang.realmsclient.gui.ChatFormatting;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.entity.player.EntityPlayer;
@@ -39,6 +38,7 @@ import net.minecraft.util.ITickable;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.common.network.NetworkRegistry.TargetPoint;
 import net.minecraftforge.fml.relauncher.Side;
@@ -454,21 +454,21 @@ public class TileEntityMachineArcWelder extends TileEntityMachineBase
         info.add(IUpgradeInfoProvider.getStandardLabel(ModBlocks.machine_arc_welder));
         if (type == UpgradeType.SPEED) {
             info.add(
-                    ChatFormatting.GREEN
+                    TextFormatting.GREEN
                             + I18nUtil.resolveKey(this.KEY_DELAY, "-" + (level * 100 / 6) + "%"));
             info.add(
-                    ChatFormatting.RED
+                    TextFormatting.RED
                             + I18nUtil.resolveKey(this.KEY_CONSUMPTION, "+" + (level * 100) + "%"));
         }
         if (type == UpgradeType.POWER) {
             info.add(
-                    ChatFormatting.GREEN
+                    TextFormatting.GREEN
                             + I18nUtil.resolveKey(this.KEY_CONSUMPTION, "-" + (level * 100 / 6) + "%"));
             info.add(
-                    ChatFormatting.RED + I18nUtil.resolveKey(this.KEY_DELAY, "+" + (level * 100 / 3) + "%"));
+                    TextFormatting.RED + I18nUtil.resolveKey(this.KEY_DELAY, "+" + (level * 100 / 3) + "%"));
         }
         if (type == UpgradeType.OVERDRIVE) {
-            info.add((BobMathUtil.getBlink() ? ChatFormatting.RED : ChatFormatting.DARK_GRAY) + "YES");
+            info.add((BobMathUtil.getBlink() ? TextFormatting.RED : TextFormatting.DARK_GRAY) + "YES");
         }
     }
 

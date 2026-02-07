@@ -12,7 +12,6 @@ import com.hbm.items.ItemEnums;
 import com.hbm.items.ModItems;
 import com.hbm.main.MainRegistry;
 import com.hbm.util.I18nUtil;
-import com.mojang.realmsclient.gui.ChatFormatting;
 import net.minecraft.client.renderer.block.model.IBakedModel;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
 import net.minecraft.client.renderer.block.model.ModelRotation;
@@ -25,6 +24,7 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.NonNullList;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.client.event.ModelBakeEvent;
 import net.minecraftforge.client.model.IModel;
@@ -170,10 +170,10 @@ public class ItemMold extends Item implements IModelRegister {
     @Override
     public void addInformation(ItemStack stack, World worldIn, List<String> list, ITooltipFlag flagIn) {
         Mold mold = getMold(stack);
-        list.add(ChatFormatting.YELLOW + mold.getTitle());
+        list.add(TextFormatting.YELLOW + mold.getTitle());
 
-        if(mold.size == 0) list.add(ChatFormatting.GOLD + I18nUtil.resolveKey(ModBlocks.foundry_mold.getTranslationKey() + ".name"));
-        if(mold.size == 1) list.add(ChatFormatting.RED + I18nUtil.resolveKey(ModBlocks.foundry_basin.getTranslationKey() + ".name"));
+        if(mold.size == 0) list.add(TextFormatting.GOLD + I18nUtil.resolveKey(ModBlocks.foundry_mold.getTranslationKey() + ".name"));
+        if(mold.size == 1) list.add(TextFormatting.RED + I18nUtil.resolveKey(ModBlocks.foundry_basin.getTranslationKey() + ".name"));
     }
 
     public Mold getMold(ItemStack stack) {

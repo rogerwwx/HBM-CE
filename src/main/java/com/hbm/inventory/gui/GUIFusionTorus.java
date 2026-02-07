@@ -1,7 +1,7 @@
 package com.hbm.inventory.gui;
 
-import com.hbm.inventory.container.ContainerFusionTorus;
 import com.hbm.Tags;
+import com.hbm.inventory.container.ContainerFusionTorus;
 import com.hbm.inventory.recipes.FusionRecipe;
 import com.hbm.inventory.recipes.FusionRecipes;
 import com.hbm.items.machine.ItemBlueprints;
@@ -9,7 +9,6 @@ import com.hbm.render.util.GaugeUtil;
 import com.hbm.tileentity.machine.fusion.TileEntityFusionTorus;
 import com.hbm.util.BobMathUtil;
 import com.hbm.util.I18nUtil;
-import com.mojang.realmsclient.gui.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.player.InventoryPlayer;
@@ -82,9 +81,9 @@ public class GUIFusionTorus extends GuiInfoContainer {
         this.fontRenderer.drawString(name, 106 - this.fontRenderer.getStringWidth(name) / 2, 6, 4210752);
         this.fontRenderer.drawString(I18n.format("container.inventory"), 35, this.ySize - 93, 4210752);
 
-        this.fontRenderer.drawString(ChatFormatting.AQUA + "/123K", 136 + 54, 32, 4210752);
+        this.fontRenderer.drawString(TextFormatting.AQUA + "/123K", 136 + 54, 32, 4210752);
         int heat = (int) Math.ceil(300F);
-        String label = (heat > 123 ? ChatFormatting.RED : ChatFormatting.AQUA) + "" + heat + "K";
+        String label = (heat > 123 ? TextFormatting.RED : TextFormatting.AQUA) + "" + heat + "K";
         this.fontRenderer.drawString(label, 166 + 54 - this.fontRenderer.getStringWidth(label), 22, 4210752);
     }
 

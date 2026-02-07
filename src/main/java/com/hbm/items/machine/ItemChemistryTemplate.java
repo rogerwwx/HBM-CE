@@ -12,7 +12,6 @@ import com.hbm.inventory.recipes.ChemplantRecipes;
 import com.hbm.items.ModItems;
 import com.hbm.main.MainRegistry;
 import com.hbm.util.I18nUtil;
-import com.mojang.realmsclient.gui.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
@@ -22,6 +21,7 @@ import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.NonNullList;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
@@ -55,7 +55,7 @@ public class ItemChemistryTemplate extends Item implements IHasCustomModel {
 	public @NotNull String getItemStackDisplayName(ItemStack stack) {
 		ChemplantRecipes.ChemRecipe recipe = ChemplantRecipes.indexMapping.get(stack.getItemDamage());
 		if(recipe == null) {
-			return ChatFormatting.RED + "Broken Template" + ChatFormatting.RESET;
+			return TextFormatting.RED + "Broken Template" + TextFormatting.RESET;
 		} else {
 			String s = (I18n.format(this.getTranslationKey() + ".name")).trim();
 			String s1 = (I18n.format("chem." + recipe.name)).trim();
@@ -109,7 +109,7 @@ public class ItemChemistryTemplate extends Item implements IHasCustomModel {
 		}
 		list.add("");
 		try {
-			list.add(ChatFormatting.BOLD + I18nUtil.resolveKey("info.template_out_p"));
+			list.add(TextFormatting.BOLD + I18nUtil.resolveKey("info.template_out_p"));
 			for(int i = 0; i < 4; i++) {
 				if(recipe.outputs[i] != null) {
 					list.add(recipe.outputs[i].getCount() + "x " + recipe.outputs[i].getDisplayName());
@@ -123,7 +123,7 @@ public class ItemChemistryTemplate extends Item implements IHasCustomModel {
 				}
 			}
 
-			list.add(ChatFormatting.BOLD + I18nUtil.resolveKey("info.template_in_p"));
+			list.add(TextFormatting.BOLD + I18nUtil.resolveKey("info.template_in_p"));
 
 			Map<ComparableStack, Integer> workingItemCounts = availableCounts != null ? new HashMap<>(availableCounts) : null;
 			for(AStack ingredient : recipe.inputs) {

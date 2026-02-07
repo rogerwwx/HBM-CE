@@ -9,7 +9,6 @@ import com.hbm.items.machine.ItemPistons;
 import com.hbm.packet.toserver.NBTControlPacket;
 import com.hbm.tileentity.machine.TileEntityMachineCombustionEngine;
 import com.hbm.util.EnumUtil;
-import com.mojang.realmsclient.gui.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.resources.I18n;
@@ -18,6 +17,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.text.TextFormatting;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -86,7 +86,7 @@ public class GUICombustionEngine extends GuiInfoContainer {
                 * piston.eff[trait.getGrade().ordinal()];
       }
 
-      String c = String.valueOf(ChatFormatting.YELLOW);
+      String c = String.valueOf(TextFormatting.YELLOW);
 
       String[] text =
           new String[] {

@@ -6,7 +6,6 @@ import com.hbm.inventory.container.ContainerMixer;
 import com.hbm.inventory.recipes.MixerRecipes;
 import com.hbm.packet.toserver.NBTControlPacket;
 import com.hbm.tileentity.machine.TileEntityMachineMixer;
-import com.mojang.realmsclient.gui.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.PositionedSoundRecord;
 import net.minecraft.client.renderer.GlStateManager;
@@ -15,6 +14,7 @@ import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.init.SoundEvents;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.text.TextFormatting;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -43,12 +43,12 @@ public class GUIMixer extends GuiInfoContainer {
 
 		if(recipes != null && recipes.length > 1) {
 			List<String> label = new ArrayList<>();
-			label.add(ChatFormatting.YELLOW + "Current recipe (" + (mixer.recipeIndex + 1) + "/" + recipes.length + "):");
+			label.add(TextFormatting.YELLOW + "Current recipe (" + (mixer.recipeIndex + 1) + "/" + recipes.length + "):");
 			MixerRecipes.MixerRecipe recipe = recipes[mixer.recipeIndex % recipes.length];
 			if(recipe.input1 != null) label.add("-" + recipe.input1.type.getLocalizedName());
 			if(recipe.input2 != null) label.add("-" + recipe.input2.type.getLocalizedName());
 			if(recipe.solidInput != null) label.add("-" + recipe.solidInput.extractForCyclingDisplay(20).getDisplayName());
-			label.add(ChatFormatting.RED + "Click to change!");
+			label.add(TextFormatting.RED + "Click to change!");
 			String[] labelArray = label.toArray(new String[0]);
 			this.drawCustomInfoStat(mouseX, mouseY, guiLeft + 62, guiTop + 22, 12, 12, mouseX, mouseY, labelArray);
 		}

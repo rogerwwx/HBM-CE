@@ -5,17 +5,18 @@ import com.hbm.inventory.container.ContainerMachineStrandCaster;
 import com.hbm.inventory.material.Mats;
 import com.hbm.tileentity.machine.TileEntityMachineStrandCaster;
 import com.hbm.util.I18nUtil;
-import com.mojang.realmsclient.gui.ChatFormatting;
-import java.awt.*;
-import java.util.ArrayList;
-import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.text.TextFormatting;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.GL11;
+
+import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class GUIMachineStrandCaster extends GuiInfoContainer {
 
@@ -87,10 +88,10 @@ public class GUIMachineStrandCaster extends GuiInfoContainer {
 
     List<String> list = new ArrayList<>();
 
-    if (caster.type == null) list.add(ChatFormatting.RED + "Empty");
+    if (caster.type == null) list.add(TextFormatting.RED + "Empty");
     else
       list.add(
-          ChatFormatting.YELLOW
+          TextFormatting.YELLOW
               + I18nUtil.resolveKey(caster.type.getTranslationKey())
               + ": "
               + Mats.formatAmount(caster.amount, Keyboard.isKeyDown(Keyboard.KEY_LSHIFT)));

@@ -7,7 +7,6 @@ import com.hbm.inventory.material.Mats;
 import com.hbm.packet.toserver.NBTControlPacket;
 import com.hbm.tileentity.machine.TileEntityElectrolyser;
 import com.hbm.util.I18nUtil;
-import com.mojang.realmsclient.gui.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.PositionedSoundRecord;
 import net.minecraft.client.renderer.GlStateManager;
@@ -16,6 +15,7 @@ import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.init.SoundEvents;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.text.TextFormatting;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.GL11;
 
@@ -43,15 +43,15 @@ public class GUIElectrolyserMetal extends GuiInfoContainer {
         electrolyser.tanks[3].renderTankInfo(this, mouseX, mouseY, guiLeft + 36, guiTop + 18, 16, 52);
 
         if(electrolyser.leftStack != null) {
-            this.drawCustomInfoStat(mouseX, mouseY, guiLeft + 58, guiTop + 18, 34, 42, mouseX, mouseY, new String[]{ChatFormatting.YELLOW + I18nUtil.resolveKey(electrolyser.leftStack.material.getTranslationKey()) + ": " + Mats.formatAmount(electrolyser.leftStack.amount, Keyboard.isKeyDown(Keyboard.KEY_LSHIFT))});
+            this.drawCustomInfoStat(mouseX, mouseY, guiLeft + 58, guiTop + 18, 34, 42, mouseX, mouseY, new String[]{TextFormatting.YELLOW + I18nUtil.resolveKey(electrolyser.leftStack.material.getTranslationKey()) + ": " + Mats.formatAmount(electrolyser.leftStack.amount, Keyboard.isKeyDown(Keyboard.KEY_LSHIFT))});
         } else {
-            this.drawCustomInfoStat(mouseX, mouseY, guiLeft + 58, guiTop + 18, 34, 42, mouseX, mouseY, new String[]{ChatFormatting.RED + "Empty"});
+            this.drawCustomInfoStat(mouseX, mouseY, guiLeft + 58, guiTop + 18, 34, 42, mouseX, mouseY, new String[]{TextFormatting.RED + "Empty"});
         }
 
         if(electrolyser.rightStack != null) {
-            this.drawCustomInfoStat(mouseX, mouseY, guiLeft + 96, guiTop + 18, 34, 42, mouseX, mouseY, new String[]{ChatFormatting.YELLOW + I18nUtil.resolveKey(electrolyser.rightStack.material.getTranslationKey()) + ": " + Mats.formatAmount(electrolyser.rightStack.amount, Keyboard.isKeyDown(Keyboard.KEY_LSHIFT))});
+            this.drawCustomInfoStat(mouseX, mouseY, guiLeft + 96, guiTop + 18, 34, 42, mouseX, mouseY, new String[]{TextFormatting.YELLOW + I18nUtil.resolveKey(electrolyser.rightStack.material.getTranslationKey()) + ": " + Mats.formatAmount(electrolyser.rightStack.amount, Keyboard.isKeyDown(Keyboard.KEY_LSHIFT))});
         } else {
-            this.drawCustomInfoStat(mouseX, mouseY, guiLeft + 96, guiTop + 18, 34, 42, mouseX, mouseY, new String[]{ChatFormatting.RED + "Empty"});
+            this.drawCustomInfoStat(mouseX, mouseY, guiLeft + 96, guiTop + 18, 34, 42, mouseX, mouseY, new String[]{TextFormatting.RED + "Empty"});
         }
 
         this.drawElectricityInfo(this, mouseX, mouseY, guiLeft + 186, guiTop + 18, 16, 89, electrolyser.power, electrolyser.maxPower);

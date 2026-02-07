@@ -7,7 +7,6 @@ import com.hbm.inventory.material.Mats;
 import com.hbm.packet.toserver.NBTControlPacket;
 import com.hbm.tileentity.machine.TileEntityMachineArcFurnaceLarge;
 import com.hbm.util.I18nUtil;
-import com.mojang.realmsclient.gui.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.PositionedSoundRecord;
 import net.minecraft.client.renderer.GlStateManager;
@@ -16,6 +15,7 @@ import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.init.SoundEvents;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.text.TextFormatting;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.GL11;
 
@@ -88,8 +88,9 @@ public class GUIMachineArcFurnaceLarge extends GuiInfoContainer {
 
     protected void drawStackInfo(List<Mats.MaterialStack> stack, int mouseX, int mouseY, int x, int y) {
         List<String> list = new ArrayList<>();
-        if(stack.isEmpty()) list.add(ChatFormatting.RED + "Empty");
-        for(Mats.MaterialStack sta : stack) list.add(ChatFormatting.YELLOW + I18nUtil.resolveKey(sta.material.getTranslationKey()) + ": " + Mats.formatAmount(sta.amount, Keyboard.isKeyDown(Keyboard.KEY_LSHIFT)));
+        if(stack.isEmpty()) list.add(TextFormatting.RED + "Empty");
+        for(Mats.MaterialStack sta : stack) list.add(
+                TextFormatting.YELLOW + I18nUtil.resolveKey(sta.material.getTranslationKey()) + ": " + Mats.formatAmount(sta.amount, Keyboard.isKeyDown(Keyboard.KEY_LSHIFT)));
         this.drawCustomInfoStat(mouseX, mouseY, guiLeft + x, guiTop + y, 16, 70, mouseX, mouseY, list);
     }
 

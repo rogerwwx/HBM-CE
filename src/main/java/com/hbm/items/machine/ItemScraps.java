@@ -8,7 +8,6 @@ import com.hbm.inventory.material.NTMMaterial;
 import com.hbm.items.ModItems;
 import com.hbm.items.special.ItemAutogen;
 import com.hbm.util.I18nUtil;
-import com.mojang.realmsclient.gui.ChatFormatting;
 import net.minecraft.client.renderer.block.model.IBakedModel;
 import net.minecraft.client.renderer.block.model.ModelBakery;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
@@ -22,6 +21,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.NonNullList;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.client.event.ModelBakeEvent;
 import net.minecraftforge.client.model.IModel;
@@ -148,7 +148,7 @@ public class ItemScraps extends ItemAutogen {
 
             if(stack.hasTagCompound() && stack.getTagCompound().getBoolean("liquid")) {
                 list.add(Mats.formatAmount(contents.amount, Keyboard.isKeyDown(Keyboard.KEY_LSHIFT)));
-                if(contents.material.smeltable == contents.material.smeltable.ADDITIVE) list.add(ChatFormatting.DARK_RED + "Additive, not castable!");
+                if(contents.material.smeltable == contents.material.smeltable.ADDITIVE) list.add(TextFormatting.DARK_RED + "Additive, not castable!");
             } else {
                 list.add(I18nUtil.resolveKey(contents.material.getTranslationKey()) + ", " + Mats.formatAmount(contents.amount, Keyboard.isKeyDown(Keyboard.KEY_LSHIFT)));
             }

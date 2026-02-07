@@ -5,13 +5,13 @@ import com.hbm.handler.threading.PacketThreading;
 import com.hbm.inventory.container.ContainerMachineSolderingStation;
 import com.hbm.packet.toserver.NBTControlPacket;
 import com.hbm.tileentity.machine.TileEntityMachineSolderingStation;
-import com.mojang.realmsclient.gui.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.text.TextFormatting;
 import org.lwjgl.opengl.GL11;
 
 import java.io.IOException;
@@ -65,8 +65,8 @@ public class GUIMachineSolderingStation extends GuiInfoContainer {
             Arrays.asList(
                 "Recipe Collision Prevention: "
                     + (soldering_station.collisionPrevention
-                        ? ChatFormatting.GREEN + "ON"
-                        : ChatFormatting.RED + "OFF"),
+                        ? TextFormatting.GREEN + "ON"
+                        : TextFormatting.RED + "OFF"),
                 "Prevents no-fluid recipes from being processed",
                 "when fluid is present."));
 

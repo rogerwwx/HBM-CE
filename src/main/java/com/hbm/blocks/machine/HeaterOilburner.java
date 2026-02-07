@@ -11,7 +11,6 @@ import com.hbm.lib.ForgeDirection;
 import com.hbm.tileentity.TileEntityProxyCombo;
 import com.hbm.tileentity.machine.TileEntityHeaterOilburner;
 import com.hbm.util.I18nUtil;
-import com.mojang.realmsclient.gui.ChatFormatting;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.util.ITooltipFlag;
@@ -21,6 +20,7 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.EnumHand;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.client.event.RenderGameOverlayEvent.Pre;
 import net.minecraftforge.fml.relauncher.Side;
@@ -106,11 +106,11 @@ public class HeaterOilburner extends BlockDummyable implements ITooltipProvider,
         TileEntityHeaterOilburner heater = (TileEntityHeaterOilburner) te;
 
         List<String> text = new ArrayList();
-        text.add(ChatFormatting.GREEN + "-> " + ChatFormatting.RESET + heater.setting + " mB/t");
+        text.add(TextFormatting.GREEN + "-> " + TextFormatting.RESET + heater.setting + " mB/t");
         FluidType type = heater.tank.getTankType();
         if(type.hasTrait(FT_Flammable.class)) {
             int heat = (int)(type.getTrait(FT_Flammable.class).getHeatEnergy() * heater.setting / 1000);
-            text.add(ChatFormatting.RED + "<- " + ChatFormatting.RESET + String.format(Locale.US, "%,d", heat) + " TU/t");
+            text.add(TextFormatting.RED + "<- " + TextFormatting.RESET + String.format(Locale.US, "%,d", heat) + " TU/t");
         }
 
         ILookOverlay.printGeneric(event, I18nUtil.resolveKey(getTranslationKey() + ".name"), 0xffff00, 0x404000, text);

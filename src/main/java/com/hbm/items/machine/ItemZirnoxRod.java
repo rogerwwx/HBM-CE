@@ -4,10 +4,10 @@ import com.hbm.items.ItemEnumMulti;
 import com.hbm.util.BobMathUtil;
 import com.hbm.util.EnumUtil;
 import com.hbm.util.I18nUtil;
-import com.mojang.realmsclient.gui.ChatFormatting;
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 
 import java.util.Collections;
@@ -64,7 +64,7 @@ public class ItemZirnoxRod extends ItemEnumMulti<ItemZirnoxRod.EnumZirnoxType> {
     public void addInformation(ItemStack stack, World worldIn, List<String> list, ITooltipFlag flagIn) {
 
         EnumZirnoxType num = EnumUtil.grabEnumSafely(theEnum, stack.getItemDamage());
-        list.add(ChatFormatting.YELLOW + I18nUtil.resolveKey("trait.rbmk.depletion", ((int) ((((double) getLifeTime(stack)) / (double) num.maxLife) * 100000)) / 1000D + "%"));
+        list.add(TextFormatting.YELLOW + I18nUtil.resolveKey("trait.rbmk.depletion", ((int) ((((double) getLifeTime(stack)) / (double) num.maxLife) * 100000)) / 1000D + "%"));
         String[] loc;
 
         if (num.breeding)

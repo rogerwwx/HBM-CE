@@ -6,8 +6,10 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonWriter;
 import com.hbm.Tags;
+import com.hbm.api.fluidmk2.IFluidRegisterListener;
 import com.hbm.blocks.fluid.FluidNTM;
 import com.hbm.handler.pollution.PollutionHandler;
+import com.hbm.handler.pollution.PollutionHandler.PollutionType;
 import com.hbm.inventory.fluid.trait.*;
 import com.hbm.inventory.fluid.trait.FT_Combustible.FuelGrade;
 import com.hbm.inventory.fluid.trait.FT_Coolable.CoolingType;
@@ -20,13 +22,10 @@ import com.hbm.main.MainRegistry;
 import com.hbm.potion.HbmPotion;
 import com.hbm.render.misc.EnumSymbol;
 import com.hbm.util.ArmorRegistry.HazardClass;
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.IResource;
 import net.minecraft.client.resources.IResourceManager;
 import net.minecraft.init.MobEffects;
-import net.minecraft.potion.Potion;
 import net.minecraft.potion.PotionEffect;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fluids.Fluid;
@@ -44,47 +43,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 
-import static com.hbm.inventory.recipes.loader.SerializableRecipe.additionalListeners;
-import static com.hbm.main.MainRegistry.proxy;
-
 public class Fluids {
 
     public static final Gson gson = new Gson();
-    public static final HashBiMap<String, FluidType> renameMapping = HashBiMap.create();
-    public static final FT_Liquid LIQUID = new FT_Liquid();
-    public static final FT_Viscous VISCOUS = new FT_Viscous();
-    public static final FT_Gaseous_ART EVAP = new FT_Gaseous_ART();
-    public static final FT_Gaseous GASEOUS = new FT_Gaseous();
-    public static final FT_Plasma PLASMA = new FT_Plasma();
-    public static final FT_Amat ANTI = new FT_Amat();
-    public static final FT_LeadContainer LEADCON = new FT_LeadContainer();
-    public static final FT_NoContainer NOCON = new FT_NoContainer();
-    public static final FT_NoID NOID = new FT_NoID();
-    public static final FT_Delicious DELICIOUS = new FT_Delicious();
-    public static final FT_Unsiphonable UNSIPHONABLE = new FT_Unsiphonable();
-    /* Burns 4x dirtier than regular fuel */
-    public static final float SOOT_UNREFINED_OIL = PollutionHandler.SOOT_PER_SECOND * 0.1F;
-    /* Original baseline, used for most fuels */
-    public static final float SOOT_REFINED_OIL = PollutionHandler.SOOT_PER_SECOND * 0.025F;
-    /* Gasses burn very cleanly */
-    public static final float SOOT_GAS = PollutionHandler.SOOT_PER_SECOND * 0.005F;
-    /* Original baseline for leaded fuels */
-    public static final float LEAD_FUEL = PollutionHandler.HEAVY_METAL_PER_SECOND * 0.025F;
-    /* Poison stat for most petrochemicals */
-    public static final float POISON_OIL = PollutionHandler.POISON_PER_SECOND * 0.0025F;
-    /* Poison stat for horrible chemicals like red mud or phosgene */
-    public static final float POISON_EXTREME = PollutionHandler.POISON_PER_SECOND * 0.025F;
-    /* Poison stat for mostly inert things like carbon dioxide */
-    public static final float POISON_MINOR = PollutionHandler.POISON_PER_SECOND * 0.001F;
-    public static final FT_Polluting P_OIL = new FT_Polluting().burn(PollutionHandler.PollutionType.SOOT, SOOT_UNREFINED_OIL).release(PollutionHandler.PollutionType.POISON, POISON_OIL);
-    public static final FT_Polluting P_FUEL = new FT_Polluting().burn(PollutionHandler.PollutionType.SOOT, SOOT_REFINED_OIL).release(PollutionHandler.PollutionType.POISON, POISON_OIL);
-    public static final FT_Polluting P_FUEL_LEADED = new FT_Polluting().burn(PollutionHandler.PollutionType.SOOT, SOOT_REFINED_OIL).burn(PollutionHandler.PollutionType.HEAVYMETAL, LEAD_FUEL).release(PollutionHandler.PollutionType.POISON, POISON_OIL).release(PollutionHandler.PollutionType.HEAVYMETAL, LEAD_FUEL * 0.1F);
-    public static final FT_Polluting P_GAS = new FT_Polluting().burn(PollutionHandler.PollutionType.SOOT, SOOT_GAS);
-    public static final FT_Polluting P_LIQUID_GAS = new FT_Polluting().burn(PollutionHandler.PollutionType.SOOT, SOOT_GAS * 2F);
-    protected static final List<FluidType> registerOrder = new ArrayList<>();
-    protected static final List<FluidType> metaOrder = new ArrayList<>();
-    private static final Int2ObjectMap<FluidType> idMapping = new Int2ObjectOpenHashMap<>();
-    private static final HashMap<String, FluidType> nameMapping = new HashMap<>();
+
+    public static List<IFluidRegisterListener> additionalListeners = new ArrayList<>();
 
     public static FluidType NONE;
     public static FluidType AIR;
@@ -242,10 +205,52 @@ public class Fluids {
     public static FluidType DHC;
     public static FluidType HYDRAZINE; //This doesnt exist on 1.7 upstream...
     /* Lagacy names for compatibility purposes */
-    @Deprecated
-    public static FluidType ACID;    //JAOPCA uses this, apparently
-    public static List<FluidType> customFluids = new ArrayList();
+    @Deprecated public static FluidType ACID;	//JAOPCA uses this, apparently
 
+    public static final HashBiMap<String, FluidType> renameMapping = HashBiMap.create();
+
+    public static List<FluidType> customFluids = new ArrayList<>();
+    public static List<FluidType> foreignFluids = new ArrayList<>();
+
+    private static final HashMap<Integer, FluidType> idMapping = new HashMap<>();
+    private static final HashMap<String, FluidType> nameMapping = new HashMap<>();
+    /** Inconsequential, only actually used when listing all fluids with niceOrder disabled */
+    protected static final List<FluidType> registerOrder = new ArrayList<>();
+    /** What's used to list fluids with niceOrder enabled */
+    public static final List<FluidType> metaOrder = new ArrayList<>();
+
+    public static final FT_Liquid LIQUID = new FT_Liquid();
+    public static final FT_Viscous VISCOUS = new FT_Viscous();
+    public static final FT_Gaseous_ART EVAP = new FT_Gaseous_ART();
+    public static final FT_Gaseous GASEOUS = new FT_Gaseous();
+    public static final FT_Plasma PLASMA = new FT_Plasma();
+    public static final FT_Amat ANTI = new FT_Amat();
+    public static final FT_LeadContainer LEADCON = new FT_LeadContainer();
+    public static final FT_NoContainer NOCON = new FT_NoContainer();
+    public static final FT_NoID NOID = new FT_NoID();
+    public static final FT_Delicious DELICIOUS = new FT_Delicious();
+    public static final FT_Unsiphonable UNSIPHONABLE = new FT_Unsiphonable();
+
+    /* Burns 4x dirtier than regular fuel */
+    public static final float SOOT_UNREFINED_OIL = PollutionHandler.SOOT_PER_SECOND * 0.1F;
+    /* Original baseline, used for most fuels */
+    public static final float SOOT_REFINED_OIL = PollutionHandler.SOOT_PER_SECOND * 0.025F;
+    /* Gasses burn very cleanly */
+    public static final float SOOT_GAS = PollutionHandler.SOOT_PER_SECOND * 0.005F;
+    /* Original baseline for leaded fuels */
+    public static final float LEAD_FUEL = PollutionHandler.HEAVY_METAL_PER_SECOND * 0.025F;
+    /* Poison stat for most petrochemicals */
+    public static final float POISON_OIL = PollutionHandler.POISON_PER_SECOND * 0.0025F;
+    /* Poison stat for horrible chemicals like red mud or phosgene */
+    public static final float POISON_EXTREME = PollutionHandler.POISON_PER_SECOND * 0.025F;
+    /* Poison stat for mostly inert things like carbon dioxide */
+    public static final float POISON_MINOR = PollutionHandler.POISON_PER_SECOND * 0.001F;
+
+    public static final FT_Polluting P_OIL =			new FT_Polluting().burn(PollutionType.SOOT, SOOT_UNREFINED_OIL).release(PollutionType.POISON, POISON_OIL);
+    public static final FT_Polluting P_FUEL =			new FT_Polluting().burn(PollutionType.SOOT, SOOT_REFINED_OIL).release(PollutionType.POISON, POISON_OIL);
+    public static final FT_Polluting P_FUEL_LEADED =	new FT_Polluting().burn(PollutionType.SOOT, SOOT_REFINED_OIL).burn(PollutionType.HEAVYMETAL, LEAD_FUEL).release(PollutionType.POISON, POISON_OIL).release(PollutionType.HEAVYMETAL, LEAD_FUEL * 0.1F);
+    public static final FT_Polluting P_GAS =			new FT_Polluting().burn(PollutionType.SOOT, SOOT_GAS);
+    public static final FT_Polluting P_LIQUID_GAS =		new FT_Polluting().burn(PollutionType.SOOT, SOOT_GAS * 2F);
 
     public static void init() {
 
@@ -298,7 +303,7 @@ public class Fluids {
         AMAT =					new FluidType("AMAT",				0x010101, 5, 0, 5, EnumSymbol.ANTIMATTER).addTraits(ANTI, GASEOUS);
         ASCHRAB =				new FluidType("ASCHRAB",			0xb50000, 5, 0, 5, EnumSymbol.ANTIMATTER).addTraits(ANTI, GASEOUS);
         PEROXIDE =				new FluidType("PEROXIDE",			0xfff7aa, 3, 0, 3, EnumSymbol.OXIDIZER).addTraits(new FT_Corrosive(40), LIQUID);
-        WATZ =					new FluidType("WATZ",				0x86653E, 4, 0, 3, EnumSymbol.ACID).addTraits(new FT_Corrosive(60), new FT_VentRadiation(0.1F), LIQUID, VISCOUS, new FT_Polluting().release(PollutionHandler.PollutionType.POISON, POISON_EXTREME));
+        WATZ =					new FluidType("WATZ",				0x86653E, 4, 0, 3, EnumSymbol.ACID).addTraits(new FT_Corrosive(60), new FT_VentRadiation(0.1F), LIQUID, VISCOUS, new FT_Polluting().release(PollutionType.POISON, POISON_EXTREME));
         CRYOGEL =				new FluidType("CRYOGEL",			0x32ffff, 2, 0, 0, EnumSymbol.CROYGENIC).setTemp(-170).addTraits(LIQUID, VISCOUS);
         HYDROGEN =				new FluidType("HYDROGEN",			0x4286f4, 3, 4, 0, EnumSymbol.CROYGENIC).setTemp(-260).addContainers(new CD_Gastank(0x4286f4, 0xffffff)).addTraits(new FT_Flammable(5_000), new FT_Combustible(FuelGrade.HIGH, 10_000), LIQUID, EVAP);
         OXYGEN =				new FluidType("OXYGEN",				0x98bdf9, 3, 0, 0, EnumSymbol.CROYGENIC).setTemp(-100).addContainers(new CD_Gastank(0x98bdf9, 0xffffff)).addTraits(LIQUID, EVAP);
@@ -317,7 +322,7 @@ public class Fluids {
         PLASMA_HT =				new FluidType("PLASMA_HT",			0xD1ABF2, 0, 4, 0, EnumSymbol.RADIATION).setTemp(3000).addTraits(NOCON, NOID, PLASMA);
         PLASMA_XM =				new FluidType("PLASMA_XM",			0xC6A5FF, 0, 4, 1, EnumSymbol.RADIATION).setTemp(4250).addTraits(NOCON, NOID, PLASMA);
         PLASMA_BF =				new FluidType("PLASMA_BF",			0xA7F1A3, 4, 5, 4, EnumSymbol.ANTIMATTER).setTemp(8500).addTraits(NOCON, NOID, PLASMA);
-        CARBONDIOXIDE =			new FluidType("CARBONDIOXIDE",		0x404040, 3, 0, 0, EnumSymbol.ASPHYXIANT).addTraits(GASEOUS, new FT_Polluting().release(PollutionHandler.PollutionType.POISON, POISON_MINOR));
+        CARBONDIOXIDE =			new FluidType("CARBONDIOXIDE",		0x404040, 3, 0, 0, EnumSymbol.ASPHYXIANT).addTraits(GASEOUS, new FT_Polluting().release(PollutionType.POISON, POISON_MINOR));
         PLASMA_DH3 =			new FluidType("PLASMA_DH3",			0xFF83AA, 0, 4, 0, EnumSymbol.RADIATION).setTemp(3480).addTraits(NOCON, NOID, PLASMA);
         HELIUM3 =				new FluidType("HELIUM3",			0xFCF0C4, 0, 0, 0, EnumSymbol.ASPHYXIANT).addTraits(GASEOUS).addContainers(new CD_Gastank(0xFD631F, 0xffffff));
         DEATH =					new FluidType("DEATH",				0x717A88, 2, 0, 1, EnumSymbol.ACID).setTemp(300).addTraits(new FT_Corrosive(80), new FT_Poison(true, 4), LEADCON, LIQUID, VISCOUS);
@@ -344,14 +349,14 @@ public class Fluids {
         WOODOIL =				new FluidType("WOODOIL",			0x847D54, 2, 2, 0, EnumSymbol.NONE).addContainers(new CD_Canister(0xBF7E4F)).addTraits(LIQUID, VISCOUS, P_OIL);
         COALCREOSOTE =			new FluidType("COALCREOSOTE",		0x51694F, 3, 2, 0, EnumSymbol.NONE).addContainers(new CD_Canister(0x285A3F)).addTraits(LIQUID, VISCOUS, P_OIL);
         SEEDSLURRY =			new FluidType("SEEDSLURRY",			0x7CC35E, 0, 0, 0, EnumSymbol.NONE).addContainers(new CD_Canister(0x7CC35E)).addTraits(LIQUID, VISCOUS);
-        NITRIC_ACID =			new FluidType("NITRIC_ACID",		0xBB7A1E, 3, 0, 2, EnumSymbol.OXIDIZER).addTraits(LIQUID, new FT_Corrosive(60), new FT_Polluting().release(PollutionHandler.PollutionType.POISON, POISON_EXTREME));
+        NITRIC_ACID =			new FluidType("NITRIC_ACID",		0xBB7A1E, 3, 0, 2, EnumSymbol.OXIDIZER).addTraits(LIQUID, new FT_Corrosive(60), new FT_Polluting().release(PollutionType.POISON, POISON_EXTREME));
         SOLVENT =				new FluidType("SOLVENT",			0xE4E3EF, 2, 3, 0, EnumSymbol.NONE).addContainers(new CD_Canister(0xE4E3EF)).addTraits(LIQUID, new FT_Corrosive(30));
         BLOOD =					new FluidType("BLOOD",				0xB22424, 0, 0, 0, EnumSymbol.NONE).addTraits(LIQUID, VISCOUS, DELICIOUS);
         BLOOD_HOT =				new FluidType("BLOOD_HOT",			0xF22419, 3, 0, 0, EnumSymbol.NONE).addTraits(LIQUID, VISCOUS).setTemp(666); //it's funny because it's the satan number
         SYNGAS =				new FluidType("SYNGAS",				0x131313, 1, 4, 2, EnumSymbol.NONE).addContainers(new CD_Gastank(0xFFFFFF, 0x131313)).addTraits(GASEOUS);
         OXYHYDROGEN =			new FluidType("OXYHYDROGEN",		0x483FC1, 0, 4, 2, EnumSymbol.NONE).addTraits(GASEOUS);
         RADIOSOLVENT =			new FluidType("RADIOSOLVENT",		0xA4D7DD, 3, 3, 0, EnumSymbol.NONE).addTraits(LIQUID, new FT_Corrosive(50));
-        HYDRAZINE       = new FluidType("HYDRAZINE",    0x31517D, 2, 3, 2, EnumSymbol.NONE).addContainers(new CD_Canister(0x31517D)).addTraits((new FT_Flammable(500_000)), new FT_Combustible(FuelGrade.HIGH, 1_250_000), new FT_Corrosive(30), LIQUID, new FT_Rocket(210, 277810));
+        HYDRAZINE =             new FluidType("HYDRAZINE",    0x31517D, 2, 3, 2, EnumSymbol.NONE).addContainers(new CD_Canister(0x31517D)).addTraits((new FT_Flammable(500_000)), new FT_Combustible(FuelGrade.HIGH, 1_250_000), new FT_Corrosive(30), LIQUID, new FT_Rocket(210, 277810));
         CHLORINE =				new FluidType("CHLORINE",			0xBAB572, 3, 0, 0, EnumSymbol.OXIDIZER).addContainers(new CD_Gastank(0xBAB572, 0x887B34)).addTraits(GASEOUS, new FT_Corrosive(25));
         HEAVYOIL_VACUUM =		new FluidType("HEAVYOIL_VACUUM",	0x131214, 2, 1, 0, EnumSymbol.NONE).addTraits(LIQUID, VISCOUS, P_OIL).addContainers(new CD_Canister(0x513F39));
         REFORMATE =				new FluidType("REFORMATE",			0x835472, 2, 2, 0, EnumSymbol.NONE).addTraits(LIQUID, VISCOUS, P_FUEL).addContainers(new CD_Canister(0xD180D6));
@@ -364,8 +369,8 @@ public class Fluids {
         KEROSENE_REFORM =		new FluidType("KEROSENE_REFORM",	0xFFA5F3, 1, 2, 0, EnumSymbol.NONE).addTraits(LIQUID, P_FUEL).addContainers(new CD_Canister(0xFF377D));
         REFORMGAS =				new FluidType("REFORMGAS",			0x6362AE, 1, 4, 1, EnumSymbol.NONE).addContainers(new CD_Gastank(0x9392FF, 0xFFB992)).addTraits(GASEOUS, P_GAS);
         COLLOID =				new FluidType("COLLOID",			0x787878, 0, 0, 0, EnumSymbol.NONE).addTraits(LIQUID, VISCOUS);
-        PHOSGENE =				new FluidType("PHOSGENE",			0xCFC4A4, 4, 0, 1, EnumSymbol.NONE).addContainers(new CD_Gastank(0xCFC4A4, 0x361414)).addTraits(GASEOUS, new FT_Polluting().release(PollutionHandler.PollutionType.POISON, POISON_EXTREME));
-        MUSTARDGAS =			new FluidType("MUSTARDGAS",			0xBAB572, 4, 1, 1, EnumSymbol.NONE).addContainers(new CD_Gastank(0xBAB572, 0x361414)).addTraits(GASEOUS, new FT_Polluting().release(PollutionHandler.PollutionType.POISON, POISON_EXTREME));
+        PHOSGENE =				new FluidType("PHOSGENE",			0xCFC4A4, 4, 0, 1, EnumSymbol.NONE).addContainers(new CD_Gastank(0xCFC4A4, 0x361414)).addTraits(GASEOUS, new FT_Polluting().release(PollutionType.POISON, POISON_EXTREME));
+        MUSTARDGAS =			new FluidType("MUSTARDGAS",			0xBAB572, 4, 1, 1, EnumSymbol.NONE).addContainers(new CD_Gastank(0xBAB572, 0x361414)).addTraits(GASEOUS, new FT_Polluting().release(PollutionType.POISON, POISON_EXTREME));
         IONGEL =				new FluidType("IONGEL",				0xB8FFFF, 1, 0, 4, EnumSymbol.NONE).addTraits(LIQUID, VISCOUS);
         OIL_COKER =				new FluidType("OIL_COKER",			0x001802, 2, 1, 0, EnumSymbol.NONE).addTraits(LIQUID, VISCOUS, P_OIL);
         NAPHTHA_COKER =			new FluidType("NAPHTHA_COKER",		0x495944, 2, 1, 0, EnumSymbol.NONE).addTraits(LIQUID, VISCOUS, P_OIL);
@@ -376,7 +381,7 @@ public class Fluids {
         FISHOIL =				new FluidType("FISHOIL",			0x4B4A45, 0, 1, 0, EnumSymbol.NONE).addTraits(LIQUID, P_FUEL);
         SUNFLOWEROIL =			new FluidType("SUNFLOWEROIL",		0xCBAD45, 0, 1, 0, EnumSymbol.NONE).addTraits(LIQUID, P_FUEL);
         NITROGLYCERIN =			new FluidType("NITROGLYCERIN",		0x92ACA6, 0, 4, 0, EnumSymbol.NONE).addTraits(LIQUID);
-        REDMUD =				new FluidType("REDMUD",				0xD85638, 3, 0, 4, EnumSymbol.NONE).addTraits(LIQUID, VISCOUS, LEADCON, new FT_Corrosive(60), new FT_Flammable(1_000), new FT_Polluting().release(PollutionHandler.PollutionType.POISON, POISON_EXTREME));
+        REDMUD =				new FluidType("REDMUD",				0xD85638, 3, 0, 4, EnumSymbol.NONE).addTraits(LIQUID, VISCOUS, LEADCON, new FT_Corrosive(60), new FT_Flammable(1_000), new FT_Polluting().release(PollutionType.POISON, POISON_EXTREME));
         CHLOROCALCITE_SOLUTION = new FluidType("CHLOROCALCITE_SOLUTION", 0x808080, 0, 0, 0, EnumSymbol.NONE).addTraits(LIQUID, NOCON, new FT_Corrosive(60));
         CHLOROCALCITE_MIX =		new FluidType("CHLOROCALCITE_MIX",	0x808080, 0, 0, 0, EnumSymbol.NONE).addTraits(LIQUID, NOCON, new FT_Corrosive(60));
         CHLOROCALCITE_CLEANED =	new FluidType("CHLOROCALCITE_CLEANED", 0x808080, 0, 0, 0, EnumSymbol.NONE).addTraits(LIQUID, NOCON, new FT_Corrosive(60));
@@ -393,7 +398,7 @@ public class Fluids {
         THORIUM_SALT =			new FluidType("THORIUM_SALT",		0x7A5542, 2, 0, 3, EnumSymbol.NONE).setTemp(800).addTraits(LIQUID, VISCOUS, new FT_Corrosive(65));
         THORIUM_SALT_HOT =		new FluidType("THORIUM_SALT_HOT",	0x3E3627, 2, 0, 3, EnumSymbol.NONE).setTemp(1600).addTraits(LIQUID, VISCOUS, new FT_Corrosive(65));
         THORIUM_SALT_DEPLETED =	new FluidType("THORIUM_SALT_DEPLETED",	0x302D1C, 2, 0, 3, EnumSymbol.NONE).setTemp(800).addTraits(LIQUID, VISCOUS, new FT_Corrosive(65));
-        FULLERENE =				new FluidType("FULLERENE",			0xFF7FED, 3, 3, 3, EnumSymbol.NONE).addTraits(LIQUID, new FT_Corrosive(65), new FT_Polluting().release(PollutionHandler.PollutionType.POISON, POISON_MINOR));
+        FULLERENE =				new FluidType("FULLERENE",			0xFF7FED, 3, 3, 3, EnumSymbol.NONE).addTraits(LIQUID, new FT_Corrosive(65), new FT_Polluting().release(PollutionType.POISON, POISON_MINOR));
         PHEROMONE =				new FluidType("PHEROMONE",			0x5FA6E8, 0, 0, 0, EnumSymbol.NONE).addTraits(LIQUID, new FT_Pheromone(1));
         PHEROMONE_M =			new FluidType("PHEROMONE_M",		0x48C9B0 , 0, 0, 0, EnumSymbol.NONE).addTraits(LIQUID, new FT_Pheromone(2));
         OIL_DS =				new FluidType("OIL_DS",				0x121212, 2, 1, 0, EnumSymbol.NONE).addContainers(new CD_Canister(0x424242)).addTraits(LIQUID, VISCOUS, P_OIL);
@@ -416,6 +421,7 @@ public class Fluids {
         ALUMINA =				new FluidType("ALUMINA",			0xDDFFFF, 0, 0, 0, EnumSymbol.NONE).addTraits(LIQUID);
         AIR =					new FluidType("AIR",				0xE7EAEB, 0, 0, 0, EnumSymbol.NONE).addTraits(GASEOUS);
         CONCRETE =				new FluidType("CONCRETE",			0xA2A2A2, 0, 0, 0, EnumSymbol.NONE).addTraits(LIQUID);
+        // 1.7 has 153, +1 due to HYDRAZINE
         DHC =					new FluidType(154, "DHC",			0xD2AFFF, 0, 0, 0, EnumSymbol.NONE).addTraits(GASEOUS);
 
         // ^ ^ ^ ^ ^ ^ ^ ^
@@ -426,10 +432,10 @@ public class Fluids {
         if(!customTypes.exists()) initDefaultFluids(customTypes);
         readCustomFluids(customTypes);
 
-//        for(IFluidRegisterListener listener : additionalListeners) listener.onFluidsLoad();
+        for(IFluidRegisterListener listener : additionalListeners) listener.onFluidsLoad();
 
         //AND DON'T FORGET THE META DOWN HERE
-        // V V V V V V V VMetaOrder
+        // V V V V V V V V
 
         //null
         metaOrder.add(NONE);
@@ -601,7 +607,7 @@ public class Fluids {
         //bug meth
         metaOrder.add(PHEROMONE);
         metaOrder.add(PHEROMONE_M);
-        metaOrder.add(HYDRAZINE);
+        metaOrder.add(HYDRAZINE);//1.12.2 Exclusive
 
         //ANY INTERNAL RENAMING MUST BE REFLECTED HERE - DON'T FORGET TO CHANGE: LANG FILES + TYPE'S STRING ID + NAME OF TANK/GUI TEXTURE FILES!
         // V
@@ -612,7 +618,7 @@ public class Fluids {
         ACID = PEROXIDE;
 
         for(FluidType custom : customFluids) metaOrder.add(custom);
-//        for(FluidType custom : foreignFluids) metaOrder.add(custom);
+        for(FluidType custom : foreignFluids) metaOrder.add(custom);
 
         CHLORINE.addTraits(new FT_Toxin().addEntry(new ToxinDirectDamage(ModDamageSource.cloud, 2F, 20, HazardClass.GAS_LUNG, false)));
         PHOSGENE.addTraits(new FT_Toxin().addEntry(new ToxinDirectDamage(ModDamageSource.cloud, 4F, 20, HazardClass.GAS_LUNG, false)));
@@ -828,7 +834,9 @@ public class Fluids {
                 String texture = obj.get("texture").getAsString();
                 int temperature = obj.get("temperature").getAsInt();
 
-                FluidType type = new FluidType(name, color, p, f, r, symbol, texture, tint, id, displayName).setTemp(temperature);
+                FluidType type = fluidMigration.get(name);
+                if(type == null) type = new FluidType(name, color, p, f, r, symbol, texture, tint, id, displayName).setTemp(temperature);
+                else type.setupCustom(name, color, p, f, r, symbol, texture, tint, id, displayName).setTemp(temperature);
                 customFluids.add(type);
             }
 
@@ -891,6 +899,54 @@ public class Fluids {
         } catch (Exception ex) {
             ex.printStackTrace();
         }
+    }
+
+    public static HashMap<String, FluidType> fluidMigration = new HashMap<>(); // since reloading would create new fluid instances, and those break existing machines
+
+    // mlbv: currently this is only called at the start of postinit. upstream also have a command to reload configs, consider adding it later.
+    public static void reloadFluids(){
+        File folder = MainRegistry.configHbmDir;
+        File customTypes = new File(folder.getAbsolutePath() + File.separatorChar + "hbmFluidTypes.json");
+        if(!customTypes.exists()) initDefaultFluids(customTypes);
+
+        for(FluidType type : customFluids) {
+            fluidMigration.put(type.getName(), type);
+            idMapping.remove(type.getID());
+            registerOrder.remove(type);
+            nameMapping.remove(type.getName());
+            metaOrder.remove(type);
+        }
+        customFluids.clear();
+
+        for(FluidType type : foreignFluids) {
+            fluidMigration.put(type.getName(), type);
+            idMapping.remove(type.getID());
+            registerOrder.remove(type);
+            nameMapping.remove(type.getName());
+            metaOrder.remove(type);
+        }
+        foreignFluids.clear();
+
+        readCustomFluids(customTypes);
+        for(FluidType custom : customFluids) metaOrder.add(custom);
+        // mlbv: change from 1.7:
+        // add foreign fluids to metaOrder before trait overrides are loaded, so they can be configured via hbmFluidTraits.json.
+        // 1.7 ordering made it impossible for hbmFluidTraits.json to control foreign fluids.
+        for(IFluidRegisterListener listener : additionalListeners) listener.onFluidsLoad();
+        for(FluidType custom : foreignFluids) metaOrder.add(custom);
+
+        File config = new File(MainRegistry.configHbmDir.getAbsolutePath() + File.separatorChar + "hbmFluidTraits.json");
+        File template = new File(MainRegistry.configHbmDir.getAbsolutePath() + File.separatorChar + "_hbmFluidTraits.json");
+
+        if(!config.exists()) {
+            writeDefaultTraits(template);
+        } else {
+            readTraits(config);
+        }
+
+        // FF compat is NOT included here;
+        // External fluids should opt in explicitly via CompatFluidRegistry.setupForgeFluidCompat
+        // to avoid unintended side effects from implicit ForgeFluid registration.
     }
 
     private static void registerCalculatedFuel(FluidType type, double base, double combustMult, FuelGrade grade) {
@@ -1012,74 +1068,89 @@ public class Fluids {
 
     public static void initForgeFluidCompat() {
         for (FluidType fluid : metaOrder) {
-            if (fluid.ffBan) continue;
-
-            Fluid existingFluid = FluidRegistry.getFluid(fluid.getFFName());
-            if (existingFluid != null) {
-                MainRegistry.logger.info("[NTM Fluid<=>ForgeFluid Compat] Found ForgeFluid for: " + fluid.getName() + ". Skipping registration...");
-                continue;
-            }
-
-            MainRegistry.logger.info("[NTM Fluid<=>ForgeFluid Compat] Forge Fluid not found for: " + fluid.getName() + ". Registering under: " + fluid.getFFName());
-
-            // Determine texture path based on fluid's stringId
-            String texturePath = Tags.MODID + ":/blocks/forgefluid" + fluid.getName().toLowerCase();
-            //Note: we are not using FF name since the old texture names seem to follow the NTMF naming schema
-            //TODO: Fix that
-
-            // Check if the custom texture exists
-            ResourceLocation textureStill = new ResourceLocation(texturePath + "_still");
-            ResourceLocation textureFlowing = new ResourceLocation(texturePath + "_flowing");
-
-            // Default texture if custom one is not found
-            ResourceLocation defaultTexture = fluid.hasTrait(FT_Gaseous.class) ? new ResourceLocation(Tags.MODID, "blocks/forgefluid/gas_default") :
-                    new ResourceLocation(Tags.MODID, "blocks/forgefluid/fluid_default_still");
-            if (fluid.hasTrait(FT_Viscous.class))
-                defaultTexture = new ResourceLocation(Tags.MODID, "blocks/forgefluid/fluid_viscous_default_still");
-
-            // Try loading the custom texture
-            int color;
-            if(FMLCommonHandler.instance().getSide() == Side.CLIENT) {
-                IResourceManager resourceManager = Minecraft.getMinecraft().getResourceManager();
-                IResource resource = null;
-
-                try {
-                    resource = resourceManager.getResource(textureStill);
-                } catch (IOException e) {
-                    textureStill = defaultTexture;
-                    MainRegistry.logger.info("[NTM Fluid<=>ForgeFluid Compat] Forge Fluid texture found for: " + fluid.getName() + ". Using default tinted");
-                }
-                resource = null;
-                try {
-                    resource = resourceManager.getResource(textureFlowing);
-                } catch (IOException e) {
-                    textureFlowing = defaultTexture;
-                }
-                color = textureStill == defaultTexture ? 0xFFFFFFFF : fluid.getColor();
-            } else
-            {
-                color = fluid.getColor();
-            }
-
-            Fluid compatFluid = new FluidNTM(fluid.getFFName(),
-                    textureStill, textureFlowing, color)
-                    .setTemperature(fluid.temperature + 273) // Fluid#setTemperature accepts Kelvin, not Celsius
-                    .setColor(fluid.getColor())
-                    .setDensity(1000)
-                    .setViscosity(fluid.hasTrait(FT_Viscous.class) ? 6000 : 1000);
-
-
-            if (fluid.hasTrait(FT_Gaseous.class)) {
-                compatFluid.setDensity(-1000);
-                compatFluid.setGaseous(true);
-            } else if (fluid.hasTrait(FT_Liquid.class) && fluid.hasTrait(FT_Viscous.class)) {
-                compatFluid.setDensity(2000);
-                compatFluid.setGaseous(false);
-            }
-
-            FluidRegistry.registerFluid(compatFluid);
-            FluidRegistry.addBucketForFluid(compatFluid);
+            setupForgeFluidCompat(fluid);
         }
+    }
+
+    public static void setupForgeFluidCompat(FluidType fluid) {
+        if (alreadyRegistered(fluid)) return;
+
+        // Determine texture path based on fluid's stringId
+        String texturePath = Tags.MODID + ":/blocks/forgefluid" + fluid.getName().toLowerCase();
+        //Note: we are not using FF name since the old texture names seem to follow the NTMF naming schema
+        //TODO: Fix that
+
+        // Check if the custom texture exists
+        ResourceLocation textureStill = new ResourceLocation(texturePath + "_still");
+        ResourceLocation textureFlowing = new ResourceLocation(texturePath + "_flowing");
+
+        // Default texture if custom one is not found
+        ResourceLocation defaultTexture = fluid.hasTrait(FT_Gaseous.class) ? new ResourceLocation(Tags.MODID, "blocks/forgefluid/gas_default") :
+                new ResourceLocation(Tags.MODID, "blocks/forgefluid/fluid_default_still");
+        if (fluid.hasTrait(FT_Viscous.class))
+            defaultTexture = new ResourceLocation(Tags.MODID, "blocks/forgefluid/fluid_viscous_default_still");
+
+        // Try loading the custom texture
+        if(FMLCommonHandler.instance().getSide() == Side.CLIENT) {
+            IResourceManager resourceManager = Minecraft.getMinecraft().getResourceManager();
+            try (IResource _ = resourceManager.getResource(textureStill)) {
+                // noop
+            } catch (IOException e) {
+                textureStill = defaultTexture;
+                MainRegistry.logger.info("[NTM Fluid<=>ForgeFluid Compat] Forge Fluid texture not found for: {}. Using default tinted",
+                        fluid.getName());
+            }
+            try (IResource _ = resourceManager.getResource(textureFlowing)) {
+                // noop
+            } catch (IOException e) {
+                textureFlowing = defaultTexture;
+            }
+        }
+        registerForgeFluidCompat(fluid, textureStill, textureFlowing, fluid.getColor());
+    }
+
+    public static void setupForgeFluidCompat(FluidType fluid, ResourceLocation textureStill, ResourceLocation textureFlowing) {
+        setupForgeFluidCompat(fluid, textureStill, textureFlowing, fluid == null ? 0xFFFFFFFF : fluid.getColor());
+    }
+
+    public static void setupForgeFluidCompat(FluidType fluid, ResourceLocation textureStill, ResourceLocation textureFlowing, int color) {
+        if (alreadyRegistered(fluid)) return;
+        if (textureStill == null || textureFlowing == null) {
+            throw new IllegalArgumentException("ForgeFluid textures cannot be null!");
+        }
+        registerForgeFluidCompat(fluid, textureStill, textureFlowing, color);
+    }
+
+    private static boolean alreadyRegistered(FluidType fluid) {
+        if (fluid == null || fluid.ffBan) return true;
+        Fluid existingFluid = FluidRegistry.getFluid(fluid.getFFName());
+        if (existingFluid != null) {
+            MainRegistry.logger.info("[NTM Fluid<=>ForgeFluid Compat] Found ForgeFluid for: {}. Skipping registration...", fluid.getName());
+            return true;
+        }
+        MainRegistry.logger.debug("[NTM Fluid<=>ForgeFluid Compat] Forge Fluid not found for: {}. Registering under: {}", fluid.getName(),
+                fluid.getFFName());
+        return false;
+    }
+
+    private static void registerForgeFluidCompat(FluidType fluid, ResourceLocation textureStill, ResourceLocation textureFlowing, int color) {
+        Fluid compatFluid = new FluidNTM(fluid.getFFName(),
+                textureStill, textureFlowing, color)
+                .setTemperature(fluid.temperature + 273) // Fluid#setTemperature accepts Kelvin, not Celsius
+                .setColor(color)
+                .setDensity(1000)
+                .setViscosity(fluid.hasTrait(FT_Viscous.class) ? 6000 : 1000);
+
+        if (fluid.hasTrait(FT_Gaseous.class)) {
+            compatFluid.setDensity(-1000);
+            compatFluid.setGaseous(true);
+        } else if (fluid.hasTrait(FT_Liquid.class) && fluid.hasTrait(FT_Viscous.class)) {
+            compatFluid.setDensity(2000);
+            compatFluid.setGaseous(false);
+        }
+
+        FluidRegistry.registerFluid(compatFluid);
+        FluidRegistry.addBucketForFluid(compatFluid);
     }
 
     public static class CD_Canister {

@@ -18,6 +18,7 @@ import java.util.zip.GZIPOutputStream;
 /**
  * A light-weight registry implementation for per-save ID/String mappings for phased structures stored in hbm_ce_phased.dat
  * Ensures consistent serialization when structures are added/removed by addon makers.
+ * MUST NOT BE SYNC'd TO CLIENTS!!!
  */
 public class PhasedStructureIdData {
 
@@ -263,6 +264,7 @@ public class PhasedStructureIdData {
 
     /**
      * Get ID for a key. Returns -1 if not mapped.
+     * This ID, and the NBT holding it, MUST NOT BE SENT TO THE CLIENTS
      */
     public int getId(String key) {
         return keyToId.getInt(key);
@@ -270,6 +272,7 @@ public class PhasedStructureIdData {
 
     /**
      * Get key for an ID. Returns null if not mapped.
+     * MUST NOT BE CALLED ON LOGICAL CLIENT
      */
     public @Nullable String getKey(int id) {
         return idToKey.get(id);
@@ -284,6 +287,7 @@ public class PhasedStructureIdData {
 
     /**
      * Get ID for a string from the global string table. Registers if not present.
+     * This ID, and the NBT holding it, MUST NOT BE SENT TO THE CLIENTS
      */
     public int getStringId(String s) {
         int id = stringToId.getInt(s);
@@ -297,6 +301,7 @@ public class PhasedStructureIdData {
 
     /**
      * Get string for an ID from the global string table.
+     * MUST NOT BE CALLED ON LOGICAL CLIENT
      */
     public @Nullable String getString(int id) {
         return idToString.get(id);

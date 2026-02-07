@@ -5,7 +5,6 @@ import com.hbm.inventory.container.ContainerMachineGasCent;
 import com.hbm.tileentity.machine.TileEntityMachineGasCent;
 import com.hbm.util.I18nUtil;
 import com.hbm.util.RenderUtil;
-import com.mojang.realmsclient.gui.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.GlStateManager;
@@ -14,6 +13,7 @@ import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.text.TextFormatting;
 import org.lwjgl.opengl.GL11;
 
 public class GUIMachineGasCent extends GuiInfoContainer {
@@ -49,8 +49,8 @@ public class GUIMachineGasCent extends GuiInfoContainer {
     if (gasCent.inputTank.getTankType().getIfHighSpeed()) {
       inTankInfo[0] =
           (gasCent.processingSpeed > gasCent.processingSpeed - 70)
-              ? ChatFormatting.DARK_RED + inTankInfo[0]
-              : ChatFormatting.GOLD + inTankInfo[0];
+              ? TextFormatting.DARK_RED + inTankInfo[0]
+              : TextFormatting.GOLD + inTankInfo[0];
     }
 
     String[] outTankInfo = {
@@ -59,7 +59,7 @@ public class GUIMachineGasCent extends GuiInfoContainer {
     };
 
     if (gasCent.outputTank.getTankType().getIfHighSpeed()) {
-      outTankInfo[0] = ChatFormatting.GOLD + outTankInfo[0];
+      outTankInfo[0] = TextFormatting.GOLD + outTankInfo[0];
     }
 
     drawCustomInfoStat(

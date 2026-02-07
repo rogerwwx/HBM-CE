@@ -4,7 +4,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonWriter;
 import com.hbm.util.BobMathUtil;
 import com.hbm.util.I18nUtil;
-import com.mojang.realmsclient.gui.ChatFormatting;
+import net.minecraft.util.text.TextFormatting;
 
 import java.io.IOException;
 import java.util.List;
@@ -25,7 +25,7 @@ public class FT_Combustible extends FluidTrait {
 	public void addInfo(List<String> info) {
 		super.addInfo(info);
 
-		info.add(ChatFormatting.GOLD + "[" + I18nUtil.resolveKey("trait.combustable") + "]");
+		info.add(TextFormatting.GOLD + "[" + I18nUtil.resolveKey("trait.combustable") + "]");
 		
 		if(combustionEnergy > 0) {
 			info.add(I18nUtil.resolveKey("trait.combustable.desc", BobMathUtil.getShortNumber(combustionEnergy)));

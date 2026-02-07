@@ -10,10 +10,6 @@ import com.hbm.lib.ForgeDirection;
 import com.hbm.tileentity.TileEntityProxyCombo;
 import com.hbm.tileentity.machine.TileEntityHeatBoilerIndustrial;
 import com.hbm.util.I18nUtil;
-import com.mojang.realmsclient.gui.ChatFormatting;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.util.ITooltipFlag;
@@ -30,6 +26,10 @@ import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 
 public class MachineHeatBoilerIndustrial extends BlockDummyable
     implements ILookOverlay, ITooltipProvider {
@@ -129,9 +129,9 @@ public class MachineHeatBoilerIndustrial extends BlockDummyable
     List<String> text = new ArrayList<>();
     text.add(String.format(Locale.US, "%,d", boiler.heat) + "TU");
     text.add(
-        ChatFormatting.GREEN
+        TextFormatting.GREEN
             + "-> "
-            + ChatFormatting.RESET
+            + TextFormatting.RESET
             + boiler.tanks[0].getTankType().getLocalizedName()
             + ": "
             + String.format(Locale.US, "%,d", boiler.tanks[0].getFill())
@@ -139,9 +139,9 @@ public class MachineHeatBoilerIndustrial extends BlockDummyable
             + String.format(Locale.US, "%,d", boiler.tanks[0].getMaxFill())
             + "mB");
     text.add(
-        ChatFormatting.RED
+        TextFormatting.RED
             + "<- "
-            + ChatFormatting.RESET
+            + TextFormatting.RESET
             + boiler.tanks[1].getTankType().getLocalizedName()
             + ": "
             + String.format(Locale.US, "%,d", boiler.tanks[1].getFill())
