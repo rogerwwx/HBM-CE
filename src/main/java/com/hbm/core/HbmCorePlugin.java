@@ -71,16 +71,6 @@ public class HbmCorePlugin implements IFMLLoadingPlugin, IEarlyMixinLoader {
         return null;
     }
 
-    // ================= Mixin Booter =================
-
-    @Override
-    public List<String> getMixinConfigs() {
-        return Arrays.asList(
-                "mixins.living.json",
-                "mixins.render.json"
-        );
-    }
-
     public static boolean runtimeDeobfEnabled() {
         return runtimeDeobfEnabled;
     }
@@ -106,5 +96,13 @@ public class HbmCorePlugin implements IFMLLoadingPlugin, IEarlyMixinLoader {
         public boolean isHybrid() {
             return this == CAT_SERVER || this == MOHIST || this == MAGMA;
         }
+    }
+
+    @Override
+    public List<String> getMixinConfigs() {
+        return Arrays.asList(
+                "mixins.living.json",
+                "mixins.render.json"
+        );
     }
 }
