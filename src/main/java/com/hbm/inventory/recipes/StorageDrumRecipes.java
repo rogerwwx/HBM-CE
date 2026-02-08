@@ -75,7 +75,4 @@ public class StorageDrumRecipes {
 		return recipeWastes.get(new ComparableStack(stack));
 	}
 
-	public static boolean isOutputItem(ItemStack stack){
-		return outputs.contains(new ComparableStack(stack));
-	}
 }

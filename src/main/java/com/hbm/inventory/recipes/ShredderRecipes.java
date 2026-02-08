@@ -43,7 +43,7 @@ public class ShredderRecipes extends SerializableRecipe {
 
         List<ItemStack> matches = OreDictionary.getOres(name);
         if (matches != null && !matches.isEmpty())
-            return matches.get(0).copy();
+            return matches.getFirst().copy();
 
         return new ItemStack(ModItems.scrap);
     }
@@ -439,10 +439,10 @@ public class ShredderRecipes extends SerializableRecipe {
     @Override
     public void readRecipe(JsonElement recipe) {
         JsonObject obj = (JsonObject) recipe;
-        ItemStack stack = this.readItemStack(obj.get("input").getAsJsonArray());
+        ItemStack stack = readItemStack(obj.get("input").getAsJsonArray());
         ComparableStack comp = new ComparableStack(stack).makeSingular();
-        ItemStack out = this.readItemStack(obj.get("output").getAsJsonArray());
-        this.shredderRecipes.put(comp, out);
+        ItemStack out = readItemStack(obj.get("output").getAsJsonArray());
+        shredderRecipes.put(comp, out);
     }
 
     @Override
@@ -450,15 +450,15 @@ public class ShredderRecipes extends SerializableRecipe {
         Entry<ComparableStack, ItemStack> entry = (Entry<ComparableStack, ItemStack>) recipe;
 
         writer.name("input");
-        this.writeItemStack(entry.getKey().toStack(), writer);
+        writeItemStack(entry.getKey().toStack(), writer);
         writer.name("output");
-        this.writeItemStack(entry.getValue(), writer);
+        writeItemStack(entry.getValue(), writer);
     }
 
     @Override
     public void deleteRecipes() {
-        this.shredderRecipes.clear();
-        this.jeiShredderRecipes = null;
+        shredderRecipes.clear();
+        jeiShredderRecipes = null;
     }
 
     @Override
