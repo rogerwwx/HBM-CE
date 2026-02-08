@@ -1,6 +1,5 @@
 package com.hbm.render.util;
 
-import com.hbm.main.ClientProxy;
 import com.hbm.main.MainRegistry;
 import com.hbm.main.ResourceManager;
 import com.hbm.mixin.MixinRender;
@@ -30,18 +29,21 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
+
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
+import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL15;
+import org.lwjgl.opengl.GL20;
+import org.lwjgl.opengl.GL30;
 import org.lwjgl.util.vector.Matrix4f;
-
 import javax.annotation.Nullable;
 import javax.vecmath.Matrix3f;
-import javax.vecmath.Vector3f;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
+import org.lwjgl.util.vector.Vector3f;
+
+import java.nio.FloatBuffer;
+import java.util.*;
 import java.util.function.Consumer;
 
 public class ModelRendererUtil {
@@ -157,46 +159,101 @@ public class ModelRendererUtil {
 		return false;
 	}
 
-	protected static void generateList(World world, EntityLivingBase ent, float scale, List<Pair<Matrix4f, ModelRenderer>> list, ModelRenderer render, ResourceLocation tex){
-		//note for !render.compiled:
-		//A lot of mobs weirdly replace model renderers and end up with extra ones in the list that aren't ever rendered.
-		//Since they're not rendered, they should never be compiled, so this hack tries to detect that.
-		//Not the greatest method ever, but it appears to work.
+	// 全局或 ThreadLocal 矩阵栈
+	// 矩阵栈：用 ThreadLocal 保证线程安全
+	private static final ThreadLocal<Deque<Matrix4f>> MATRIX_STACK =
+			ThreadLocal.withInitial(ArrayDeque::new);
+
+	protected static void generateList(World world, EntityLivingBase ent, float scale,
+									   List<Pair<Matrix4f, ModelRenderer>> list,
+									   ModelRenderer render, ResourceLocation tex) {
 		if(render.isHidden || !render.showModel || !render.compiled)
 			return;
-		GlStateManager.pushMatrix();
-		doTransforms(render, scale);
-		if(render.childModels != null)
-			for(ModelRenderer renderer : render.childModels) {
-				generateList(world, ent, scale, list, renderer, tex);
+
+		// push 当前矩阵
+		Deque<Matrix4f> stack = MATRIX_STACK.get();
+		Matrix4f current = stack.isEmpty() ? new Matrix4f() : new Matrix4f(stack.peek());
+		stack.push(current);
+
+		// 应用变换到 GL 和本地矩阵
+		doTransforms(render, scale);          // 保持原有 GL 调用
+		doTransforms(render, scale, current); // 同步更新本地矩阵
+
+		// 递归子模型
+		if(render.childModels != null) {
+			for(ModelRenderer child : render.childModels) {
+				generateList(world, ent, scale, list, child, tex);
 			}
-		GL11.glScaled(scale, scale, scale);
-		GL11.glGetFloat(GL11.GL_MODELVIEW_MATRIX, ClientProxy.AUX_GL_BUFFER);
-		Matrix4f mat = new Matrix4f();
-		mat.load(ClientProxy.AUX_GL_BUFFER);
-		ClientProxy.AUX_GL_BUFFER.rewind();
-		list.add(Pair.of(mat, render));
-		GlStateManager.popMatrix();
+		}
+
+		// scale
+		Matrix4f scaleMat = new Matrix4f();
+		scaleMat.setIdentity();
+		scaleMat.m00 = scale;
+		scaleMat.m11 = scale;
+		scaleMat.m22 = scale;
+		Matrix4f.mul(current, scaleMat, current);
+
+		// 添加到列表
+		list.add(Pair.of(new Matrix4f(current), render));
+
+		// pop
+		stack.pop();
 	}
 
+	// 原始版本：只更新 OpenGL 状态
 	public static void doTransforms(ModelRenderer m, float scale) {
 		GlStateManager.translate(m.offsetX, m.offsetY, m.offsetZ);
 		if(m.rotateAngleX == 0.0F && m.rotateAngleY == 0.0F && m.rotateAngleZ == 0.0F) {
-			if(m.rotationPointX == 0.0F && m.rotationPointY == 0.0F && m.rotationPointZ == 0.0F) {
-			} else {
+			if(m.rotationPointX != 0.0F || m.rotationPointY != 0.0F || m.rotationPointZ != 0.0F) {
 				GlStateManager.translate(m.rotationPointX * scale, m.rotationPointY * scale, m.rotationPointZ * scale);
 			}
 		} else {
 			GlStateManager.translate(m.rotationPointX * scale, m.rotationPointY * scale, m.rotationPointZ * scale);
 			if(m.rotateAngleZ != 0.0F) {
-				GlStateManager.rotate(m.rotateAngleZ * (180F / (float) Math.PI), 0.0F, 0.0F, 1.0F);
+				GlStateManager.rotate(m.rotateAngleZ * (180F / (float)Math.PI), 0.0F, 0.0F, 1.0F);
 			}
 			if(m.rotateAngleY != 0.0F) {
-				GlStateManager.rotate(m.rotateAngleY * (180F / (float) Math.PI), 0.0F, 1.0F, 0.0F);
+				GlStateManager.rotate(m.rotateAngleY * (180F / (float)Math.PI), 0.0F, 1.0F, 0.0F);
 			}
 			if(m.rotateAngleX != 0.0F) {
-				GlStateManager.rotate(m.rotateAngleX * (180F / (float) Math.PI), 1.0F, 0.0F, 0.0F);
+				GlStateManager.rotate(m.rotateAngleX * (180F / (float)Math.PI), 1.0F, 0.0F, 0.0F);
 			}
+		}
+	}
+
+	// 新增版本：更新 Matrix4f
+	public static void doTransforms(ModelRenderer m, float scale, Matrix4f mat) {
+		Matrix4f trans = new Matrix4f();
+		trans.setIdentity();
+		trans.m30 = m.offsetX;
+		trans.m31 = m.offsetY;
+		trans.m32 = m.offsetZ;
+		Matrix4f.mul(mat, trans, mat);
+
+		trans.setIdentity();
+		trans.m30 = m.rotationPointX * scale;
+		trans.m31 = m.rotationPointY * scale;
+		trans.m32 = m.rotationPointZ * scale;
+		Matrix4f.mul(mat, trans, mat);
+
+		if(m.rotateAngleZ != 0.0F) {
+			Matrix4f rotZ = new Matrix4f();
+			rotZ.setIdentity();
+			rotZ.rotate(m.rotateAngleZ, new Vector3f(0,0,1));
+			Matrix4f.mul(mat, rotZ, mat);
+		}
+		if(m.rotateAngleY != 0.0F) {
+			Matrix4f rotY = new Matrix4f();
+			rotY.setIdentity();
+			rotY.rotate(m.rotateAngleY, new Vector3f(0,1,0));
+			Matrix4f.mul(mat, rotY, mat);
+		}
+		if(m.rotateAngleX != 0.0F) {
+			Matrix4f rotX = new Matrix4f();
+			rotX.setIdentity();
+			rotX.rotate(m.rotateAngleX, new Vector3f(1,0,0));
+			Matrix4f.mul(mat, rotX, mat);
 		}
 	}
 
@@ -233,36 +290,22 @@ public class ModelRendererUtil {
 	}
 
 	public static VertexData compress(Triangle[] tris){
-		List<Vec3d> vertices = new ArrayList<>(tris.length*3);
-		int[] indices = new int[tris.length*3];
-		float[] texCoords = new float[tris.length*6];
-		for(int i = 0; i < tris.length; i ++){
+		List<Vec3d> vertices = new ArrayList<>(tris.length * 3);
+		int[] indices = new int[tris.length * 3];
+		float[] texCoords = new float[tris.length * 6];
+
+		double eps = 0.00001D;
+		Map<Long, Integer> indexMap = new HashMap<>();
+
+		for(int i = 0; i < tris.length; i++){
 			Triangle tri = tris[i];
-			double eps = 0.00001D;
-			int idx = epsIndexOf(vertices, tri.p1.pos, eps);
-			if(idx != -1){
-				indices[i*3] = idx;
-			} else {
-				indices[i*3] = vertices.size();
-				vertices.add(tri.p1.pos);
-			}
 
-			idx = epsIndexOf(vertices, tri.p2.pos, eps);
-			if(idx != -1){
-				indices[i*3+1] = idx;
-			} else {
-				indices[i*3+1] = vertices.size();
-				vertices.add(tri.p2.pos);
-			}
+			// 顶点处理函数：量化坐标并查找/插入
+			indices[i*3]   = getOrAddIndex(tri.p1.pos, eps, vertices, indexMap);
+			indices[i*3+1] = getOrAddIndex(tri.p2.pos, eps, vertices, indexMap);
+			indices[i*3+2] = getOrAddIndex(tri.p3.pos, eps, vertices, indexMap);
 
-			idx = epsIndexOf(vertices, tri.p3.pos, eps);
-			if(idx != -1){
-				indices[i*3+2] = idx;
-			} else {
-				indices[i*3+2] = vertices.size();
-				vertices.add(tri.p3.pos);
-			}
-
+			// 纹理坐标
 			texCoords[i*6+0] = tri.p1.texX;
 			texCoords[i*6+1] = tri.p1.texY;
 			texCoords[i*6+2] = tri.p2.texX;
@@ -270,12 +313,34 @@ public class ModelRendererUtil {
 			texCoords[i*6+4] = tri.p3.texX;
 			texCoords[i*6+5] = tri.p3.texY;
 		}
+
 		VertexData data = new VertexData();
 		data.positions = vertices.toArray(new Vec3d[0]);
 		data.positionIndices = indices;
 		data.texCoords = texCoords;
 		return data;
 	}
+
+	// 辅助方法：量化坐标并生成哈希键
+	private static int getOrAddIndex(Vec3d pos, double eps, List<Vec3d> vertices, Map<Long, Integer> indexMap){
+		long x = Math.round(pos.x / eps);
+		long y = Math.round(pos.y / eps);
+		long z = Math.round(pos.z / eps);
+		long key = (x * 73856093) ^ (y * 19349663) ^ (z * 83492791); // 简单哈希混合
+
+		Integer idx = indexMap.get(key);
+		if(idx != null){
+			// 再做一次 epsilonEquals 精确确认，避免哈希碰撞
+			if(BobMathUtil.epsilonEquals(vertices.get(idx), pos, eps)){
+				return idx;
+			}
+		}
+		int newIdx = vertices.size();
+		vertices.add(pos);
+		indexMap.put(key, newIdx);
+		return newIdx;
+	}
+
 
 	private static int epsIndexOf(List<Vec3d> l, Vec3d vec, double eps){
 		for(int i = 0; i < l.size(); i++){
@@ -383,24 +448,57 @@ public class ModelRendererUtil {
 			while(!clippedEdges.isEmpty()){
 				orderedClipVertices.add(getNext(clippedEdges, orderedClipVertices.get(orderedClipVertices.size()-1)));
 			}
-			Vector3f uv1 = new Vector3f((float)orderedClipVertices.get(0).x, (float)orderedClipVertices.get(0).y, (float)orderedClipVertices.get(0).z);
+
+			// 使用 javax.vecmath.Vector3f
+			javax.vecmath.Vector3f uv1 = new javax.vecmath.Vector3f(
+					(float)orderedClipVertices.get(0).x,
+					(float)orderedClipVertices.get(0).y,
+					(float)orderedClipVertices.get(0).z
+			);
 			mat.transform(uv1);
+
 			Triangle[] cap = new Triangle[orderedClipVertices.size()-2];
 			for(int i = 0; i < cap.length; i ++){
-				Vector3f uv2 = new Vector3f((float)orderedClipVertices.get(i+2).x, (float)orderedClipVertices.get(i+2).y, (float)orderedClipVertices.get(i+2).z);
+				javax.vecmath.Vector3f uv2 = new javax.vecmath.Vector3f(
+						(float)orderedClipVertices.get(i+2).x,
+						(float)orderedClipVertices.get(i+2).y,
+						(float)orderedClipVertices.get(i+2).z
+				);
 				mat.transform(uv2);
-				Vector3f uv3 = new Vector3f((float)orderedClipVertices.get(i+1).x, (float)orderedClipVertices.get(i+1).y, (float)orderedClipVertices.get(i+1).z);
-				mat.transform(uv3);
-				cap[i] = new Triangle(orderedClipVertices.get(0), orderedClipVertices.get(i+2), orderedClipVertices.get(i+1), new float[]{uv1.x, uv1.y, uv2.x, uv2.y, uv3.x, uv3.y});
 
-				side1.add(new Triangle(orderedClipVertices.get(0), orderedClipVertices.get(i+2), orderedClipVertices.get(i+1), new float[]{0, 0, 0, 0, 0, 0}));
-				side2.add(new Triangle(orderedClipVertices.get(0), orderedClipVertices.get(i+1), orderedClipVertices.get(i+2), new float[]{0, 0, 0, 0, 0, 0}));
+				javax.vecmath.Vector3f uv3 = new javax.vecmath.Vector3f(
+						(float)orderedClipVertices.get(i+1).x,
+						(float)orderedClipVertices.get(i+1).y,
+						(float)orderedClipVertices.get(i+1).z
+				);
+				mat.transform(uv3);
+
+				cap[i] = new Triangle(
+						orderedClipVertices.get(0),
+						orderedClipVertices.get(i+2),
+						orderedClipVertices.get(i+1),
+						new float[]{uv1.x, uv1.y, uv2.x, uv2.y, uv3.x, uv3.y}
+				);
+
+				side1.add(new Triangle(
+						orderedClipVertices.get(0),
+						orderedClipVertices.get(i+2),
+						orderedClipVertices.get(i+1),
+						new float[]{0, 0, 0, 0, 0, 0}
+				));
+				side2.add(new Triangle(
+						orderedClipVertices.get(0),
+						orderedClipVertices.get(i+1),
+						orderedClipVertices.get(i+2),
+						new float[]{0, 0, 0, 0, 0, 0}
+				));
 			}
 			returnData[2] = compress(cap);
 		}
 		returnData[0] = compress(side1.toArray(new Triangle[side1.size()]));
 		returnData[1] = compress(side2.toArray(new Triangle[side2.size()]));
 		return returnData;
+
 	}
 
 	private static Vec3d getNext(List<Vec3d[]> edges, Vec3d first){
@@ -424,6 +522,77 @@ public class ModelRendererUtil {
 		double denom = plane[0]*ray.x + plane[1]*ray.y + plane[2]*ray.z;
 		return num/denom;
 	}
+
+	// 把 CutModelData 列表转成 FloatBuffer
+	private static FloatBuffer buildBuffer(List<CutModelData> list, boolean body) {
+		List<Float> vertexData = new ArrayList<>();
+
+		for (CutModelData dat : list) {
+			VertexData vdat = body ? dat.data : dat.cap;
+			if (vdat == null) continue;
+
+			for (int idx = 0; idx < vdat.positionIndices.length; idx += 3) {
+				Vec3d a = vdat.positions[vdat.positionIndices[idx]];
+				Vec3d b = vdat.positions[vdat.positionIndices[idx+1]];
+				Vec3d c = vdat.positions[vdat.positionIndices[idx+2]];
+
+				Vec3d norm = b.subtract(a).crossProduct(c.subtract(a)).normalize();
+
+				// 顶点 A
+				vertexData.add((float)a.x);
+				vertexData.add((float)a.y);
+				vertexData.add((float)a.z);
+				vertexData.add(vdat.texCoords[idx*2]);
+				vertexData.add(vdat.texCoords[idx*2+1]);
+				vertexData.add((float)norm.x);
+				vertexData.add((float)norm.y);
+				vertexData.add((float)norm.z);
+
+				// 顶点 B
+				vertexData.add((float)b.x);
+				vertexData.add((float)b.y);
+				vertexData.add((float)b.z);
+				vertexData.add(vdat.texCoords[(idx+1)*2]);
+				vertexData.add(vdat.texCoords[(idx+1)*2+1]);
+				vertexData.add((float)norm.x);
+				vertexData.add((float)norm.y);
+				vertexData.add((float)norm.z);
+
+				// 顶点 C
+				vertexData.add((float)c.x);
+				vertexData.add((float)c.y);
+				vertexData.add((float)c.z);
+				vertexData.add(vdat.texCoords[(idx+2)*2]);
+				vertexData.add(vdat.texCoords[(idx+2)*2+1]);
+				vertexData.add((float)norm.x);
+				vertexData.add((float)norm.y);
+				vertexData.add((float)norm.z);
+			}
+		}
+
+		FloatBuffer buffer = BufferUtils.createFloatBuffer(vertexData.size());
+		for (Float f : vertexData) buffer.put(f);
+		buffer.flip();
+		return buffer;
+	}
+
+	// 设置 VAO 属性指针
+	private static void setupAttributes() {
+		int stride = 8 * Float.BYTES; // 3 pos + 2 uv + 3 normal
+
+		// 位置
+		GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, stride, 0);
+		GL20.glEnableVertexAttribArray(0);
+
+		// UV
+		GL20.glVertexAttribPointer(1, 2, GL11.GL_FLOAT, false, stride, 3 * Float.BYTES);
+		GL20.glEnableVertexAttribArray(1);
+
+		// 法线
+		GL20.glVertexAttribPointer(2, 3, GL11.GL_FLOAT, false, stride, 5 * Float.BYTES);
+		GL20.glEnableVertexAttribArray(2);
+	}
+
 
 	public static Triangle[] triangulate(ModelBox b, @Nullable Matrix4f transform){
 		Triangle[] tris = new Triangle[12];
@@ -457,24 +626,25 @@ public class ModelRendererUtil {
 		return generateCutParticles(ent, plane, capTex, capBloom, null);
 	}
 
-	public static ParticleSlicedMob[] generateCutParticles(Entity ent, float[] plane, ResourceLocation capTex, float capBloom, Consumer<List<Triangle>> capConsumer){
-
-		// Cut all mob boxes and store them in separate lists //
+	public static ParticleSlicedMob[] generateCutParticles(Entity ent, float[] plane, ResourceLocation capTex, float capBloom, Consumer<List<Triangle>> capConsumer) {
 
 		List<Pair<Matrix4f, ModelRenderer>> boxes = ModelRendererUtil.getBoxesFromMob((EntityLivingBase) ent);
 		List<CutModelData> top = new ArrayList<>();
 		List<CutModelData> bottom = new ArrayList<>();
+
 		for(Pair<Matrix4f, ModelRenderer> r : boxes){
 			for(ModelBox b : r.getRight().cubeList){
 				VertexData[] dat = ModelRendererUtil.cutAndCapModelBox(b, plane, r.getLeft());
 				CutModelData tp = null;
 				CutModelData bt = null;
 				if(dat[0].positionIndices != null && dat[0].positionIndices.length > 0){
-					tp = new CutModelData(dat[0], null, false, new ConvexMeshCollider(dat[0].positionIndices, dat[0].vertexArray(), 1));
+					tp = new CutModelData(dat[0], null, false,
+							new ConvexMeshCollider(dat[0].positionIndices, dat[0].vertexArray(), 1));
 					top.add(tp);
 				}
 				if(dat[1].positionIndices != null && dat[1].positionIndices.length > 0){
-					bt = new CutModelData(dat[1], null, true, new ConvexMeshCollider(dat[1].positionIndices, dat[1].vertexArray(), 1));
+					bt = new CutModelData(dat[1], null, true,
+							new ConvexMeshCollider(dat[1].positionIndices, dat[1].vertexArray(), 1));
 					bottom.add(bt);
 				}
 				if(dat[2].positionIndices != null && dat[2].positionIndices.length > 0){
@@ -487,10 +657,9 @@ public class ModelRendererUtil {
 		if(capConsumer != null){
 			List<Triangle> tris = new ArrayList<>();
 			for(CutModelData d : top){
-				if(d.cap != null)
-					for(Triangle t : decompress(d.cap)){
-						tris.add(t);
-					}
+				if(d.cap != null){
+					Collections.addAll(tris, decompress(d.cap));
+				}
 			}
 			capConsumer.accept(tris);
 		}
@@ -500,53 +669,50 @@ public class ModelRendererUtil {
 		generateChunks(particleChunks, bottom);
 
 		List<ParticleSlicedMob> particles = new ArrayList<>(2);
-
-		Tessellator tes = Tessellator.getInstance();
-		BufferBuilder buf = tes.getBuffer();
-
 		ResourceLocation tex = getEntityTexture(ent);
 
 		for(List<CutModelData> l : particleChunks){
-			float scale = 3.5F;
-			if(l.get(0).flip){
-				scale = -scale;
-			}
-			//Generate the physics body
+			float scale = l.get(0).flip ? -3.5F : 3.5F;
+
 			RigidBody body = new RigidBody(ent.world, ent.posX, ent.posY, ent.posZ);
 			Collider[] colliders = new Collider[l.size()];
-			int i = 0;
-			for(CutModelData dat : l){
-				colliders[i++] = dat.collider;
+			for(int i = 0; i < l.size(); i++){
+				colliders[i] = l.get(i).collider;
 			}
 			body.addColliders(colliders);
-			body.impulseVelocityDirect(new Vec3(plane[0]*scale, plane[1]*scale, plane[2]*scale), body.globalCentroid.add(0, 0, 0));
+			body.impulseVelocityDirect(new Vec3(plane[0]*scale, plane[1]*scale, plane[2]*scale), body.globalCentroid);
 
-			//Create rendering display lists
-			int bodyDL = GL11.glGenLists(1);
-			int capDL = GL11.glGenLists(1);
+			// VAO/VBO 缓存
+			int vaoBody = GL30.glGenVertexArrays();
+			GL30.glBindVertexArray(vaoBody);
+			int vboBody = GL15.glGenBuffers();
+			FloatBuffer bufBody = buildBuffer(l, true);
+			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboBody);
+			GL15.glBufferData(GL15.GL_ARRAY_BUFFER, bufBody, GL15.GL_STATIC_DRAW);
+			setupAttributes();
+			GL30.glBindVertexArray(0);
+			int countBody = bufBody.limit() / 8;
 
-			GL11.glNewList(bodyDL, GL11.GL_COMPILE);
-			buf.begin(GL11.GL_TRIANGLES, DefaultVertexFormats.POSITION_TEX_NORMAL);
-			for(CutModelData dat : l){
-				dat.data.tessellate(buf, true);
-			}
-			tes.draw();
-			GL11.glEndList();
+			int vaoCap = GL30.glGenVertexArrays();
+			GL30.glBindVertexArray(vaoCap);
+			int vboCap = GL15.glGenBuffers();
+			FloatBuffer bufCap = buildBuffer(l, false);
+			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboCap);
+			GL15.glBufferData(GL15.GL_ARRAY_BUFFER, bufCap, GL15.GL_STATIC_DRAW);
+			setupAttributes();
+			GL30.glBindVertexArray(0);
+			int countCap = bufCap.limit() / 8;
 
-			GL11.glNewList(capDL, GL11.GL_COMPILE);
-			buf.begin(GL11.GL_TRIANGLES, DefaultVertexFormats.POSITION_TEX_NORMAL);
-			for(CutModelData dat : l){
-				if(dat.cap != null)
-					dat.cap.tessellate(buf, dat.flip, true);
-			}
-			tes.draw();
-			GL11.glEndList();
-
-			particles.add(new ParticleSlicedMob(ent.world, body, bodyDL, capDL, tex, capTex, capBloom));
+			particles.add(new ParticleSlicedMob(ent.world, body,
+					vaoBody, vaoCap,
+					countBody, countCap,
+					tex, capTex, capBloom));
 		}
 
-		return particles.toArray(new ParticleSlicedMob[particles.size()]);
+		return particles.toArray(new ParticleSlicedMob[0]);
 	}
+
+
 
 	public static RigidBody[] generateRigidBodiesFromBoxes(Entity ent, List<Pair<Matrix4f, ModelRenderer>> boxes){
 		RigidBody[] arr = new RigidBody[boxes.size()];
