@@ -23,6 +23,12 @@ To mitigate, move your fluids into a ForgeFluid fluid tank(e.g. Mekanism tanks) 
 - Fixed some crucible bugs
 - Fixed Fallout Rain pinning worker threads on jvm
 - Fixed Diode texture and energy transfer
+- Fixed fluid tank slot shift-click issue in chemical plant
+- Fixed QMAW localization
+- Fixed various turret bugs, see issue #1335
+- Fixed battery socket GL crash
+- Fixed a NBT worldgen ClassCastException
+- Fixed ZIRNOX opencomupter functions
 ### Changes
 - Reworked phased worldgen system(`package com.hbm.world.phased`) to be vastly more extensible and robust
 ### New Features
@@ -35,6 +41,8 @@ To mitigate, move your fluids into a ForgeFluid fluid tank(e.g. Mekanism tanks) 
   - "DEFAULT", default behavior
   - "TOOLABLE", can toggle between default and redstone-only mode with a screwdriver. When locked, requires key on offhand.
   - "REDSTONE", redstone only
+- Ported IFluidRegisterListener
+- Ported calculator
 ### Performance
 - Overhauled Radiation System to be ~60% faster
 - Made nuke algorithm 2 marginally faster
