@@ -339,14 +339,90 @@ public class ModelRendererUtil {
 
 	private static void clipTriangle(Triangle t, float[] plane,
 									 List<Triangle> side1, List<Triangle> side2,
-									 List<Vec3d[]> clippedEdges){
-		// 找出正点和负点，插值生成交点
-		// 添加到 side1/side2，并记录 clippedEdges
-		// 逻辑和你原来的两段代码一样，但集中在这里
+									 List<Vec3d[]> clippedEdges) {
+		Vec3d[] verts = {t.p1.pos, t.p2.pos, t.p3.pos};
+		float[][] texs = {
+				{t.p1.texX, t.p1.texY},
+				{t.p2.texX, t.p2.texY},
+				{t.p3.texX, t.p3.texY}
+		};
+
+		double[] dists = new double[3];
+		boolean[] posSide = new boolean[3];
+		for (int i = 0; i < 3; i++) {
+			dists[i] = dotPlane(verts[i], plane);
+			posSide[i] = dists[i] > 1e-7;
+		}
+
+		List<Vec3d> posVerts = new ArrayList<>();
+		List<float[]> posTexs = new ArrayList<>();
+		List<Vec3d> negVerts = new ArrayList<>();
+		List<float[]> negTexs = new ArrayList<>();
+		List<Vec3d> interVerts = new ArrayList<>();
+		List<float[]> interTexs = new ArrayList<>();
+
+		// 遍历三条边，找交点
+		for (int i = 0; i < 3; i++) {
+			int j = (i + 1) % 3;
+			Vec3d v1 = verts[i], v2 = verts[j];
+			float[] t1 = texs[i], t2 = texs[j];
+			double d1 = dists[i], d2 = dists[j];
+
+			if (posSide[i]) {
+				posVerts.add(v1);
+				posTexs.add(t1);
+			} else {
+				negVerts.add(v1);
+				negTexs.add(t1);
+			}
+
+			if ((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) {
+				double tIntersect = rayPlaneIntercept(v1, v2.subtract(v1), plane);
+				Vec3d ipos = new Vec3d(
+						v1.x + tIntersect * (v2.x - v1.x),
+						v1.y + tIntersect * (v2.y - v1.y),
+						v1.z + tIntersect * (v2.z - v1.z)
+				);
+				float[] itex = {
+						t1[0] + (float)tIntersect * (t2[0] - t1[0]),
+						t1[1] + (float)tIntersect * (t2[1] - t1[1])
+				};
+				interVerts.add(ipos);
+				interTexs.add(itex);
+			}
+		}
+
+		if (posVerts.size() == 1 && interVerts.size() == 2) {
+			// 正侧 1 点 + 2 交点
+			side1.add(new Triangle(posVerts.get(0), interVerts.get(0), interVerts.get(1),
+					new float[]{posTexs.get(0)[0], posTexs.get(0)[1],
+							interTexs.get(0)[0], interTexs.get(0)[1],
+							interTexs.get(1)[0], interTexs.get(1)[1]}));
+			side2.add(new Triangle(negVerts.get(0), interVerts.get(1), interVerts.get(0),
+					new float[]{negTexs.get(0)[0], negTexs.get(0)[1],
+							interTexs.get(1)[0], interTexs.get(1)[1],
+							interTexs.get(0)[0], interTexs.get(0)[1]}));
+			clippedEdges.add(new Vec3d[]{interVerts.get(0), interVerts.get(1)});
+		} else if (posVerts.size() == 2 && interVerts.size() == 2) {
+			// 正侧 2 点 + 2 交点
+			side1.add(new Triangle(posVerts.get(0), posVerts.get(1), interVerts.get(0),
+					new float[]{posTexs.get(0)[0], posTexs.get(0)[1],
+							posTexs.get(1)[0], posTexs.get(1)[1],
+							interTexs.get(0)[0], interTexs.get(0)[1]}));
+			side1.add(new Triangle(posVerts.get(1), interVerts.get(1), interVerts.get(0),
+					new float[]{posTexs.get(1)[0], posTexs.get(1)[1],
+							interTexs.get(1)[0], interTexs.get(1)[1],
+							interTexs.get(0)[0], interTexs.get(0)[1]}));
+			side2.add(new Triangle(negVerts.get(0), interVerts.get(0), interVerts.get(1),
+					new float[]{negTexs.get(0)[0], negTexs.get(0)[1],
+							interTexs.get(0)[0], interTexs.get(0)[1],
+							interTexs.get(1)[0], interTexs.get(1)[1]}));
+			clippedEdges.add(new Vec3d[]{interVerts.get(0), interVerts.get(1)});
+		}
 	}
 
 	private static VertexData buildCap(List<Vec3d[]> clippedEdges, float[] plane,
-									   List<Triangle> side1, List<Triangle> side2){
+									   List<Triangle> side1, List<Triangle> side2) {
 		Matrix3f mat = BakedModelUtil.normalToMat(new Vec3d(plane[0], plane[1], plane[2]), 0);
 		List<Vec3d> orderedClipVertices = new ArrayList<>();
 		orderedClipVertices.add(clippedEdges.get(0)[0]);
@@ -383,18 +459,10 @@ public class ModelRendererUtil {
 					orderedClipVertices.get(i+1),
 					new float[]{uv1.x, uv1.y, uv2.x, uv2.y, uv3.x, uv3.y}
 			);
-
-			// 保证 side1/side2 的 UV 也正确传递
-			side1.add(cap[i]);
-			side2.add(new Triangle(
-					orderedClipVertices.get(0),
-					orderedClipVertices.get(i+1),
-					orderedClipVertices.get(i+2),
-					new float[]{uv1.x, uv1.y, uv3.x, uv3.y, uv2.x, uv2.y}
-			));
 		}
 		return compress(cap);
 	}
+
 
 
 	private static Vec3d getNext(List<Vec3d[]> edges, Vec3d first){
