@@ -26,6 +26,8 @@ import org.lwjgl.input.Keyboard;
 import java.io.IOException;
 import java.util.Locale;
 
+import static com.hbm.util.GuiUtil.playClickSound;
+
 public class GUIPWR extends GuiInfoContainer {
 
     protected TileEntityPWRController controller;
@@ -143,7 +145,7 @@ public class GUIPWR extends GuiInfoContainer {
                 NBTTagCompound control = new NBTTagCompound();
                 control.setInteger("control", 100 - level);
                 PacketThreading.createSendToServerThreadedPacket(new NBTControlPacket(control, controller.getPos()));
-                mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+                playClickSound();
             }
         }
     }

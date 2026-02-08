@@ -31,6 +31,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import static com.hbm.util.GuiUtil.playClickSound;
+
 public class GUIScreenTemplateFolder extends GuiScreen {
 
 	private static final ResourceLocation TEXTURE = new ResourceLocation(Tags.MODID, "textures/gui/gui_planner.png");
@@ -310,7 +312,7 @@ public class GUIScreenTemplateFolder extends GuiScreen {
 		}
 
 		void executeAction() {
-			mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+			playClickSound();
 			switch (type) {
 				case 0 -> PacketDispatcher.wrapper.sendToServer(new ItemFolderPacket(stack.copy()));
 				case 1 -> {

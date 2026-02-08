@@ -26,6 +26,8 @@ import org.lwjgl.opengl.GL11;
 
 import java.io.IOException;
 
+import static com.hbm.util.GuiUtil.playClickSound;
+
 public class GUIPADipole extends GuiInfoContainer {
 
     private static final ResourceLocation texture = new ResourceLocation(Tags.MODID + ":textures/gui/particleaccelerator/gui_dipole.png");
@@ -77,21 +79,21 @@ public class GUIPADipole extends GuiInfoContainer {
         this.threshold.mouseClicked(mouseX, mouseY, mouseButton);
 
         if (isPointInRegion(62, 29, 12, 12, mouseX, mouseY)) {
-            mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+            playClickSound();
             NBTTagCompound data = new NBTTagCompound();
             data.setBoolean("lower", true);
             PacketThreading.createSendToServerThreadedPacket(new NBTControlPacket(data, dipole.getPos()));
         }
 
         if (isPointInRegion(62, 43, 12, 12, mouseX, mouseY)) {
-            mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+            playClickSound();
             NBTTagCompound data = new NBTTagCompound();
             data.setBoolean("upper", true);
             PacketThreading.createSendToServerThreadedPacket(new NBTControlPacket(data, dipole.getPos()));
         }
 
         if (isPointInRegion(62, 57, 12, 12, mouseX, mouseY)) {
-            mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+            playClickSound();
             NBTTagCompound data = new NBTTagCompound();
             data.setBoolean("redstone", true);
             PacketThreading.createSendToServerThreadedPacket(new NBTControlPacket(data, dipole.getPos()));

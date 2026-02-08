@@ -22,6 +22,8 @@ import org.lwjgl.opengl.GL11;
 import java.awt.*;
 import java.io.IOException;
 
+import static com.hbm.util.GuiUtil.playClickSound;
+
 public class GUIElectrolyserMetal extends GuiInfoContainer {
 
     public static ResourceLocation texture = new ResourceLocation(Tags.MODID + ":textures/gui/processing/gui_electrolyser_metal.png");
@@ -61,7 +63,7 @@ public class GUIElectrolyserMetal extends GuiInfoContainer {
         super.mouseClicked(x, y, i);
 
         if(guiLeft + 8 <= x && guiLeft + 8 + 54 > x && guiTop + 82 < y && guiTop + 82 + 12 >= y) {
-            mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+            playClickSound();
             NBTTagCompound data = new NBTTagCompound();
             data.setBoolean("sgf", true);
             PacketThreading.createSendToServerThreadedPacket(

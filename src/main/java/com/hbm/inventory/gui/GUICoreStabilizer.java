@@ -19,6 +19,8 @@ import org.lwjgl.input.Keyboard;
 
 import java.io.IOException;
 
+import static com.hbm.util.GuiUtil.playClickSound;
+
 public class GUICoreStabilizer extends GuiInfoContainer {
 
 	private static ResourceLocation texture = new ResourceLocation(Tags.MODID + ":textures/gui/dfc/gui_stabilizer.png");
@@ -69,7 +71,7 @@ public class GUICoreStabilizer extends GuiInfoContainer {
     		if(saveButtonCoolDown == 0 && NumberUtils.isCreatable(field.getText())) {
     			int j = MathHelper.clamp(Integer.parseInt(field.getText()), 1, 100);
     			field.setText(j + "");
-				mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+				playClickSound();
 	    		PacketDispatcher.wrapper.sendToServer(new AuxButtonPacket(stabilizer.getPos(), j, 0));
 	    		saveButtonCoolDown = 20;
     		}

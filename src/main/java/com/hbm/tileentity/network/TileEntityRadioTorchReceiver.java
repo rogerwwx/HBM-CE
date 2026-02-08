@@ -83,12 +83,12 @@ public class TileEntityRadioTorchReceiver extends TileEntityRadioTorchBase imple
 
   @Override
   public Container provideContainer(int ID, EntityPlayer player, World world, int x, int y, int z) {
-    return new ContainerRadioTorchReceiver(player, this);
+    return new ContainerRadioTorchReceiver();
   }
 
   @Override
   @SideOnly(Side.CLIENT)
   public GuiScreen provideGUI(int ID, EntityPlayer player, World world, int x, int y, int z) {
-    return new GUIScreenRadioTorch(this);
+    return new GUIScreenRadioTorch(this, false);
   }
 }

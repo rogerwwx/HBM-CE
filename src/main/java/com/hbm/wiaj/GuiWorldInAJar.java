@@ -30,6 +30,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 
+import static com.hbm.util.GuiUtil.playClickSound;
+
 //krass
 public class GuiWorldInAJar extends GuiScreen {
 
@@ -85,7 +87,7 @@ public class GuiWorldInAJar extends GuiScreen {
     protected void mouseClicked(int mouseX, int mouseY, int button) {
 
         if (width / 2 - 12 <= mouseX && width / 2 - 12 + 24 > mouseX && height - 36 < mouseY && height - 36 + 24 >= mouseY) {
-            mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+            playClickSound();
 
             if (this.jarScript.isPaused()) {
                 this.jarScript.unpause();
@@ -98,7 +100,7 @@ public class GuiWorldInAJar extends GuiScreen {
 
             if (this.jarScript.sceneNumber > 0) {
                 this.jarScript.rewindOne();
-                mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+                playClickSound();
             }
         }
 
@@ -106,7 +108,7 @@ public class GuiWorldInAJar extends GuiScreen {
 
             if (this.jarScript.sceneNumber < this.jarScript.scenes.size()) {
                 this.jarScript.forwardOne();
-                mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+                playClickSound();
             }
         }
 
@@ -114,7 +116,7 @@ public class GuiWorldInAJar extends GuiScreen {
 
             if (15 <= mouseX && 39 > mouseX && 15 + 36 * (i + 1) < mouseY && 39 + 36 * (i + 1) >= mouseY) {
                 CanneryBase cannery = seeAlso[i];
-                mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+                playClickSound();
                 FMLCommonHandler.instance().showGuiScreen(new GuiWorldInAJar(cannery.createScript(), cannery.getName(), cannery.getIcon(), cannery.seeAlso()));
                 return;
             }

@@ -1,12 +1,9 @@
 package com.hbm.blocks.network;
 
 import com.hbm.blocks.ILookOverlay;
-import com.hbm.inventory.gui.GUIScreenRadioTorch;
 import com.hbm.tileentity.network.TileEntityRadioTorchBase;
 import com.hbm.util.I18nUtil;
 import com.mojang.realmsclient.gui.ChatFormatting;
-import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -32,14 +29,5 @@ public abstract class RadioTorchRWBase extends RadioTorchBase {
       ILookOverlay.printGeneric(
           event, I18nUtil.resolveKey(getTranslationKey() + ".name"), 0xffff00, 0x404000, text);
     }
-  }
-
-  @Override
-  @SideOnly(Side.CLIENT)
-  public GuiScreen provideGUI(int ID, EntityPlayer player, World world, int x, int y, int z) {
-    TileEntity te = world.getTileEntity(new BlockPos(x, y, z));
-    if (te instanceof TileEntityRadioTorchBase)
-      return new GUIScreenRadioTorch((TileEntityRadioTorchBase) te);
-    return null;
   }
 }

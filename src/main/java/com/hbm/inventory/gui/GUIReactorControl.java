@@ -24,6 +24,8 @@ import org.lwjgl.input.Keyboard;
 
 import java.io.IOException;
 
+import static com.hbm.util.GuiUtil.playClickSound;
+
 public class GUIReactorControl extends GuiInfoContainer {
 
     private static ResourceLocation texture = new ResourceLocation(Tags.MODID + ":textures/gui/gui_reactor_control.png");
@@ -90,7 +92,7 @@ public class GUIReactorControl extends GuiInfoContainer {
 
         if(guiLeft + 33 <= x && guiLeft + 33 + 58 > x && guiTop + 59 < y && guiTop + 59 + 10 >= y) {
 
-            mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+            playClickSound();
             NBTTagCompound data = new NBTTagCompound();
 
             double[] vals = new double[] { 0D, 0D, 0D, 0D };
@@ -121,7 +123,7 @@ public class GUIReactorControl extends GuiInfoContainer {
         for(int k = 0; k < 3; k++) {
             if(guiLeft + 7 <= x && guiLeft + 7 + 22 > x && guiTop + 37 + k * 11 < y && guiTop + 37 + 10 + k * 11 >= y) {
 
-                mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+                playClickSound();
                 NBTTagCompound data = new NBTTagCompound();
                 data.setInteger("function", k);
                 PacketThreading.createSendToServerThreadedPacket(

@@ -24,6 +24,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hbm.util.GuiUtil.playClickSound;
+
 public class GUIMachineArcFurnaceLarge extends GuiInfoContainer {
 
     private static ResourceLocation texture = new ResourceLocation(Tags.MODID + ":textures/gui/processing/gui_arc_furnace.png");
@@ -52,7 +54,7 @@ public class GUIMachineArcFurnaceLarge extends GuiInfoContainer {
         super.mouseClicked(x, y, k);
 
         if(this.checkClick(x, y, 151, 17, 18, 18)) {
-            mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+            playClickSound();
             NBTTagCompound data = new NBTTagCompound();
             data.setBoolean("liquid", true);
             PacketThreading.createSendToServerThreadedPacket(

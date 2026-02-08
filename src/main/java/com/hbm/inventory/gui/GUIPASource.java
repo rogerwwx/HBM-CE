@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import static com.hbm.util.GuiUtil.playClickSound;
+
 public class GUIPASource extends GuiInfoContainer {
 
     private static final ResourceLocation texture = new ResourceLocation(Tags.MODID + ":textures/gui/particleaccelerator/gui_source.png");
@@ -57,7 +59,7 @@ public class GUIPASource extends GuiInfoContainer {
         super.mouseClicked(x, y, i);
 
         if (guiLeft + 105 <= x && guiLeft + 105 + 10 > x && guiTop + 30 < y && guiTop + 30 + 10 >= y) {
-            mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+            playClickSound();
             NBTTagCompound data = new NBTTagCompound();
             data.setBoolean("cancel", true);
             PacketThreading.createSendToServerThreadedPacket(new NBTControlPacket(data, source.getPos()));

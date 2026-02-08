@@ -56,7 +56,7 @@ public class TileEntityRadioTorchBase extends TileEntity implements IBufPacketRe
 		nbt.setBoolean("hasMapping", customMap);
 		nbt.setInteger("lastPower", lastState);
 		nbt.setLong("lastTime", lastUpdate);
-		if(channel != null) 
+		if(channel != null)
 			nbt.setString("channel", channel);
 		for(int i = 0; i < 16; i++) {
 			if(mapping[i] != null) {
@@ -97,21 +97,30 @@ public class TileEntityRadioTorchBase extends TileEntity implements IBufPacketRe
 	public void serialize(ByteBuf buf) {
 		buf.writeBoolean(polling);
 		buf.writeBoolean(customMap);
+        buf.writeBoolean(channel != null);
 		if(channel != null)
 			BufferUtil.writeString(buf, channel);
+
 		for(int i = 0; i < 16; i++) {
-			if(mapping[i] != null) {
-				BufferUtil.writeString(buf, mapping[i]);
-			}
-		}
+            buf.writeBoolean(mapping[i] != null);
+            if (mapping[i] != null)
+                BufferUtil.writeString(buf, mapping[i]);
+        }
 	}
 
 	@Override
 	public void deserialize(ByteBuf buf) {
 		this.polling = buf.readBoolean();
 		this.customMap = buf.readBoolean();
-		this.channel = BufferUtil.readString(buf);
-		for(int i = 0; i < 16; i++)
-			this.mapping[i] = BufferUtil.readString(buf);
+
+        if(buf.readBoolean()) {
+            this.channel = BufferUtil.readString(buf);
+        }
+
+        for (int i = 0; i < 16; i++) {
+            if (buf.readBoolean()) {
+                this.mapping[i] = BufferUtil.readString(buf);
+            }
+        }
 	}
 }

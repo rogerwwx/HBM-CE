@@ -3,7 +3,6 @@ package com.hbm.blocks.network;
 import com.hbm.blocks.ILookOverlay;
 import com.hbm.blocks.ITooltipProvider;
 import com.hbm.main.MainRegistry;
-import com.hbm.tileentity.IGUIProvider;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockContainer;
 import net.minecraft.block.SoundType;
@@ -16,7 +15,6 @@ import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.inventory.Container;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.*;
 import net.minecraft.util.math.AxisAlignedBB;
@@ -31,7 +29,7 @@ import org.jetbrains.annotations.NotNull;
 import javax.annotation.Nullable;
 import java.util.List;
 
-public abstract class RadioTorchBase extends BlockContainer implements IGUIProvider, ILookOverlay, ITooltipProvider {
+public abstract class RadioTorchBase extends BlockContainer implements ILookOverlay, ITooltipProvider {
 
     public static final PropertyDirection FACING = PropertyDirection.create("facing");
     public static final PropertyBool LIT = PropertyBool.create("lit");
@@ -170,11 +168,6 @@ public abstract class RadioTorchBase extends BlockContainer implements IGUIProvi
         } else {
             return !playerIn.isSneaking();
         }
-    }
-
-    @Override
-    public Container provideContainer(int ID, EntityPlayer player, World world, int x, int y, int z) {
-        return null;
     }
 
     @Override

@@ -23,6 +23,8 @@ import java.awt.*;
 import java.util.Arrays;
 import java.util.Locale;
 
+import static com.hbm.util.GuiUtil.playClickSound;
+
 public class GUIScreenFluid extends GuiScreen {
 
     protected static final ResourceLocation texture = new ResourceLocation(Tags.MODID + ":textures/gui/machine/gui_fluid.png");
@@ -86,13 +88,13 @@ public class GUIScreenFluid extends GuiScreen {
 
             if(guiLeft + 7 + k * 18 <= i && guiLeft + 7 + k * 18 + 18 > i && guiTop + 29 < j && guiTop + 29 + 18 >= j) {
                 if(button == 0) {
-                    mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+                    playClickSound();
                     this.primary = this.searchArray[k];
                     NBTTagCompound data = new NBTTagCompound();
                     data.setInteger("primary", this.primary.getID());
                     PacketThreading.createSendToServerThreadedPacket(new NBTItemControlPacket(data));
                 } else if(button == 1) {
-                    mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+                    playClickSound();
                     this.secondary = this.searchArray[k];
                     NBTTagCompound data = new NBTTagCompound();
                     data.setInteger("secondary", this.secondary.getID());

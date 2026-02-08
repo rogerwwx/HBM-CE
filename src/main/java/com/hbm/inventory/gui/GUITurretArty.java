@@ -1,17 +1,17 @@
 package com.hbm.inventory.gui;
 
 import com.hbm.Tags;
-import com.hbm.packet.toserver.AuxButtonPacket;
 import com.hbm.packet.PacketDispatcher;
+import com.hbm.packet.toserver.AuxButtonPacket;
 import com.hbm.tileentity.turret.TileEntityTurretArty;
 import com.hbm.tileentity.turret.TileEntityTurretBaseNT;
 import com.hbm.util.I18nUtil;
-import net.minecraft.client.audio.PositionedSoundRecord;
 import net.minecraft.entity.player.InventoryPlayer;
-import net.minecraft.init.SoundEvents;
 import net.minecraft.util.ResourceLocation;
 
 import java.io.IOException;
+
+import static com.hbm.util.GuiUtil.playClickSound;
 
 public class GUITurretArty extends GUITurretBase {
 
@@ -67,7 +67,7 @@ public class GUITurretArty extends GUITurretBase {
 
         if(guiLeft + 151 <= x && guiLeft + 151 + 18 > x && guiTop + 16 < y && guiTop + 16 + 18 >= y) {
 
-            mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+            playClickSound();
             PacketDispatcher.wrapper.sendToServer(new AuxButtonPacket(turret.getPos().getX(), turret.getPos().getY(), turret.getPos().getZ(), 0, 5));
         }
     }

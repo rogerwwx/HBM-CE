@@ -18,6 +18,8 @@ import net.minecraft.client.renderer.GlStateManager;
 import java.io.IOException;
 import java.util.Arrays;
 
+import static com.hbm.util.GuiUtil.playClickSound;
+
 public class GUIMachineRadarNTSlots extends GuiInfoContainer {
 
     private static ResourceLocation texture = new ResourceLocation(Tags.MODID + ":textures/gui/machine/gui_radar_link.png");
@@ -36,7 +38,7 @@ public class GUIMachineRadarNTSlots extends GuiInfoContainer {
         super.mouseClicked(x, y, i);
 
         if(checkClick(x, y, 5, 5, 8, 8)) {
-            mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+            playClickSound();
             this.mc.player.connection.handleCloseWindow(new SPacketCloseWindow(this.mc.player.openContainer.windowId)); // closes the server-side GUI component without resetting the client's cursor position
             FMLNetworkHandler.openGui(this.mc.player, MainRegistry.instance, 0, radar.getWorld(), radar.getPos().getX(), radar.getPos().getY(), radar.getPos().getZ());
         }

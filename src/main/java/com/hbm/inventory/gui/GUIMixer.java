@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hbm.util.GuiUtil.playClickSound;
+
 public class GUIMixer extends GuiInfoContainer {
 
 	private static ResourceLocation texture = new ResourceLocation(Tags.MODID + ":textures/gui/processing/gui_mixer.png");
@@ -64,7 +66,7 @@ public class GUIMixer extends GuiInfoContainer {
 		super.mouseClicked(x, y, i);
 		if(guiLeft + 62 <= x && guiLeft + 62 + 12 > x && guiTop + 22 < y && guiTop + 22 + 12 >= y) {
 
-			mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+			playClickSound();
 			NBTTagCompound data = new NBTTagCompound();
 			data.setBoolean("toggle", true);
             PacketThreading.createSendToServerThreadedPacket(new NBTControlPacket(data, mixer.getPos()));

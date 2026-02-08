@@ -23,6 +23,8 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Locale;
 
+import static com.hbm.util.GuiUtil.playClickSound;
+
 public class GUICombustionEngine extends GuiInfoContainer {
 
   private static final ResourceLocation texture =
@@ -133,7 +135,7 @@ public class GUICombustionEngine extends GuiInfoContainer {
         && guiLeft + 89 + 16 > mouseX
         && guiTop + 13 < mouseY
         && guiTop + 13 + 14 >= mouseY) {
-      playPressSound();
+      playClickSound();
       NBTTagCompound data = new NBTTagCompound();
       data.setBoolean("turnOn", true);
         PacketThreading.createSendToServerThreadedPacket(new NBTControlPacket(
@@ -144,7 +146,7 @@ public class GUICombustionEngine extends GuiInfoContainer {
         && guiLeft + 79 + 36 > mouseX
         && guiTop + 38 < mouseY
         && guiTop + 38 + 8 >= mouseY) {
-      playPressSound();
+      playClickSound();
       isMouseLocked = true;
     }
   }

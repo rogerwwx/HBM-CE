@@ -18,6 +18,8 @@ import org.lwjgl.input.Keyboard;
 import java.io.IOException;
 import java.util.Locale;
 
+import static com.hbm.util.GuiUtil.playClickSound;
+
 public class GUIMassStorage extends GuiInfoContainer {
 
 	private static ResourceLocation texture = new ResourceLocation(Tags.MODID + ":textures/gui/storage/gui_mass_storage.png");
@@ -65,7 +67,7 @@ public class GUIMassStorage extends GuiInfoContainer {
 
 		if(guiLeft + 62 <= x && guiLeft + 62 + 14 > x && guiTop + 72 < y && guiTop + 72 + 14 >= y) {
 
-			mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+			playClickSound();
 			NBTTagCompound data = new NBTTagCompound();
 			data.setBoolean("provide", Keyboard.isKeyDown(Keyboard.KEY_LSHIFT));
             PacketThreading.createSendToServerThreadedPacket(
@@ -74,7 +76,7 @@ public class GUIMassStorage extends GuiInfoContainer {
 
 		if(guiLeft + 80 <= x && guiLeft + 80 + 14 > x && guiTop + 72 < y && guiTop + 72 + 14 >= y) {
 
-			mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+			playClickSound();
 			NBTTagCompound data = new NBTTagCompound();
 			data.setBoolean("toggle", false);
             PacketThreading.createSendToServerThreadedPacket(

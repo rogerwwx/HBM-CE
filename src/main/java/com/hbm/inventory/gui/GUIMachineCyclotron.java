@@ -7,13 +7,13 @@ import com.hbm.packet.toserver.AuxButtonPacket;
 import com.hbm.tileentity.machine.TileEntityMachineCyclotron;
 import com.hbm.util.I18nUtil;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.audio.PositionedSoundRecord;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.player.InventoryPlayer;
-import net.minecraft.init.SoundEvents;
 import net.minecraft.util.ResourceLocation;
 
 import java.io.IOException;
+
+import static com.hbm.util.GuiUtil.playClickSound;
 
 public class GUIMachineCyclotron extends GuiInfoContainer {
 
@@ -61,7 +61,7 @@ public class GUIMachineCyclotron extends GuiInfoContainer {
 
     	if(guiLeft + 97 <= mouseX && guiLeft + 97 + 18 > mouseX && guiTop + 107 < mouseY && guiTop + 107 + 18 >= mouseY) {
 
-			mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+			playClickSound();
     		PacketDispatcher.wrapper.sendToServer(new AuxButtonPacket(cyclotron.getPos(), 0, 0));
     	}
 	}

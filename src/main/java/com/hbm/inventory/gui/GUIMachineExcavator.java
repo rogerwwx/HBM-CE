@@ -18,6 +18,8 @@ import org.lwjgl.opengl.GL11;
 
 import java.io.IOException;
 
+import static com.hbm.util.GuiUtil.playClickSound;
+
 public class GUIMachineExcavator extends GuiInfoContainer {
 
 	private static ResourceLocation texture = new ResourceLocation(Tags.MODID + ":textures/gui/machine/gui_mining_drill.png");
@@ -70,7 +72,7 @@ public class GUIMachineExcavator extends GuiInfoContainer {
 
 		if(toggle != null) {
 			// "hbm:block.leverLarge"
-			mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+			playClickSound();
 			NBTTagCompound data = new NBTTagCompound();
 			data.setBoolean(toggle, true);
             PacketThreading.createSendToServerThreadedPacket(new NBTControlPacket(data, drill.getPos()));

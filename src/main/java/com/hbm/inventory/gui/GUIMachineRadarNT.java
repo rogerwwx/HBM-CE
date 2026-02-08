@@ -23,6 +23,8 @@ import org.lwjgl.opengl.GL11;
 import java.io.IOException;
 import java.util.Arrays;
 
+import static com.hbm.util.GuiUtil.playClickSound;
+
 public class GUIMachineRadarNT extends GuiScreen {
 
     public static final ResourceLocation texture = new ResourceLocation(Tags.MODID + ":textures/gui/machine/gui_radar_nt.png");
@@ -63,7 +65,7 @@ public class GUIMachineRadarNT extends GuiScreen {
         if(checkClick(x, y, -10, 178, 8, 8)) cmd = "clear";
 
         if(cmd != null) {
-            mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+            playClickSound();
             NBTTagCompound data = new NBTTagCompound();
             data.setBoolean(cmd, true);
             PacketThreading.createSendToServerThreadedPacket(
