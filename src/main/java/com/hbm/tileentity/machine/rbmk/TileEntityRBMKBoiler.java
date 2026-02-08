@@ -230,9 +230,12 @@ public class TileEntityRBMKBoiler extends TileEntityRBMKSlottedBase implements I
 
         if (RBMKDials.getOverpressure(world)) {
             for (DirPos pos : getOutputPos()) {
-                FluidNode node = (FluidNode) UniNodespace.getNode(world, pos.getPos(), steam.getTankType().getNetworkProvider());
-                if (node.net != null && node.hasValidNet()) {
-                    this.pipes.add(node.net);
+                //mlbv: this is meant to retrieve all the ducts that are present and connected to this boiler to
+                //and then add to TileEntityRBMKBase#pipes. The pipes field is a temporary collector for all the
+                //ducts connected to boilers within a single meltdown event. Technically it should be a ThreadLocal..
+                FluidNode node = UniNodespace.getNode(world, pos.getPos(), steam.getTankType().getNetworkProvider());
+                if (node != null && node.hasValidNet()) {
+                    pipes.add(node.net);
                 }
             }
         }

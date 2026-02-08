@@ -1,6 +1,8 @@
 package com.hbm.tileentity.machine.rbmk;
 
 import com.hbm.api.fluidmk2.FluidNetMK2;
+import com.hbm.api.fluidmk2.FluidNode;
+import com.hbm.api.fluidmk2.IFluidReceiverMK2;
 import com.hbm.blocks.ModBlocks;
 import com.hbm.blocks.machine.rbmk.RBMKBase;
 import com.hbm.config.MachineConfig;
@@ -25,6 +27,9 @@ import com.hbm.tileentity.TileEntityLoadedBase;
 import com.hbm.tileentity.machine.rbmk.RBMKColumn.ColumnType;
 import com.hbm.util.I18nUtil;
 import io.netty.buffer.ByteBuf;
+import it.unimi.dsi.fastutil.objects.ObjectSet;
+import it.unimi.dsi.fastutil.objects.ReferenceLinkedOpenHashSet;
+import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
@@ -32,6 +37,7 @@ import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Blocks;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
@@ -495,8 +501,8 @@ public abstract class TileEntityRBMKBase extends TileEntityLoadedBase implements
 		world.spawnEntity(debris);
 	}
 
-	public static HashSet<TileEntityRBMKBase> columns = new HashSet<>();
-	public static HashSet<FluidNetMK2> pipes = new HashSet<>();
+	public static ReferenceOpenHashSet<TileEntityRBMKBase> columns = new ReferenceOpenHashSet<>();
+	public static ReferenceOpenHashSet<FluidNetMK2> pipes = new ReferenceOpenHashSet<>();
 
 	//assumes that !world.isRemote
 	public void meltdown() {
@@ -563,30 +569,35 @@ public abstract class TileEntityRBMKBase extends TileEntityLoadedBase implements
 
 		/* Hanlde overpressure event */
 		if(RBMKDials.getOverpressure(world) && !pipes.isEmpty()) {
-			HashSet<Object> pipeBlocks = new HashSet<>();
-			HashSet<Object> pipeReceivers = new HashSet<>();
+			//mlbv: the types here on upstream is a complete mess thanks to raw types
+            var pipeBlocks = new ReferenceOpenHashSet<FluidNode>();
+            var pipeReceivers = new ReferenceOpenHashSet<Map.Entry<IFluidReceiverMK2, Long>>();
 
 			//unify all parts into single sets to prevent redundancy
-			pipes.forEach(x -> {
-				pipeBlocks.addAll(x.links);
-				pipeReceivers.addAll(x.receiverEntries.entrySet());
-			});
+            for (FluidNetMK2 x : pipes) {
+                pipeBlocks.addAll(x.links);
+                pipeReceivers.addAll(x.receiverEntries.entrySet());
+            }
 
-			int count = 0;
+            int count = 0;
 			int max = Math.min(pipeBlocks.size() / 5, 100);
-			Iterator<Object> itPipes = pipeBlocks.iterator();
-			Iterator<Object> itReceivers = pipeReceivers.iterator();
+			var itPipes = pipeBlocks.iterator();
+			var itReceivers = pipeReceivers.iterator();
 
 			while(itPipes.hasNext() && count < max) {
-				Object pipe = itPipes.next();
-				if(pipe instanceof TileEntity tile) {
-                    world.setBlockToAir(tile.getPos());
+				var node = itPipes.next();
+				for (BlockPos pos : node.positions) {
+					if (world.getTileEntity(pos) != null) {
+						//mlbv: so the pipes just simply vanish?
+						world.setBlockToAir(pos);
+					}
 				}
 				count++;
 			}
 
 			while(itReceivers.hasNext()) {
-				Object con = itReceivers.next();
+                var e = itReceivers.next();
+				IFluidReceiverMK2 con = e.getKey();
 				if(con instanceof TileEntity tile) {
                     if(con instanceof IOverpressurable) {
 						((IOverpressurable) con).explode(world, tile.getPos().getX(), tile.getPos().getY(), tile.getPos().getZ());
@@ -610,9 +621,9 @@ public abstract class TileEntityRBMKBase extends TileEntityLoadedBase implements
 
 		world.playSound(null, avgX + 0.5, pos.getY() + 1, avgZ + 0.5, HBMSoundHandler.rbmk_explosion, SoundCategory.BLOCKS, 50.0F, 1.0F);
 
-		List<EntityPlayer> list = world.getEntitiesWithinAABB(EntityPlayer.class, new AxisAlignedBB(pos.getX() - 50 + 0.5, pos.getY() - 50 + 0.5, pos.getZ() - 50 + 0.5, pos.getX() + 50 + 0.5, pos.getY() + 50 + 0.5, pos.getZ() + 50 + 0.5));
+		List<EntityPlayerMP> list = world.getEntitiesWithinAABB(EntityPlayerMP.class, new AxisAlignedBB(pos.getX() - 50 + 0.5, pos.getY() - 50 + 0.5, pos.getZ() - 50 + 0.5, pos.getX() + 50 + 0.5, pos.getY() + 50 + 0.5, pos.getZ() + 50 + 0.5));
 
-		for(EntityPlayer e : list) {
+		for(EntityPlayerMP e : list) {
 			AdvancementManager.grantAchievement(e, AdvancementManager.achRBMKBoom);
 		}
 
@@ -626,6 +637,10 @@ public abstract class TileEntityRBMKBase extends TileEntityLoadedBase implements
 
 		RBMKBase.dropLids = true;
 		RBMKBase.digamma = false;
+
+		//mlbv: add cleanups to avoid reference leaks
+		columns.clear();
+		pipes.clear();
 	}
 
 	//Family and Friends
