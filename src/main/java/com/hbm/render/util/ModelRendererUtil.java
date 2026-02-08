@@ -453,17 +453,30 @@ public class ModelRendererUtil {
 			);
 			mat.transform(uv3);
 
+			// 真正的 cap 三角形，带投影 UV
 			cap[i] = new Triangle(
 					orderedClipVertices.get(0),
 					orderedClipVertices.get(i+2),
 					orderedClipVertices.get(i+1),
 					new float[]{uv1.x, uv1.y, uv2.x, uv2.y, uv3.x, uv3.y}
 			);
+
+			// 同时补到 side1/side2，UV 全零，保证渲染完整
+			side1.add(new Triangle(
+					orderedClipVertices.get(0),
+					orderedClipVertices.get(i+2),
+					orderedClipVertices.get(i+1),
+					new float[]{0,0,0,0,0,0}
+			));
+			side2.add(new Triangle(
+					orderedClipVertices.get(0),
+					orderedClipVertices.get(i+1),
+					orderedClipVertices.get(i+2),
+					new float[]{0,0,0,0,0,0}
+			));
 		}
 		return compress(cap);
 	}
-
-
 
 	private static Vec3d getNext(List<Vec3d[]> edges, Vec3d first){
 		Iterator<Vec3d[]> itr = edges.iterator();

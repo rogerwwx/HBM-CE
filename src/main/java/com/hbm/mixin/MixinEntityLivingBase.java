@@ -51,7 +51,7 @@ public abstract class MixinEntityLivingBase{
             return;
         }
 
-        if (this.forceDead) {
+        if (self.getEntityData().getBoolean("force_Dead")) {
             cir.setReturnValue(0.0F);
             return;
         }
@@ -94,7 +94,4 @@ public abstract class MixinEntityLivingBase{
         EntityLivingBase self = (EntityLivingBase)(Object)this;
         self.isDead = true; // 再次标记死亡，不影响史莱姆分裂
     }
-
-    @Unique
-    public boolean forceDead;
 }
