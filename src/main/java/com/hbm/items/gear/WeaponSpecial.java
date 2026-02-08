@@ -10,6 +10,7 @@ import com.hbm.items.ModItems;
 import com.hbm.lib.HBMSoundHandler;
 import com.hbm.main.AdvancementManager;
 import com.hbm.main.MainRegistry;
+import com.hbm.mixin.MixinEntityLivingBase;
 import com.hbm.packet.PacketDispatcher;
 import com.hbm.packet.toclient.GuiDeathPacket;
 import com.hbm.potion.HbmPotion;
@@ -73,7 +74,7 @@ public class WeaponSpecial extends ItemSword {
 				target.getEntityAttribute(SharedMonsterAttributes.MAX_HEALTH).setBaseValue(0.0D);
 				target.setHealth(0);
 				target.onDeath(DamageSource.GENERIC);
-				target.getEntityData().setBoolean("Dead", true);
+				((MixinEntityLivingBase)(Object)target).forceDead = true;
 				if (target instanceof EntityPlayerMP player) {
                     String deathText = player.getName() + " 在锤子的重击下变成了一摊薄饼";
 					GuiDeathPacket packet = new GuiDeathPacket(deathText);

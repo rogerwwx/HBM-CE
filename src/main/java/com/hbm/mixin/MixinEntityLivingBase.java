@@ -7,6 +7,7 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
@@ -14,9 +15,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(EntityLivingBase.class)
-public abstract class MixinEntityLivingBase {
+public abstract class MixinEntityLivingBase{
 
     private boolean isDnsPlateActive(EntityLivingBase self) {
+        //判断玩家
         if (!(self instanceof EntityPlayer)) {
             return false;
         }
@@ -49,8 +51,7 @@ public abstract class MixinEntityLivingBase {
             return;
         }
 
-        // 原有 Dead NBT，保留
-        if (self.getEntityData().getBoolean("Dead")) {
+        if (this.forceDead) {
             cir.setReturnValue(0.0F);
             return;
         }
@@ -93,4 +94,7 @@ public abstract class MixinEntityLivingBase {
         EntityLivingBase self = (EntityLivingBase)(Object)this;
         self.isDead = true; // 再次标记死亡，不影响史莱姆分裂
     }
+
+    @Unique
+    public boolean forceDead;
 }
