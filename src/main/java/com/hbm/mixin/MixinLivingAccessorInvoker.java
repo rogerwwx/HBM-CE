@@ -2,6 +2,7 @@ package com.hbm.mixin;
 
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.network.datasync.DataParameter;
 import net.minecraft.util.DamageSource;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
@@ -34,6 +35,11 @@ public interface MixinLivingAccessorInvoker {
     // dropLoot
     @Invoker("dropLoot")
     void invokeDropLoot(boolean wasRecentlyHit, int lootingModifier, DamageSource source);
+
+    @Accessor("HEALTH")
+        static DataParameter<Float> getHealthKey() {
+            throw new AssertionError();
+    }
 }
 
 /*

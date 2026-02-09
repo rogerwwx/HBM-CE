@@ -17,7 +17,7 @@ public abstract class MixinEntityDataManager {
 
     @Inject(method = "get", at = @At("HEAD"), cancellable = true)
     private <T> void onGet(DataParameter<T> key, CallbackInfoReturnable<T> cir) {
-        if (key == MixinEntityLivingBase.getHealthKey()) {
+        if (key == MixinLivingAccessorInvoker.getHealthKey()) {
             if (entity != null && entity.getEntityData().getBoolean("force_Dead")) {
                 cir.setReturnValue((T)(Float)0.0F);
             }
@@ -32,7 +32,7 @@ public abstract class MixinEntityDataManager {
             )
     )
     private <T> void onSetRedirect(EntityDataManager.DataEntry<T> entry, Object value) {
-        if (entry.getKey() == MixinEntityLivingBase.getHealthKey()) {
+        if (entry.getKey() == MixinLivingAccessorInvoker.getHealthKey()) {
             if (entity != null && entity.getEntityData().getBoolean("force_Dead")) {
                 entry.setValue((T)(Float)0.0F);
                 return;

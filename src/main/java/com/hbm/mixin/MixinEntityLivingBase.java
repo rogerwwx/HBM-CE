@@ -24,12 +24,8 @@ public abstract class MixinEntityLivingBase {
     // 暴露私有静态 HEALTH
     @Shadow
     @Final
-    private static DataParameter<Float> HEALTH;
+    static DataParameter<Float> HEALTH;
 
-    @Unique
-    public static DataParameter<Float> getHealthKey() {
-        return HEALTH;
-    }
 
     @Shadow
     public abstract ItemStack getItemStackFromSlot(EntityEquipmentSlot slot);
