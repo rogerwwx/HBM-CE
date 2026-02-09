@@ -45,8 +45,9 @@ public class ParticleSlicedMob extends Particle {
 		this.particleAge ++;
 		if(particleAge >= particleMaxAge){
 			setExpired();
-			GL11.glDeleteLists(cutMob, 1);
-			GL11.glDeleteLists(cap, 1);
+			// release display lists (may be cached by ModelRendererUtil)
+			com.hbm.render.util.ModelRendererUtil.releaseDisplayList(cutMob);
+			com.hbm.render.util.ModelRendererUtil.releaseDisplayList(cap);
 		}
 	}
 
