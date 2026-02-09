@@ -6,17 +6,35 @@ import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.item.ItemStack;
+import net.minecraft.network.datasync.DataParameter;
+import net.minecraft.network.datasync.EntityDataManager;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(EntityLivingBase.class)
-public abstract class MixinEntityLivingBase{
+public abstract class MixinEntityLivingBase {
 
+    // 暴露私有静态 HEALTH
+    @Shadow
+    @Final
+    private static DataParameter<Float> HEALTH;
+
+    @Unique
+    public static DataParameter<Float> getHealthKey() {
+        return HEALTH;
+    }
+
+    @Shadow
+    public abstract ItemStack getItemStackFromSlot(EntityEquipmentSlot slot);
+
+    // 你已有的逻辑（force_Dead / dns_plate 等）
     private boolean isDnsPlateActive(EntityLivingBase self) {
         //判断玩家
         if (!(self instanceof EntityPlayer)) {
@@ -38,14 +56,13 @@ public abstract class MixinEntityLivingBase{
         return armor.isArmorEnabled(chest);
     }
 
-
     @Inject(
             method = "getHealth",
             at = @At("HEAD"),
             cancellable = true
     )
     private void forceZeroHealth(CallbackInfoReturnable<Float> cir) {
-        EntityLivingBase self = (EntityLivingBase)(Object)this;
+        EntityLivingBase self = (EntityLivingBase) (Object) this;
 
         if (self.world.isRemote) {
             return;
@@ -62,36 +79,41 @@ public abstract class MixinEntityLivingBase{
         }
     }
 
-
     @Inject(method = "onDeathUpdate", at = @At("HEAD"), cancellable = true)
     private void cancelDeathUpdateIfDnsPlate(CallbackInfo ci) {
-        EntityLivingBase self = (EntityLivingBase)(Object)this;
+        EntityLivingBase self = (EntityLivingBase) (Object) this;
 
         if (isDnsPlateActive(self)) {
             ci.cancel();
         }
     }
 
-    @Redirect(
+    @ModifyVariable(
             method = "setHealth",
-            at = @At(
-                    value = "INVOKE",
-                    target = "Lnet/minecraft/entity/EntityLivingBase;setHealth(F)V"
-            )
+            at = @At("HEAD"),
+            argsOnly = true
     )
-    private void redirectSetHealth(EntityLivingBase entity, float health) {
-        if (isDnsPlateActive(entity)) { // 条件判断，示例用你原来的逻辑
-            health = 100f;
+    private float modifyHealthArg(float health) {
+        EntityLivingBase self = (EntityLivingBase) (Object) this;
+        // 使用你原本的逻辑判断
+        if (isDnsPlateActive(self)) {
+            return 100.0F; // 强制改成 100
         }
-        entity.setHealth(health); // 调用原方法
+        return health; // 否则保持原样
     }
 
-    @Inject(
-            method = "onDeathUpdate",
-            at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/EntityLivingBase;setDead()V", shift = At.Shift.AFTER)
-    )
-    private void afterSetDead(CallbackInfo ci) {
+    @Unique
+    public void setHealthDirectly(float health) {
         EntityLivingBase self = (EntityLivingBase)(Object)this;
-        self.isDead = true; // 再次标记死亡，不影响史莱姆分裂
+
+        // 只在服务端执行
+        if (self.world == null || self.world.isRemote) {
+            return;
+        }
+        //EntityDataManager edm = ((MixinEntityAccessor) self).getDataManager(); if (edm == null) return;
+
+        // 写入 dataManager（会触发 notifyDataManagerChange 与同步）
+        EntityDataManager dataManager = ((MixinEntityAccessor)(Object)self).getDataManager();
+        dataManager.set((DataParameter)HEALTH, Float.valueOf(health));
     }
 }

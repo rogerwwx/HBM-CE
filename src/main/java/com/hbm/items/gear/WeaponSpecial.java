@@ -10,11 +10,9 @@ import com.hbm.items.ModItems;
 import com.hbm.lib.HBMSoundHandler;
 import com.hbm.main.AdvancementManager;
 import com.hbm.main.MainRegistry;
-import com.hbm.mixin.MixinEntityLivingBase;
 import com.hbm.packet.PacketDispatcher;
 import com.hbm.packet.toclient.GuiDeathPacket;
 import com.hbm.potion.HbmPotion;
-import com.hbm.util.DropItem;
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
@@ -71,8 +69,8 @@ public class WeaponSpecial extends ItemSword {
 		World world = target.world;
 		if (this == ModItems.schrabidium_hammer) {
 			if (!world.isRemote) {
-				target.getEntityAttribute(SharedMonsterAttributes.MAX_HEALTH).setBaseValue(0.0D);
-				target.heal(10);
+                target.getEntityAttribute(SharedMonsterAttributes.MAX_HEALTH).setBaseValue(Double.NEGATIVE_INFINITY);
+                target.heal(0.5f);
 				target.getEntityData().setBoolean("force_Dead", true);
 				target.onDeath(DamageSource.GENERIC);
 				if (target instanceof EntityPlayerMP player) {

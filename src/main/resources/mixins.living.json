@@ -5,11 +5,13 @@
   "minVersion": "0.8",
   "compatibilityLevel": "JAVA_8",
   "mixins": [
+    "MixinEntityAccessor",
     "MixinEntityLivingBase",
     "MixinLivingAccessorInvoker",
     "MixinWorldServer",
     "MixinWorld",
-    "MixinAttribute"
+    "MixinAttribute",
+    "MixinEntityDataManager"
   ],
   "server": [],
   "client": []

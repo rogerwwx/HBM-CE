@@ -128,6 +128,7 @@ public class PacketMobSlicer implements IMessage {
 					victim.heal(0.5f);
 					victim.setHealth(0.0F);
 					victim.onKillCommand();
+					victim.world.setEntityState(victim, (byte)35);
 					victim.setDead();
 					victim.isDead = true;
 

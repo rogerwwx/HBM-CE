@@ -1,6 +1,5 @@
 package com.hbm.render.util;
 
-import com.hbm.lib.internal.MethodHandleHelper;
 import com.hbm.main.ClientProxy;
 import com.hbm.main.MainRegistry;
 import com.hbm.main.ResourceManager;
@@ -39,8 +38,6 @@ import org.lwjgl.util.vector.Matrix4f;
 import javax.annotation.Nullable;
 import javax.vecmath.Matrix3f;
 import javax.vecmath.Vector3f;
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -186,19 +183,19 @@ public class ModelRendererUtil {
 		if(render.isHidden || !render.showModel || !render.compiled)
 			return;
 		GlStateManager.pushMatrix();
-			doTransforms(render, scale);
-			// compute local matrices: one without the uniform glScaled (for children), and one with it (for this renderer)
-			Matrix4f localNoScale = computeModelRendererMatrix(render, scale, false);
-			Matrix4f localWithScale = computeModelRendererMatrix(render, scale, true);
-			Matrix4f combinedForChildren = Matrix4f.mul(globalMat, localNoScale, null);
-			if(render.childModels != null)
-				for(ModelRenderer renderer : render.childModels) {
-					generateList(world, ent, scale, list, renderer, tex, combinedForChildren);
-				}
-			GL11.glScaled(scale, scale, scale);
-			// Combine global with local-with-scale for the final matrix used for this renderer
-			Matrix4f mat = Matrix4f.mul(globalMat, localWithScale, null);
-			list.add(Pair.of(mat, render));
+		doTransforms(render, scale);
+		// compute local matrices: one without the uniform glScaled (for children), and one with it (for this renderer)
+		Matrix4f localNoScale = computeModelRendererMatrix(render, scale, false);
+		Matrix4f localWithScale = computeModelRendererMatrix(render, scale, true);
+		Matrix4f combinedForChildren = Matrix4f.mul(globalMat, localNoScale, null);
+		if(render.childModels != null)
+			for(ModelRenderer renderer : render.childModels) {
+				generateList(world, ent, scale, list, renderer, tex, combinedForChildren);
+			}
+		GL11.glScaled(scale, scale, scale);
+		// Combine global with local-with-scale for the final matrix used for this renderer
+		Matrix4f mat = Matrix4f.mul(globalMat, localWithScale, null);
+		list.add(Pair.of(mat, render));
 		GlStateManager.popMatrix();
 	}
 
@@ -274,76 +271,122 @@ public class ModelRendererUtil {
 	}
 
 	public static Triangle[] decompress(VertexData vertices){
-		Triangle[] tris = new Triangle[vertices.positionIndices.length/3];
+		int triCount = vertices.positionIndices.length / 3;
+		Triangle[] tris = new Triangle[triCount];
 		for(int i = 0; i < vertices.positionIndices.length; i += 3){
 			int i0 = vertices.positionIndices[i];
 			int i1 = vertices.positionIndices[i+1];
 			int i2 = vertices.positionIndices[i+2];
+			int triIndex = i / 3;
+			int texOff = triIndex * 6;
 			float[] tex = new float[6];
-			tex[0] = vertices.texCoords[(i+0)*2];
-			tex[1] = vertices.texCoords[(i+0)*2+1];
-			tex[2] = vertices.texCoords[(i+1)*2];
-			tex[3] = vertices.texCoords[(i+1)*2+1];
-			tex[4] = vertices.texCoords[(i+2)*2];
-			tex[5] = vertices.texCoords[(i+2)*2+1];
-			tris[i/3] = new Triangle(vertices.positions[i0], vertices.positions[i1], vertices.positions[i2], tex);
+			tex[0] = vertices.texCoords[texOff + 0];
+			tex[1] = vertices.texCoords[texOff + 1];
+			tex[2] = vertices.texCoords[texOff + 2];
+			tex[3] = vertices.texCoords[texOff + 3];
+			tex[4] = vertices.texCoords[texOff + 4];
+			tex[5] = vertices.texCoords[texOff + 5];
+			tris[triIndex] = new Triangle(vertices.positions[i0], vertices.positions[i1], vertices.positions[i2], tex);
 		}
 		return tris;
 	}
 
-	public static VertexData compress(Triangle[] tris){
-		List<Vec3d> vertices = new ArrayList<>(tris.length*3);
-		int[] indices = new int[tris.length*3];
-		float[] texCoords = new float[tris.length*6];
-		for(int i = 0; i < tris.length; i ++){
-			Triangle tri = tris[i];
-			double eps = 0.00001D;
-			int idx = epsIndexOf(vertices, tri.p1.pos, eps);
-			if(idx != -1){
-				indices[i*3] = idx;
-			} else {
-				indices[i*3] = vertices.size();
-				vertices.add(tri.p1.pos);
+	public static VertexData compress(Triangle[] tris) {
+		// 容差与量化参数（可根据需要微调）
+		final double posEps = 1e-6;      // 精确比较位置的 epsilon
+		final double uvEps = 1e-6;       // 精确比较 UV 的 epsilon
+		final double bucketScale = 1e-4; // 量化尺度：用于把空间划分为桶，避免过多桶冲突
+
+		// 输出容器
+		List<Vec3d> uniquePositions = new ArrayList<>(tris.length * 3);
+		int[] indices = new int[tris.length * 3];
+		float[] texCoords = new float[tris.length * 6];
+
+		// 局部 firstUVMap：每次 compress 调用独立，避免跨次索引语义错位
+		java.util.Map<Integer, float[]> firstUVMap = new java.util.HashMap<>(tris.length * 2);
+
+		// 桶化映射：long key -> list of vertex indices (在 uniquePositions 中的索引)
+		java.util.Map<Long, List<Integer>> buckets = new java.util.HashMap<>(tris.length * 2);
+
+		// 量化函数（稳定）
+		java.util.function.Function<Double, Long> quant = (Double v) -> Math.round(v / bucketScale);
+
+		// 辅助比较函数：位置与 UV 是否在容差内
+		java.util.function.BiPredicate<Vec3d, Vec3d> posEqual = (a, b) -> BobMathUtil.epsilonEquals(a, b, posEps);
+		java.util.function.BiPredicate<Float, Float> uvEqual = (a, b) -> Math.abs(a - b) <= uvEps;
+
+		for (int i = 0; i < tris.length; i++) {
+			Triangle t = tris[i];
+
+			// 保持原三角顺序：p1, p2, p3
+			Vec3d[] triPos = new Vec3d[]{t.p1.pos, t.p2.pos, t.p3.pos};
+			float[] triTex = new float[]{t.p1.texX, t.p1.texY, t.p2.texX, t.p2.texY, t.p3.texX, t.p3.texY};
+
+			for (int v = 0; v < 3; v++) {
+				Vec3d pos = triPos[v];
+				float u = triTex[v * 2];
+				float vv = triTex[v * 2 + 1];
+
+				// 量化坐标生成桶 key（稳定组合）
+				long qx = quant.apply(pos.x);
+				long qy = quant.apply(pos.y);
+				long qz = quant.apply(pos.z);
+				long key = (qx & 0x1FFFFFL);
+				key = (key << 21) ^ (qy & 0x1FFFFFL);
+				key = (key << 21) ^ (qz & 0x1FFFFFL);
+
+				List<Integer> bucket = buckets.get(key);
+				int foundIdx = -1;
+				if (bucket != null) {
+					// 在桶内做精确比较：位置 + UV 都要匹配
+					for (int idx : bucket) {
+						Vec3d existingPos = uniquePositions.get(idx);
+						if (!posEqual.test(pos, existingPos)) continue;
+						float[] repUV = firstUVMap.get(idx);
+						if (repUV != null) {
+							if (!uvEqual.test(repUV[0], u) || !uvEqual.test(repUV[1], vv)) {
+								continue; // UV 不匹配，不能合并
+							}
+						}
+						foundIdx = idx;
+						break;
+					}
+				}
+
+				if (foundIdx == -1) {
+					// 新顶点：记录位置并在桶中注册
+					foundIdx = uniquePositions.size();
+					uniquePositions.add(pos);
+					if (bucket == null) {
+						bucket = new ArrayList<>(2);
+						buckets.put(key, bucket);
+					}
+					bucket.add(foundIdx);
+					// 记录代表 UV（用于后续桶内比较，避免跨 seam 合并）
+					firstUVMap.put(foundIdx, new float[]{u, vv});
+				}
+
+				indices[i * 3 + v] = foundIdx;
 			}
 
-			idx = epsIndexOf(vertices, tri.p2.pos, eps);
-			if(idx != -1){
-				indices[i*3+1] = idx;
-			} else {
-				indices[i*3+1] = vertices.size();
-				vertices.add(tri.p2.pos);
-			}
-
-			idx = epsIndexOf(vertices, tri.p3.pos, eps);
-			if(idx != -1){
-				indices[i*3+2] = idx;
-			} else {
-				indices[i*3+2] = vertices.size();
-				vertices.add(tri.p3.pos);
-			}
-
-			texCoords[i*6+0] = tri.p1.texX;
-			texCoords[i*6+1] = tri.p1.texY;
-			texCoords[i*6+2] = tri.p2.texX;
-			texCoords[i*6+3] = tri.p2.texY;
-			texCoords[i*6+4] = tri.p3.texX;
-			texCoords[i*6+5] = tri.p3.texY;
+			// 保持原有 texCoords 布局（每三角 6 个 float）
+			texCoords[i * 6 + 0] = triTex[0];
+			texCoords[i * 6 + 1] = triTex[1];
+			texCoords[i * 6 + 2] = triTex[2];
+			texCoords[i * 6 + 3] = triTex[3];
+			texCoords[i * 6 + 4] = triTex[4];
+			texCoords[i * 6 + 5] = triTex[5];
 		}
+
 		VertexData data = new VertexData();
-		data.positions = vertices.toArray(new Vec3d[0]);
+		data.positions = uniquePositions.toArray(new Vec3d[0]);
 		data.positionIndices = indices;
 		data.texCoords = texCoords;
+		// 确保缓存初始状态为空
+		data.invalidateCache();
 		return data;
 	}
 
-	private static int epsIndexOf(List<Vec3d> l, Vec3d vec, double eps){
-		for(int i = 0; i < l.size(); i++){
-			if(BobMathUtil.epsilonEquals(vec, l.get(i), eps)){
-				return i;
-			}
-		}
-		return -1;
-	}
 
 	public static VertexData[] cutAndCapModelBox(ModelBox b, float[] plane, @Nullable Matrix4f transform){
 		return cutAndCapConvex(triangulate(b, transform), plane);
@@ -758,50 +801,68 @@ public class ModelRendererUtil {
 		public int[] positionIndices;
 		public float[] texCoords;
 
+		private transient float[] cachedVertexArray;
+		private transient int cachedHash = 0;
+		private static final ThreadLocal<float[]> TL_NORMAL = ThreadLocal.withInitial(() -> new float[3]);
+
 		public void tessellate(BufferBuilder buf, boolean normal){
 			tessellate(buf, false, normal);
 		}
 
 		public void tessellate(BufferBuilder buf, boolean flip, boolean normal){
-			if(positionIndices != null)
-				for(int i = 0; i < positionIndices.length; i += 3){
-					Vec3d a = positions[positionIndices[i]];
-					Vec3d b = positions[positionIndices[i+1]];
-					Vec3d c = positions[positionIndices[i+2]];
-					//Offset into texcoord array
-					int tOB = 1;
-					int tOC = 2;
-					if(flip){
-						Vec3d tmp = b;
-						b = c;
-						c = tmp;
-						tOB = 2;
-						tOC = 1;
-					}
-					if(normal){
-						Vec3d norm = b.subtract(a).crossProduct(c.subtract(a)).normalize();
-						buf.pos(a.x, a.y, a.z).tex(texCoords[i*2+0], texCoords[i*2+1]).normal((float)norm.x, (float)norm.y, (float)norm.z).endVertex();
-						buf.pos(b.x, b.y, b.z).tex(texCoords[(i+tOB)*2+0], texCoords[(i+tOB)*2+1]).normal((float)norm.x, (float)norm.y, (float)norm.z).endVertex();
-						buf.pos(c.x, c.y, c.z).tex(texCoords[(i+tOC)*2+0], texCoords[(i+tOC)*2+1]).normal((float)norm.x, (float)norm.y, (float)norm.z).endVertex();
-					} else {
-						buf.pos(a.x, a.y, a.z).tex(texCoords[i*2+0], texCoords[i*2+1]).endVertex();
-						buf.pos(b.x, b.y, b.z).tex(texCoords[(i+tOB)*2+0], texCoords[(i+tOB)*2+1]).endVertex();
-						buf.pos(c.x, c.y, c.z).tex(texCoords[(i+tOC)*2+0], texCoords[(i+tOC)*2+1]).endVertex();
-					}
+			if (positionIndices == null) return;
+			for (int i = 0; i < positionIndices.length; i += 3) {
+				Vec3d a = positions[positionIndices[i]];
+				Vec3d b = positions[positionIndices[i + 1]];
+				Vec3d c = positions[positionIndices[i + 2]];
+				int triIndex = i / 3;
+				int texOff = triIndex * 6;
 
+				Vec3d v1 = a;
+				Vec3d v2 = flip ? c : b;
+				Vec3d v3 = flip ? b : c;
+
+				float u1 = texCoords[texOff + 0], v_1 = texCoords[texOff + 1];
+				float u2 = texCoords[texOff + (flip ? 4 : 2)], v_2 = texCoords[texOff + (flip ? 5 : 3)];
+				float u3 = texCoords[texOff + (flip ? 2 : 4)], v_3 = texCoords[texOff + (flip ? 3 : 5)];
+
+				if (normal) {
+					float[] tmp = TL_NORMAL.get();
+					float ux = (float)(v2.x - v1.x), uy = (float)(v2.y - v1.y), uz = (float)(v2.z - v1.z);
+					float vx = (float)(v3.x - v1.x), vy = (float)(v3.y - v1.y), vz = (float)(v3.z - v1.z);
+					tmp[0] = uy * vz - uz * vy;
+					tmp[1] = uz * vx - ux * vz;
+					tmp[2] = ux * vy - uy * vx;
+					float len = (float)Math.sqrt(tmp[0]*tmp[0] + tmp[1]*tmp[1] + tmp[2]*tmp[2]);
+					if (len != 0f) { tmp[0] /= len; tmp[1] /= len; tmp[2] /= len; }
+					buf.pos(v1.x, v1.y, v1.z).tex(u1, v_1).normal(tmp[0], tmp[1], tmp[2]).endVertex();
+					buf.pos(v2.x, v2.y, v2.z).tex(u2, v_2).normal(tmp[0], tmp[1], tmp[2]).endVertex();
+					buf.pos(v3.x, v3.y, v3.z).tex(u3, v_3).normal(tmp[0], tmp[1], tmp[2]).endVertex();
+				} else {
+					buf.pos(v1.x, v1.y, v1.z).tex(u1, v_1).endVertex();
+					buf.pos(v2.x, v2.y, v2.z).tex(u2, v_2).endVertex();
+					buf.pos(v3.x, v3.y, v3.z).tex(u3, v_3).endVertex();
 				}
+			}
 		}
 
 		public float[] vertexArray() {
-			float[] verts = new float[positions.length*3];
-			for(int i = 0; i < positions.length; i ++){
-				Vec3d pos = positions[i];
-				verts[i*3] = (float) pos.x;
-				verts[i*3+1] = (float) pos.y;
-				verts[i*3+2] = (float) pos.z;
+			int hash = java.util.Arrays.hashCode(positionIndices) ^ java.util.Arrays.hashCode(texCoords);
+			if (cachedVertexArray != null && cachedHash == hash) return cachedVertexArray;
+			cachedVertexArray = new float[positions.length * 3];
+			for (int i = 0; i < positions.length; i++) {
+				Vec3d p = positions[i];
+				cachedVertexArray[i*3 + 0] = (float)p.x;
+				cachedVertexArray[i*3 + 1] = (float)p.y;
+				cachedVertexArray[i*3 + 2] = (float)p.z;
 			}
-			return verts;
+			cachedHash = hash;
+			return cachedVertexArray;
+		}
+
+		public void invalidateCache() {
+			cachedVertexArray = null;
+			cachedHash = 0;
 		}
 	}
-
 }
