@@ -27,6 +27,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hbm.util.GuiUtil.playClickSound;
+
 public class GUIMachineTurbineGas extends GuiInfoContainer {
 
     private static final ResourceLocation texture = new ResourceLocation(Tags.MODID + ":textures/gui/generators/gui_turbinegas.png");
@@ -58,7 +60,7 @@ public class GUIMachineTurbineGas extends GuiInfoContainer {
         if (Math.sqrt(Math.pow((mouseX - (guiLeft + 88)), 2) + Math.pow((mouseY - (guiTop + 40)), 2)) <= 8) {
             if (turbinegas.counter == 0 || turbinegas.counter == 579) {
                 int state = turbinegas.state - 1; //offline(0) to startup(-1), online(1) to offline(0)
-                mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+                playClickSound();
                 NBTTagCompound data = new NBTTagCompound();
                 data.setInteger("state", state);
                 PacketThreading.createSendToServerThreadedPacket(new NBTControlPacket(data, turbinegas.getPos()));
@@ -67,7 +69,7 @@ public class GUIMachineTurbineGas extends GuiInfoContainer {
         if (turbinegas.state == 1 && mouseX > guiLeft + 74 && mouseX <= guiLeft + 74 + 29 && mouseY >= guiTop + 86 && mouseY < guiTop + 86 + 13) {
             //auto mode button
             boolean automode = !turbinegas.autoMode;
-            mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+            playClickSound();
             NBTTagCompound data = new NBTTagCompound();
             data.setBoolean("autoMode", automode);
             PacketThreading.createSendToServerThreadedPacket(new NBTControlPacket(data, turbinegas.getPos()));
@@ -78,7 +80,7 @@ public class GUIMachineTurbineGas extends GuiInfoContainer {
             NBTTagCompound data = new NBTTagCompound();
             data.setBoolean("autoMode", false); //if you click the slider with automode on, turns off automode
             PacketThreading.createSendToServerThreadedPacket(new NBTControlPacket(data, turbinegas.getPos()));
-            mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+            playClickSound();
         }
     }
 

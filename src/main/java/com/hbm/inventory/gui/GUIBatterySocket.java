@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static com.hbm.util.GuiUtil.playClickSound;
+
 public class GUIBatterySocket extends GuiInfoContainer {
 
     private static final ResourceLocation texture = new ResourceLocation(Tags.MODID + ":textures/gui/storage/gui_battery_socket.png");
@@ -74,15 +76,15 @@ public class GUIBatterySocket extends GuiInfoContainer {
         NBTTagCompound data = new NBTTagCompound();
 
         if (this.checkClick(x, y, 106, 16, 18, 18)) {
-            this.playPressSound();
+            playClickSound();
             data.setBoolean("low", true);
         }
         if (this.checkClick(x, y, 106, 52, 18, 18)) {
-            this.playPressSound();
+            playClickSound();
             data.setBoolean("high", true);
         }
         if (this.checkClick(x, y, 125, 35, 16, 16)) {
-            this.playPressSound();
+            playClickSound();
             data.setBoolean("priority", true);
         }
 

@@ -20,6 +20,8 @@ import org.lwjgl.input.Keyboard;
 
 import java.io.IOException;
 
+import static com.hbm.util.GuiUtil.playClickSound;
+
 public class GUIRBMKControlAuto extends GuiInfoContainer {
 	
 	private static ResourceLocation texture = new ResourceLocation(Tags.MODID + ":textures/gui/reactors/gui_rbmk_control_auto.png");
@@ -97,7 +99,7 @@ public class GUIRBMKControlAuto extends GuiInfoContainer {
 		
 		if(guiLeft + 28 <= x && guiLeft + 28 + 30 > x && guiTop + 70 < y && guiTop + 70 +10 >= y) {
 			
-			mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+			playClickSound();
 			NBTTagCompound data = new NBTTagCompound();
 			
 			double[] vals = new double[] {0D ,0D, 0D, 0D};
@@ -128,7 +130,7 @@ public class GUIRBMKControlAuto extends GuiInfoContainer {
 			//manual rod control
 			if(guiLeft + 61 <= x && guiLeft + 61 + 22 > x && guiTop + 48 + k * 11 < y && guiTop + 48 + 10 + k * 11 >= y) {
 	
-				mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+				playClickSound();
 				NBTTagCompound data = new NBTTagCompound();
 				data.setInteger("function", k);
                 PacketThreading.createSendToServerThreadedPacket(new NBTControlPacket(data, rod.getPos()));

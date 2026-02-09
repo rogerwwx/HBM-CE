@@ -16,6 +16,8 @@ import net.minecraft.util.ResourceLocation;
 
 import java.io.IOException;
 
+import static com.hbm.util.GuiUtil.playClickSound;
+
 public class GUICraneBoxer extends GuiInfoContainer {
     private static ResourceLocation texture = new ResourceLocation(Tags.MODID + ":textures/gui/storage/gui_crane_boxer.png");
     private TileEntityCraneBoxer boxer;
@@ -50,7 +52,7 @@ public class GUICraneBoxer extends GuiInfoContainer {
 
         if(guiLeft + 151 <= x && guiLeft + 151 + 18 > x && guiTop + 34 < y && guiTop + 34 + 18 >= y) {
 
-            mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+            playClickSound();
             NBTTagCompound data = new NBTTagCompound();
             data.setBoolean("toggle", true);
             PacketThreading.createSendToServerThreadedPacket(new NBTControlPacket(data, boxer.getPos()));

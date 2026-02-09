@@ -29,6 +29,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 
+import static com.hbm.util.GuiUtil.playClickSound;
+
 public class GUIMachineAmmoPress extends GuiInfoContainer {
     private static final ResourceLocation texture = new ResourceLocation(Tags.MODID + ":textures/gui/processing/gui_ammo_press.png");
     private final TileEntityMachineAmmoPress press;
@@ -143,13 +145,13 @@ public class GUIMachineAmmoPress extends GuiInfoContainer {
         this.search.mouseClicked(x, y, k);
 
         if (guiLeft + 7 <= x && guiLeft + 7 + 9 > x && guiTop + 17 < y && guiTop + 17 + 54 >= y) {
-            playPressSound();
+            playClickSound();
             if (this.index > 0) this.index--;
             return;
         }
 
         if (guiLeft + 88 <= x && guiLeft + 88 + 9 > x && guiTop + 17 < y && guiTop + 17 + 54 >= y) {
-            playPressSound();
+            playClickSound();
             if (this.index < this.size) this.index++;
             return;
         }
@@ -173,7 +175,7 @@ public class GUIMachineAmmoPress extends GuiInfoContainer {
                 data.setInteger("selection", this.selection);
                 PacketThreading.createSendToServerThreadedPacket(
                         new NBTControlPacket(data, press.getPos().getX(), press.getPos().getY(), press.getPos().getZ()));
-                playPressSound();
+                playClickSound();
                 return;
             }
         }

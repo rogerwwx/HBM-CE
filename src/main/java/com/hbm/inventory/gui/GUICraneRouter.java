@@ -21,6 +21,8 @@ import org.lwjgl.input.Keyboard;
 import java.io.IOException;
 import java.util.Arrays;
 
+import static com.hbm.util.GuiUtil.playClickSound;
+
 public class GUICraneRouter extends GuiInfoContainer {
     private static ResourceLocation texture = new ResourceLocation(Tags.MODID + ":textures/gui/storage/gui_crane_router.png");
     private TileEntityCraneRouter router;
@@ -43,7 +45,7 @@ public class GUICraneRouter extends GuiInfoContainer {
                 int buttonY = guiTop + 16 + k * 26;
 
                 if (buttonX <= mouseX && mouseX < buttonX + 18 && buttonY < mouseY && mouseY <= buttonY + 18) {
-                    mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+                    playClickSound();
                     NBTTagCompound data = new NBTTagCompound();
                     data.setInteger("toggle", j * 3 + k);
                     PacketThreading.createSendToServerThreadedPacket(new NBTControlPacket(data, router.getPos()));

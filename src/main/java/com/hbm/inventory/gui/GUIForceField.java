@@ -16,6 +16,8 @@ import org.lwjgl.opengl.GL11;
 
 import java.io.IOException;
 
+import static com.hbm.util.GuiUtil.playClickSound;
+
 public class GUIForceField extends GuiInfoContainer {
 
 	public static ResourceLocation texture = new ResourceLocation(Tags.MODID + ":textures/gui/gui_field.png");
@@ -51,7 +53,7 @@ public class GUIForceField extends GuiInfoContainer {
 		
     	if(guiLeft + 142 <= x && guiLeft + 142 + 18 > x && guiTop + 34 < y && guiTop + 34 + 18 >= y) {
 
-			mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+			playClickSound();
     		PacketDispatcher.wrapper.sendToServer(new AuxButtonPacket(diFurnace.getPos(), 0, 0));
     	}
     }

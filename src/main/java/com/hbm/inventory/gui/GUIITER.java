@@ -16,6 +16,8 @@ import org.lwjgl.opengl.GL11;
 
 import java.io.IOException;
 
+import static com.hbm.util.GuiUtil.playClickSound;
+
 public class GUIITER extends GuiInfoContainer {
 
 	public static ResourceLocation texture = new ResourceLocation(Tags.MODID + ":textures/gui/reactors/gui_fusion_multiblock.png");
@@ -50,7 +52,7 @@ public class GUIITER extends GuiInfoContainer {
     	if(guiLeft + 52 <= x && guiLeft + 52 + 18 > x && guiTop + 107 < y && guiTop + 107 + 18 >= y) {
 
     		//toggle the magnets
-			mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+			playClickSound();
     		PacketDispatcher.wrapper.sendToServer(new AuxButtonPacket(iter.getPos(), 0, 0));
     	}
     	super.renderHoveredToolTip(x, y);

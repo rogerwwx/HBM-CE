@@ -21,6 +21,8 @@ import org.lwjgl.opengl.GL11; import net.minecraft.client.renderer.GlStateManage
 
 import java.io.IOException;
 
+import static com.hbm.util.GuiUtil.playClickSound;
+
 public class GUIMachineLaunchTable extends GuiInfoContainer {
 
 	private static final ResourceLocation texture = new ResourceLocation(Tags.MODID + ":textures/gui/gui_launch_table.png");
@@ -65,19 +67,19 @@ public class GUIMachineLaunchTable extends GuiInfoContainer {
 		
     	if(guiLeft + 7 <= x && guiLeft + 7 + 18 > x && guiTop + 98 < y && guiTop + 98 + 18 >= y) {
     		
-			mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+			playClickSound();
     		PacketDispatcher.wrapper.sendToServer(new AuxButtonPacket(launcher.getPos(), PartSize.SIZE_10.ordinal(), 0));
     	}
 		
     	if(guiLeft + 25 <= x && guiLeft + 25 + 18 > x && guiTop + 98 < y && guiTop + 98 + 18 >= y) {
     		
-			mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+			playClickSound();
     		PacketDispatcher.wrapper.sendToServer(new AuxButtonPacket(launcher.getPos(), PartSize.SIZE_15.ordinal(), 0));
     	}
 		
     	if(guiLeft + 43 <= x && guiLeft + 43 + 18 > x && guiTop + 98 < y && guiTop + 98 + 18 >= y) {
     		
-			mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+			playClickSound();
     		PacketDispatcher.wrapper.sendToServer(new AuxButtonPacket(launcher.getPos(), PartSize.SIZE_20.ordinal(), 0));
     	}
     }

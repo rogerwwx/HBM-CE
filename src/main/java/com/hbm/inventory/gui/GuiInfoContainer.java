@@ -7,13 +7,11 @@ import com.hbm.lib.Library;
 import com.hbm.tileentity.IUpgradeInfoProvider;
 import com.hbm.util.I18nUtil;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.audio.PositionedSoundRecord;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.RenderHelper;
-import net.minecraft.init.SoundEvents;
 import net.minecraft.inventory.Container;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
@@ -359,9 +357,5 @@ public abstract class GuiInfoContainer extends GuiContainer {
         && guiLeft + left + sizeX > x
         && guiTop + top < y
         && guiTop + top + sizeY >= y;
-  }
-
-  protected void playPressSound() {
-    mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
   }
 }

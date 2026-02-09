@@ -17,6 +17,8 @@ import net.minecraft.util.ResourceLocation;
 
 import java.io.IOException;
 
+import static com.hbm.util.GuiUtil.playClickSound;
+
 public class GUIRBMKBoiler extends GuiInfoContainer {
 	
 	private static ResourceLocation texture = new ResourceLocation(Tags.MODID + ":textures/gui/reactors/gui_rbmk_boiler.png");
@@ -44,7 +46,7 @@ public class GUIRBMKBoiler extends GuiInfoContainer {
 
 		if(guiLeft + 33 <= x && guiLeft + 33 + 20 > x && guiTop + 21 < y && guiTop + 21 + 64 >= y) {
 
-			mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+			playClickSound();
 			NBTTagCompound data = new NBTTagCompound();
 			data.setBoolean("compression", true); //we only need to send on bit, so boolean it is
             PacketThreading.createSendToServerThreadedPacket(new NBTControlPacket(data, boiler.getPos()));

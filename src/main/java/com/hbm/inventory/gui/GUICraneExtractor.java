@@ -20,6 +20,8 @@ import net.minecraft.util.text.TextFormatting;
 import java.io.IOException;
 import java.util.Arrays;
 
+import static com.hbm.util.GuiUtil.playClickSound;
+
 public class GUICraneExtractor extends GuiInfoContainer {
 
     private static ResourceLocation texture = new ResourceLocation(Tags.MODID + ":textures/gui/storage/gui_crane_ejector.png");
@@ -64,7 +66,7 @@ public class GUICraneExtractor extends GuiInfoContainer {
 
         if(guiLeft + 128 <= x && guiLeft + 128 + 14 > x && guiTop + 30 < y && guiTop + 30 + 26 >= y) {
 
-            mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+            playClickSound();
             NBTTagCompound data = new NBTTagCompound();
             data.setBoolean("isWhitelist", true);
             PacketThreading.createSendToServerThreadedPacket(new NBTControlPacket(data, ejector.getPos()));

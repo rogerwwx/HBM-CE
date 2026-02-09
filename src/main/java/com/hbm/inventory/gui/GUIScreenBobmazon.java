@@ -25,6 +25,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static com.hbm.util.GuiUtil.playClickSound;
+
 public class GUIScreenBobmazon extends GuiScreen {
 	
     protected static final ResourceLocation texture = new ResourceLocation(Tags.MODID + ":textures/gui/gui_bobmazon.png");
@@ -185,7 +187,7 @@ public class GUIScreenBobmazon extends GuiScreen {
 		}
 		
 		public void executeAction() {
-			mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+			playClickSound();
 			if(type == 0) {
 				PacketDispatcher.wrapper.sendToServer(new ItemBobmazonPacket(player, offer));
 			} else if(type == 1) {

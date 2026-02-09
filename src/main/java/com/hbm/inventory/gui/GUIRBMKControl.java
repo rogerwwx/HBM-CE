@@ -16,6 +16,8 @@ import net.minecraft.util.ResourceLocation;
 
 import java.io.IOException;
 
+import static com.hbm.util.GuiUtil.playClickSound;
+
 public class GUIRBMKControl extends GuiInfoContainer {
 	
 	private static ResourceLocation texture = new ResourceLocation(Tags.MODID + ":textures/gui/reactors/gui_rbmk_control.png");
@@ -46,7 +48,7 @@ public class GUIRBMKControl extends GuiInfoContainer {
 			//manual rod control
 			if(guiLeft + 118 <= x && guiLeft + 118 + 30 > x && guiTop + 26 + k * 11 < y && guiTop + 26 + 10 + k * 11 >= y) {
 	
-				mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+				playClickSound();
 				NBTTagCompound data = new NBTTagCompound();
 				data.setDouble("level", 1.0D - (k * 0.25D));
                 PacketThreading.createSendToServerThreadedPacket(new NBTControlPacket(data, rod.getPos()));
@@ -55,7 +57,7 @@ public class GUIRBMKControl extends GuiInfoContainer {
 			//color groups
 			if(guiLeft + 28 <= x && guiLeft + 28 + 12 > x && guiTop + 26 + k * 11 < y && guiTop + 26 + 10 + k * 11 >= y) {
 	
-				mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+				playClickSound();
 				NBTTagCompound data = new NBTTagCompound();
 				data.setInteger("color", k);
                 PacketThreading.createSendToServerThreadedPacket(new NBTControlPacket(data, rod.getPos()));

@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static com.hbm.util.GuiUtil.playClickSound;
+
 public class GUIMachineSolderingStation extends GuiInfoContainer {
   private static final ResourceLocation texture =
       new ResourceLocation(Tags.MODID + ":textures/gui/processing/gui_soldering_station.png");
@@ -80,7 +82,7 @@ public class GUIMachineSolderingStation extends GuiInfoContainer {
     super.mouseClicked(x, y, i);
 
     if (guiLeft + 5 <= x && guiLeft + 5 + 10 > x && guiTop + 66 < y && guiTop + 66 + 10 >= y) {
-      playPressSound();
+      playClickSound();
       NBTTagCompound data = new NBTTagCompound();
       data.setBoolean("collision", true);
         PacketThreading.createSendToServerThreadedPacket(new NBTControlPacket(data, soldering_station.getPos()));

@@ -26,6 +26,8 @@ import java.io.IOException;
 import java.util.Random;
 import java.util.function.Consumer;
 
+import static com.hbm.util.GuiUtil.playClickSound;
+
 public class GUILaunchPadRusted extends GuiInfoContainer {
 
     private static ResourceLocation texture = new ResourceLocation(Tags.MODID + ":textures/gui/weapon/gui_launch_pad_rusted.png");
@@ -52,7 +54,7 @@ public class GUILaunchPadRusted extends GuiInfoContainer {
 
         if(guiLeft + 26 <= x && guiLeft + 26 + 16 > x && guiTop + 36 < y && guiTop + 36 + 16 >= y) {
 
-            mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+            playClickSound();
             NBTTagCompound data = new NBTTagCompound();
             data.setBoolean("release", true);
             PacketThreading.createSendToServerThreadedPacket(

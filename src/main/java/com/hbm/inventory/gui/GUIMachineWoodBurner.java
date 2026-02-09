@@ -21,6 +21,8 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
+import static com.hbm.util.GuiUtil.playClickSound;
+
 public class GUIMachineWoodBurner extends GuiInfoContainer {
 	
 	private TileEntityMachineWoodBurner burner;
@@ -67,14 +69,14 @@ public class GUIMachineWoodBurner extends GuiInfoContainer {
 		super.mouseClicked(mouseX, mouseY, mouseButton);
 
 		if(guiLeft + 53 <= mouseX && guiLeft + 53 + 16 > mouseX && guiTop + 17 < mouseY && guiTop + 17 + 15 >= mouseY) {
-			mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+			playClickSound();
 			NBTTagCompound data = new NBTTagCompound();
 			data.setBoolean("toggle", false);
             PacketThreading.createSendToServerThreadedPacket(new NBTControlPacket(data, burner.getPos()));
         }
 
 		if(guiLeft + 46 <= mouseX && guiLeft + 46 + 30 > mouseX && guiTop + 37 < mouseY && guiTop + 37 + 14 >= mouseY) {
-			mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+			playClickSound();
 			NBTTagCompound data = new NBTTagCompound();
 			data.setBoolean("switch", false);
             PacketThreading.createSendToServerThreadedPacket(new NBTControlPacket(data, burner.getPos()));

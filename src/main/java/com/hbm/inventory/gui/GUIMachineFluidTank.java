@@ -15,6 +15,8 @@ import net.minecraft.util.ResourceLocation;
 
 import java.io.IOException;
 
+import static com.hbm.util.GuiUtil.playClickSound;
+
 public class GUIMachineFluidTank extends GuiInfoContainer {
 
 	private static ResourceLocation texture = new ResourceLocation(Tags.MODID + ":textures/gui/storage/gui_tank.png");
@@ -39,7 +41,7 @@ public class GUIMachineFluidTank extends GuiInfoContainer {
 	protected void mouseClicked(int x, int y, int mouseButton) throws IOException {
 		super.mouseClicked(x, y, mouseButton);
 		if(guiLeft + 151 <= x && guiLeft + 151 + 18 > x && guiTop + 35 < y && guiTop + 35 + 18 >= y) {
-			mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+			playClickSound();
     		PacketDispatcher.wrapper.sendToServer(new AuxButtonPacket(tank.getPos(), 0, 0));
     	}
 	}

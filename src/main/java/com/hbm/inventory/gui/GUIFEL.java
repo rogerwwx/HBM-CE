@@ -21,6 +21,8 @@ import org.lwjgl.opengl.GL11;
 import java.awt.*;
 import java.io.IOException;
 
+import static com.hbm.util.GuiUtil.playClickSound;
+
 public class GUIFEL extends GuiInfoContainer {
 
 	public static ResourceLocation texture = new ResourceLocation(Tags.MODID + ":textures/gui/machine/gui_fel.png");
@@ -46,7 +48,7 @@ public class GUIFEL extends GuiInfoContainer {
 		super.mouseClicked(mouseX, mouseY, i);
 
 		if(guiLeft + 142 <= mouseX && guiLeft + 142 + 29 > mouseX && guiTop + 41 < mouseY && guiTop + 41 + 17 >= mouseY) {
-			mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+			playClickSound();
 			PacketDispatcher.wrapper.sendToServer(new AuxButtonPacket(fel.getPos(), 0, 2));
 		}
 	}

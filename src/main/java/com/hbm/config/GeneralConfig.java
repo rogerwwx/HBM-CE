@@ -104,6 +104,8 @@ public class GeneralConfig {
 	public static boolean enableLBSMIGen = true;
     public static boolean enable528BosniaSimulator = false;
 
+	public static boolean enableBlockReplcement = false;
+
     public static void loadFromConfig(Configuration config){
 		enablePacketThreading = config.get(CommonConfig.CATEGORY_GENERAL, "0.01_enablePacketThreading", true, "Enables creation of a separate thread to increase packet processing speed on servers. Disable this if you are having anomalous crashes related to memory connections.").getBoolean(true);
 		packetThreadingCoreCount = config.get(CommonConfig.CATEGORY_GENERAL, "0.02_packetThreadingCoreCount", 1, "Number of core threads to create for packets (recommended 1).").getInt(1);
@@ -111,6 +113,10 @@ public class GeneralConfig {
 		packetThreadingErrorBypass = config.get(CommonConfig.CATEGORY_GENERAL, "0.04_packetThreadingErrorBypass", false, "Forces the bypassing of most packet threading errors, only enable this if directed to or if you know what you're doing.").getBoolean(false);
 		enableServerRecipeSync = config.get(CommonConfig.CATEGORY_GENERAL, "0.05_enableServerRecipeSync", true, "Syncs any recipes customised via JSON to clients connecting to the server.").getBoolean(true);
         enableThreadedNodeSpaceUpdate = config.get(CommonConfig.CATEGORY_GENERAL, "0.07_enableThreadedNodeSpaceUpdate", true, "Enables threaded updating of the nodespace. This can improve performance, but may cause issues with certain mods.").getBoolean(true);
+		enableBlockReplcement = config.get(CommonConfig.CATEGORY_GENERAL, "0.99_CE_01_enableBlockAutoReplacing", false, """
+                Enables automatic block replacement for missing blocks to avoid giant holes in the ground when they got removed. This may severely impact chunkloading performance,
+                only enable when you are sure that we removed some blocks AND we added that to this replacement system AND you are absolutely sure about what you are doing.
+                Currently only works for hbm:waste_*.""").getBoolean(false);
 		enableDebugMode = config.get(CommonConfig.CATEGORY_GENERAL, "1.00_enableDebugMode", false, "Enable debugging mode").getBoolean(false);
 		enableDebugWorldGen = config.get(CommonConfig.CATEGORY_GENERAL, "1.00_enableDebugWorldGen", false, "Enable debugging mode for phased structure generation. Separate from the previous option!").getBoolean(false);
 		enableSkyboxes = config.get(CommonConfig.CATEGORY_GENERAL, "1.00_enableSkybox", true, "If enabled, will try to use NTM's custom skyboxes.").getBoolean(true);

@@ -18,6 +18,8 @@ import org.lwjgl.opengl.GL11; import net.minecraft.client.renderer.GlStateManage
 
 import java.io.IOException;
 
+import static com.hbm.util.GuiUtil.playClickSound;
+
 public class GUIMachineMissileAssembly extends GuiInfoContainer {
 
 	private static ResourceLocation texture = new ResourceLocation(Tags.MODID + ":textures/gui/gui_missile_assembly.png");
@@ -42,7 +44,7 @@ public class GUIMachineMissileAssembly extends GuiInfoContainer {
 		
     	if(guiLeft + 115 <= x && guiLeft + 115 + 18 > x && guiTop + 35 < y && guiTop + 35 + 18 >= y) {
     		
-			mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+			playClickSound();
     		PacketDispatcher.wrapper.sendToServer(new AuxButtonPacket(assembler.getPos(), 0, 0));
     	}
     }

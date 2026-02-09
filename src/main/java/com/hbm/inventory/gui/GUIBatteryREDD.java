@@ -21,6 +21,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
+import static com.hbm.util.GuiUtil.playClickSound;
+
 public class GUIBatteryREDD extends GuiInfoContainer {
 
     private static final ResourceLocation texture = new ResourceLocation(Tags.MODID + ":textures/gui/storage/gui_battery_redd.png");
@@ -60,15 +62,15 @@ public class GUIBatteryREDD extends GuiInfoContainer {
         NBTTagCompound data = new NBTTagCompound();
 
         if (this.checkClick(x, y, 133, 16, 18, 18)) {
-            this.playPressSound();
+            playClickSound();
             data.setBoolean("low", true);
         }
         if (this.checkClick(x, y, 133, 52, 18, 18)) {
-            this.playPressSound();
+            playClickSound();
             data.setBoolean("high", true);
         }
         if (this.checkClick(x, y, 152, 35, 16, 16)) {
-            this.playPressSound();
+            playClickSound();
             data.setBoolean("priority", true);
         }
 

@@ -20,6 +20,8 @@ import net.minecraft.client.renderer.GlStateManager;
 
 import java.io.IOException;
 
+import static com.hbm.util.GuiUtil.playClickSound;
+
 public class GUICoreEmitter extends GuiInfoContainer {
 
 	private static ResourceLocation texture = new ResourceLocation(Tags.MODID + ":textures/gui/dfc/gui_emitter.png");
@@ -70,14 +72,14 @@ public class GUICoreEmitter extends GuiInfoContainer {
     		if(saveButtonCoolDown == 0 && NumberUtils.isCreatable(field.getText())) {
     			int j = MathHelper.clamp(Integer.parseInt(field.getText()), 1, 100);
     			field.setText(j + "");
-				mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+				playClickSound();
 	    		PacketDispatcher.wrapper.sendToServer(new AuxButtonPacket(emitter.getPos(), j, 0));
 	    		saveButtonCoolDown = 20;
     		}
     	}
 
     	if(guiLeft + 151 <= x && guiLeft + 151 + 18 > x && guiTop + 56 < y && guiTop + 56 + 18 >= y) {
-			mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+			playClickSound();
     		PacketDispatcher.wrapper.sendToServer(new AuxButtonPacket(emitter.getPos(), 0, 1));
     	}
 	}

@@ -24,6 +24,8 @@ import org.lwjgl.opengl.GL11;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hbm.util.GuiUtil.playClickSound;
+
 public class GUIScreenGuide extends GuiScreen {
 
     private static final ResourceLocation texture = new ResourceLocation(Tags.MODID + ":textures/gui/book/book.png");
@@ -231,7 +233,7 @@ public class GUIScreenGuide extends GuiScreen {
 
         if (page < 0) {
             page = 0;
-            mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+            playClickSound();
             return;
         }
 
@@ -240,12 +242,12 @@ public class GUIScreenGuide extends GuiScreen {
 
         if (overLeft && page > 0) {
             page--;
-            mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+            playClickSound();
         }
 
         if (overRight && page < maxPage) {
             page++;
-            mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+            playClickSound();
         }
     }
 

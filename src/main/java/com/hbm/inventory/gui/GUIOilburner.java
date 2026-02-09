@@ -18,6 +18,8 @@ import net.minecraft.util.ResourceLocation;
 import java.io.IOException;
 import java.util.Locale;
 
+import static com.hbm.util.GuiUtil.playClickSound;
+
 public class GUIOilburner extends GuiInfoContainer {
 
     private static ResourceLocation texture = new ResourceLocation(Tags.MODID + ":textures/gui/machine/gui_oilburner.png");
@@ -50,7 +52,7 @@ public class GUIOilburner extends GuiInfoContainer {
         super.mouseClicked(mouseX, mouseY, mouseButton);
 
         if (guiLeft + 80 <= mouseX && guiLeft + 80 + 16 > mouseX && guiTop + 54 < mouseY && guiTop + 54 + 14 >= mouseY) {
-            mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+            playClickSound();
             NBTTagCompound data = new NBTTagCompound();
             data.setBoolean("toggle", true);
             PacketThreading.createSendToServerThreadedPacket(new NBTControlPacket(data, heater.getPos()));

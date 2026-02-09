@@ -1,30 +1,30 @@
 package com.hbm.inventory.gui;
 
 import com.hbm.Tags;
-import com.hbm.inventory.recipes.SILEXRecipes;
 import com.hbm.inventory.container.ContainerSILEX;
 import com.hbm.inventory.fluid.Fluids;
+import com.hbm.inventory.recipes.SILEXRecipes;
 import com.hbm.items.ModItems;
 import com.hbm.items.machine.ItemFELCrystal.EnumWavelengths;
-import com.hbm.packet.toserver.AuxButtonPacket;
 import com.hbm.packet.PacketDispatcher;
+import com.hbm.packet.toserver.AuxButtonPacket;
 import com.hbm.tileentity.machine.TileEntitySILEX;
 import com.hbm.util.I18nUtil;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.audio.PositionedSoundRecord;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.player.InventoryPlayer;
-import net.minecraft.init.SoundEvents;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
 import org.lwjgl.opengl.GL11;
 
 import java.awt.*;
 import java.io.IOException;
+
+import static com.hbm.util.GuiUtil.playClickSound;
 
 public class GUISILEX extends GuiInfoContainer {
 
@@ -59,7 +59,7 @@ public class GUISILEX extends GuiInfoContainer {
 
         if (guiLeft + 10 <= x && guiLeft + 10 + 12 > x && guiTop + 92 < y && guiTop + 92 + 12 >= y) {
 
-            mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+            playClickSound();
             PacketDispatcher.wrapper.sendToServer(new AuxButtonPacket(silex.getPos(), 0, 0));
         }
     }

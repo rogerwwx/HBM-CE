@@ -18,6 +18,8 @@ import net.minecraft.util.ResourceLocation;
 
 import java.io.IOException;
 
+import static com.hbm.util.GuiUtil.playClickSound;
+
 public class GUIMachineGasFlare extends GuiInfoContainer {
 
 	private static ResourceLocation texture = new ResourceLocation(Tags.MODID + ":textures/gui/generators/gui_flare_stack.png");
@@ -48,13 +50,13 @@ public class GUIMachineGasFlare extends GuiInfoContainer {
 		super.mouseClicked(x, y, mouseButton);
 
 		if(guiLeft + 89 <= x && guiLeft + 89 + 16 > x && guiTop + 16 < y && guiTop + 16 + 10 >= y) {
-			mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+			playClickSound();
 			NBTTagCompound data = new NBTTagCompound();
 			data.setBoolean("valve", true);
             PacketThreading.createSendToServerThreadedPacket(new NBTControlPacket(data, flare.getPos()));
 
         } else if(guiLeft + 89 <= x && guiLeft + 89 + 16 > x && guiTop + 50 < y && guiTop + 50 + 14 >= y) {
-			mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+			playClickSound();
 			NBTTagCompound data = new NBTTagCompound();
 			data.setBoolean("dial", true);
             PacketThreading.createSendToServerThreadedPacket(new NBTControlPacket(data, flare.getPos()));

@@ -22,6 +22,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static com.hbm.util.GuiUtil.playClickSound;
+
 public class GUIMachineBattery extends GuiInfoContainer {
 
 	private static ResourceLocation texture = new ResourceLocation(Tags.MODID + ":textures/gui/storage/gui_battery.png");
@@ -79,19 +81,19 @@ public class GUIMachineBattery extends GuiInfoContainer {
 		
     	if(guiLeft + 6 <= x && guiLeft + 6 + 18 > x && guiTop + 33 < y && guiTop + 33 + 18 >= y) {
     		
-			mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+			playClickSound();
     		PacketDispatcher.wrapper.sendToServer(new AuxButtonPacket(battery.getPos(), 0, 0));
     	}
 		
     	if(guiLeft + 150 <= x && guiLeft + 150 + 18 > x && guiTop + 33 < y && guiTop + 33 + 18 >= y) {
     		
-			mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+			playClickSound();
     		PacketDispatcher.wrapper.sendToServer(new AuxButtonPacket(battery.getPos(), 0, 1));
     	}
 
     	if(guiLeft + 151 <= x && guiLeft + 151 + 16 > x && guiTop + 16 < y && guiTop + 17 + 16 >= y) {
     		
-			mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+			playClickSound();
     		PacketDispatcher.wrapper.sendToServer(new AuxButtonPacket(battery.getPos(), 0, 2));
     	}
 	}
