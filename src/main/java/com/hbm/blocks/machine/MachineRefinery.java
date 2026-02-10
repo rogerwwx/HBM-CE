@@ -106,7 +106,7 @@ public class MachineRefinery extends BlockDummyable implements IPersistentInfoPr
     }
 
 	@Override
-	public void addInformation(ItemStack stack, NBTTagCompound persistentTag, EntityPlayer player, List list, boolean ext) {
+	public void addInformation(ItemStack stack, NBTTagCompound persistentTag, EntityPlayer player, List<String> list, boolean ext) {
 
 		for(int i = 0; i < 5; i++) {
 			FluidTankNTM tank = new FluidTankNTM(Fluids.NONE, 0);

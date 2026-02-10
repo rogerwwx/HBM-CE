@@ -91,7 +91,7 @@ public class MachineCatalyticReformer extends BlockDummyable implements IPersist
     }
 
     @Override
-    public void addInformation(ItemStack stack, NBTTagCompound persistentTag, EntityPlayer player, List list, boolean ext) {
+    public void addInformation(ItemStack stack, NBTTagCompound persistentTag, EntityPlayer player, List<String> list, boolean ext) {
 
         for(int i = 0; i < 4; i++) {
             FluidTankNTM tank = new FluidTankNTM(Fluids.NONE, 0);
