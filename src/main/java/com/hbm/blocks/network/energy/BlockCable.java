@@ -233,7 +233,7 @@ public class BlockCable extends BlockContainer implements IDynamicModels {
 			itemModel = BlockCableBakedModel.empty(missing);
 		} else {
 			blockModel = BlockCableBakedModel.forBlock(wavefront, sprite);
-			itemModel = BlockCableBakedModel.forItem(wavefront, sprite, 1F, 0.0F, 0.0F, 0.0F, (float)Math.PI);
+			itemModel = BlockCableBakedModel.forItem(wavefront, sprite, 1F, 0.5F, 0.0F, 0.5F, (float)Math.PI);
 		}
 
 		ModelResourceLocation mrlBlock = new ModelResourceLocation(getRegistryName(), "normal");

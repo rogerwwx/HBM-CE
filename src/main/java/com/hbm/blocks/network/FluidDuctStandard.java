@@ -5,7 +5,6 @@ import com.hbm.blocks.ICustomBlockItem;
 import com.hbm.blocks.ILookOverlay;
 import com.hbm.blocks.ModBlocks;
 import com.hbm.blocks.ModSoundTypes;
-import com.hbm.render.loader.HFRWavefrontObject;
 import com.hbm.interfaces.IBlockSpecialPlacementAABB;
 import com.hbm.inventory.fluid.FluidType;
 import com.hbm.inventory.fluid.Fluids;
@@ -15,6 +14,7 @@ import com.hbm.items.block.ItemBlockSpecialAABB;
 import com.hbm.lib.ForgeDirection;
 import com.hbm.lib.Library;
 import com.hbm.main.MainRegistry;
+import com.hbm.render.loader.HFRWavefrontObject;
 import com.hbm.render.model.DuctNeoBakedModel;
 import com.hbm.tileentity.network.TileEntityPipeBaseNT;
 import com.hbm.util.I18nUtil;
@@ -49,9 +49,6 @@ import net.minecraftforge.client.event.ColorHandlerEvent;
 import net.minecraftforge.client.event.ModelBakeEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.client.model.ModelLoader;
-import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
-import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.fluids.capability.IFluidTankProperties;
 import net.minecraftforge.fml.common.registry.ForgeRegistries;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
@@ -60,7 +57,6 @@ import org.jetbrains.annotations.NotNull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 public class FluidDuctStandard extends FluidDuctBase implements IDynamicModels, ILookOverlay, ICustomBlockItem, IBlockSpecialPlacementAABB {
 
@@ -402,7 +398,7 @@ public class FluidDuctStandard extends FluidDuctBase implements IDynamicModels, 
 				itemModel = DuctNeoBakedModel.empty(missing);
 			} else {
 				blockModel = DuctNeoBakedModel.forBlock(wavefront, base, overlay);
-				itemModel = DuctNeoBakedModel.forItem(wavefront, base, overlay, 1.0F, 0.0F, 0.0F, 0.0F, (float)Math.PI);
+				itemModel = DuctNeoBakedModel.forItem(wavefront, base, overlay, 1.0F, 0.5F, 0.0F, 0.5F, (float)Math.PI);
 			}
 
 			ModelResourceLocation mrlBlock = new ModelResourceLocation(getRegistryName(), "meta=" + meta);
