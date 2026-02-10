@@ -1,5 +1,6 @@
 package com.hbm.mixin;
 
+import com.hbm.api.entity.IHealthDirectAccess;
 import com.hbm.items.ModItems;
 import com.hbm.items.gear.ArmorFSB;
 import net.minecraft.entity.EntityLivingBase;
@@ -19,13 +20,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(EntityLivingBase.class)
-public abstract class MixinEntityLivingBase {
+public abstract class MixinEntityLivingBase implements IHealthDirectAccess {
 
     // 暴露私有静态 HEALTH
-    @Shadow
-    @Final
-    static DataParameter<Float> HEALTH;
-
+    @Shadow @Final private static DataParameter<Float> HEALTH;
 
     @Shadow
     public abstract ItemStack getItemStackFromSlot(EntityEquipmentSlot slot);
@@ -110,6 +108,8 @@ public abstract class MixinEntityLivingBase {
 
         // 写入 dataManager（会触发 notifyDataManagerChange 与同步）
         EntityDataManager dataManager = ((MixinEntityAccessor)(Object)self).getDataManager();
-        dataManager.set((DataParameter)HEALTH, Float.valueOf(health));
+        if (dataManager != null) {
+            dataManager.set((DataParameter) HEALTH, Float.valueOf(health));
+        }
     }
 }

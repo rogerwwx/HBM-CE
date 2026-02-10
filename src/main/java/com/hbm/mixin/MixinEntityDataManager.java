@@ -3,6 +3,7 @@ package com.hbm.mixin;
 import net.minecraft.entity.Entity;
 import net.minecraft.network.datasync.DataParameter;
 import net.minecraft.network.datasync.EntityDataManager;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -13,7 +14,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(EntityDataManager.class)
 public abstract class MixinEntityDataManager {
 
-    @Shadow private Entity entity;
+    @Shadow @Final
+    private Entity entity;
 
     @Inject(method = "get", at = @At("HEAD"), cancellable = true)
     private <T> void onGet(DataParameter<T> key, CallbackInfoReturnable<T> cir) {

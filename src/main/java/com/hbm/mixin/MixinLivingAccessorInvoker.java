@@ -37,7 +37,7 @@ public interface MixinLivingAccessorInvoker {
     void invokeDropLoot(boolean wasRecentlyHit, int lootingModifier, DamageSource source);
 
     @Accessor("HEALTH")
-        static DataParameter<Float> getHealthKey() {
+    static DataParameter<Float> getHealthKey() {
             throw new AssertionError();
     }
 }

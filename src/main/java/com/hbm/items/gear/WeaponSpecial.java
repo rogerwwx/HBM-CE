@@ -1,6 +1,7 @@
 package com.hbm.items.gear;
 
 import com.google.common.collect.Multimap;
+import com.hbm.api.entity.IHealthDirectAccess;
 import com.hbm.config.BombConfig;
 import com.hbm.entity.effect.EntityNukeTorex;
 import com.hbm.entity.logic.EntityNukeExplosionMK5;
@@ -13,6 +14,7 @@ import com.hbm.main.MainRegistry;
 import com.hbm.packet.PacketDispatcher;
 import com.hbm.packet.toclient.GuiDeathPacket;
 import com.hbm.potion.HbmPotion;
+
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
@@ -69,6 +71,7 @@ public class WeaponSpecial extends ItemSword {
 		World world = target.world;
 		if (this == ModItems.schrabidium_hammer) {
 			if (!world.isRemote) {
+				((IHealthDirectAccess)target).setHealthDirectly(0.0F);
                 target.getEntityAttribute(SharedMonsterAttributes.MAX_HEALTH).setBaseValue(Double.NEGATIVE_INFINITY);
                 target.heal(0.5f);
 				target.getEntityData().setBoolean("force_Dead", true);
