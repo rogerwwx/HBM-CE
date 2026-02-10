@@ -3,12 +3,13 @@ package com.hbm.mixin;
 import com.hbm.api.entity.IHealthDirectAccess;
 import com.hbm.items.ModItems;
 import com.hbm.items.gear.ArmorFSB;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.datasync.DataParameter;
-import net.minecraft.network.datasync.EntityDataManager;
+import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -20,9 +21,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(EntityLivingBase.class)
-public abstract class MixinEntityLivingBase implements IHealthDirectAccess {
+public abstract class MixinEntityLivingBase extends Entity implements IHealthDirectAccess {
 
-    // 暴露私有静态 HEALTH
+    private MixinEntityLivingBase(World worldIn) {
+        super(worldIn);
+    }
+
     @Shadow @Final private static DataParameter<Float> HEALTH;
 
     @Shadow
@@ -106,10 +110,8 @@ public abstract class MixinEntityLivingBase implements IHealthDirectAccess {
         }
         //EntityDataManager edm = ((MixinEntityAccessor) self).getDataManager(); if (edm == null) return;
 
-        // 写入 dataManager（会触发 notifyDataManagerChange 与同步）
-        EntityDataManager dataManager = ((MixinEntityAccessor)(Object)self).getDataManager();
         if (dataManager != null) {
-            dataManager.set((DataParameter) HEALTH, Float.valueOf(health));
+            dataManager.set(HEALTH, health);
         }
     }
 }
