@@ -111,7 +111,7 @@ public class MachineOilWell extends BlockDummyable implements IPersistentInfoPro
     }
 
 	@Override
-	public void addInformation(ItemStack stack, NBTTagCompound persistentTag, EntityPlayer player, List list, boolean ext) {
+	public void addInformation(ItemStack stack, NBTTagCompound persistentTag, EntityPlayer player, List<String> list, boolean ext) {
 		list.add(TextFormatting.GREEN + BobMathUtil.getShortNumber(persistentTag.getLong("power")) + "HE");
 		for(int i = 0; i < 2; i++) {
 			FluidTankNTM tank = new FluidTankNTM(Fluids.NONE, 0);

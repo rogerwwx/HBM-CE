@@ -93,7 +93,7 @@ public class MachineBatteryREDD extends BlockDummyable implements IPersistentInf
     }
 
     @Override
-    public void addInformation(ItemStack stack, NBTTagCompound persistentTag, EntityPlayer player, List list, boolean ext) {
+    public void addInformation(ItemStack stack, NBTTagCompound persistentTag, EntityPlayer player, List<String> list, boolean ext) {
         if(persistentTag != null && persistentTag.hasKey("power"))
             list.add(TextFormatting.YELLOW + "" + BobMathUtil.format(new BigInteger(persistentTag.getByteArray("power"))) + " HE");
     }

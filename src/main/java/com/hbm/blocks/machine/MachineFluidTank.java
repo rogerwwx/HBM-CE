@@ -126,7 +126,7 @@ public class MachineFluidTank extends BlockDummyable implements IPersistentInfoP
 	}
 
 	@Override
-	public void addInformation(ItemStack stack, NBTTagCompound persistentTag, EntityPlayer player, List list, boolean ext) {
+	public void addInformation(ItemStack stack, NBTTagCompound persistentTag, EntityPlayer player, List<String> list, boolean ext) {
 		FluidTankNTM tank = new FluidTankNTM(Fluids.NONE, 0);
 		tank.readFromNBT(persistentTag, "tank");
 		list.add(TextFormatting.YELLOW + "" + tank.getFill() + "/" + tank.getMaxFill() + "mB " + tank.getTankType().getLocalizedName());
