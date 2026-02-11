@@ -72,8 +72,6 @@ public class WeaponSpecial extends ItemSword {
 		if (this == ModItems.schrabidium_hammer) {
 			if (!world.isRemote) {
 				((IHealthDirectAccess)target).setHealthDirectly(0.0F);
-                target.getEntityAttribute(SharedMonsterAttributes.MAX_HEALTH).setBaseValue(Double.NEGATIVE_INFINITY);
-                target.heal(0.5f);
 				target.getEntityData().setBoolean("force_Dead", true);
 				target.onDeath(DamageSource.GENERIC);
 				if (target instanceof EntityPlayerMP player) {

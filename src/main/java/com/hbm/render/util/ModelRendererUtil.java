@@ -292,101 +292,98 @@ public class ModelRendererUtil {
 	}
 
 	public static VertexData compress(Triangle[] tris) {
-		// 容差与量化参数（可根据需要微调）
-		final double posEps = 1e-6;      // 精确比较位置的 epsilon
-		final double uvEps = 1e-6;       // 精确比较 UV 的 epsilon
-		final double bucketScale = 1e-4; // 量化尺度：用于把空间划分为桶，避免过多桶冲突
+		final int vertexCount = tris.length * 3;
+		final double posEps = 1e-6;
+		final double uvEps = 1e-6;
+		final double bucketScale = 1e-4;
 
-		// 输出容器
-		List<Vec3d> uniquePositions = new ArrayList<>(tris.length * 3);
-		int[] indices = new int[tris.length * 3];
+		// 1. 预分配结果容器
+		List<Vec3d> uniquePositions = new ArrayList<>(vertexCount);
+		int[] indices = new int[vertexCount];
 		float[] texCoords = new float[tris.length * 6];
 
-		// 局部 firstUVMap：每次 compress 调用独立，避免跨次索引语义错位
-		java.util.Map<Integer, float[]> firstUVMap = new java.util.HashMap<>(tris.length * 2);
+		// 2. 用于比较 UV 的临时数组 (按唯一顶点索引存储)
+		float[] representativeUVs = new float[vertexCount * 2];
 
-		// 桶化映射：long key -> list of vertex indices (在 uniquePositions 中的索引)
-		java.util.Map<Long, List<Integer>> buckets = new java.util.HashMap<>(tris.length * 2);
-
-		// 量化函数（稳定）
-		java.util.function.Function<Double, Long> quant = (Double v) -> Math.round(v / bucketScale);
-
-		// 辅助比较函数：位置与 UV 是否在容差内
-		java.util.function.BiPredicate<Vec3d, Vec3d> posEqual = (a, b) -> BobMathUtil.epsilonEquals(a, b, posEps);
-		java.util.function.BiPredicate<Float, Float> uvEqual = (a, b) -> Math.abs(a - b) <= uvEps;
+		// 3. 高性能原始数组哈希表 (链式前向星思路)
+		// 使用 2 的幂作为大小，通过位运算代替取模，速度极快
+		final int HASH_SIZE = 4096;
+		final int HASH_MASK = HASH_SIZE - 1;
+		int[] head = new int[HASH_SIZE];        // 存储每个桶的第一个顶点索引
+		int[] next = new int[vertexCount];      // 存储指向下一个冲突顶点的指针
+		java.util.Arrays.fill(head, -1);        // 初始化为 -1 表示空桶
 
 		for (int i = 0; i < tris.length; i++) {
 			Triangle t = tris[i];
 
-			// 保持原三角顺序：p1, p2, p3
-			Vec3d[] triPos = new Vec3d[]{t.p1.pos, t.p2.pos, t.p3.pos};
-			float[] triTex = new float[]{t.p1.texX, t.p1.texY, t.p2.texX, t.p2.texY, t.p3.texX, t.p3.texY};
+			// 渲染核心：保持 UV 铺平，确保切块颜色和贴图绝对正确
+			int baseUV = i * 6;
+			texCoords[baseUV + 0] = t.p1.texX;
+			texCoords[baseUV + 1] = t.p1.texY;
+			texCoords[baseUV + 2] = t.p2.texX;
+			texCoords[baseUV + 3] = t.p2.texY;
+			texCoords[baseUV + 4] = t.p3.texX;
+			texCoords[baseUV + 5] = t.p3.texY;
 
+			// 处理三个顶点
 			for (int v = 0; v < 3; v++) {
-				Vec3d pos = triPos[v];
-				float u = triTex[v * 2];
-				float vv = triTex[v * 2 + 1];
+				Triangle.TexVertex tv = (v == 0) ? t.p1 : (v == 1) ? t.p2 : t.p3;
+				Vec3d pos = tv.pos;
+				float u = tv.texX;
+				float vv = tv.texY;
 
-				// 量化坐标生成桶 key（稳定组合）
-				long qx = quant.apply(pos.x);
-				long qy = quant.apply(pos.y);
-				long qz = quant.apply(pos.z);
+				// --- 快速哈希计算 (与你的逻辑保持 1:1 兼容) ---
+				long qx = Math.round(pos.x / bucketScale);
+				long qy = Math.round(pos.y / bucketScale);
+				long qz = Math.round(pos.z / bucketScale);
 				long key = (qx & 0x1FFFFFL);
 				key = (key << 21) ^ (qy & 0x1FFFFFL);
 				key = (key << 21) ^ (qz & 0x1FFFFFL);
 
-				List<Integer> bucket = buckets.get(key);
+				// 将 64 位 key 转换为桶索引 (通过二次哈希减少碰撞)
+				int h = (int)(key ^ (key >>> 32));
+				int bucketIdx = h & HASH_MASK;
+
 				int foundIdx = -1;
-				if (bucket != null) {
-					// 在桶内做精确比较：位置 + UV 都要匹配
-					for (int idx : bucket) {
-						Vec3d existingPos = uniquePositions.get(idx);
-						if (!posEqual.test(pos, existingPos)) continue;
-						float[] repUV = firstUVMap.get(idx);
-						if (repUV != null) {
-							if (!uvEqual.test(repUV[0], u) || !uvEqual.test(repUV[1], vv)) {
-								continue; // UV 不匹配，不能合并
-							}
+				// 遍历链表桶
+				for (int curr = head[bucketIdx]; curr != -1; curr = next[curr]) {
+					Vec3d existingPos = uniquePositions.get(curr);
+					// 位置检查
+					if (BobMathUtil.epsilonEquals(pos, existingPos, posEps)) {
+						// UV 检查
+						float repU = representativeUVs[curr * 2];
+						float repV = representativeUVs[curr * 2 + 1];
+						if (Math.abs(repU - u) <= uvEps && Math.abs(repV - vv) <= uvEps) {
+							foundIdx = curr;
+							break;
 						}
-						foundIdx = idx;
-						break;
 					}
 				}
 
 				if (foundIdx == -1) {
-					// 新顶点：记录位置并在桶中注册
+					// 创建新唯一顶点
 					foundIdx = uniquePositions.size();
 					uniquePositions.add(pos);
-					if (bucket == null) {
-						bucket = new ArrayList<>(2);
-						buckets.put(key, bucket);
-					}
-					bucket.add(foundIdx);
-					// 记录代表 UV（用于后续桶内比较，避免跨 seam 合并）
-					firstUVMap.put(foundIdx, new float[]{u, vv});
+					representativeUVs[foundIdx * 2] = u;
+					representativeUVs[foundIdx * 2 + 1] = vv;
+
+					// 将新索引插入链表头部
+					next[foundIdx] = head[bucketIdx];
+					head[bucketIdx] = foundIdx;
 				}
 
 				indices[i * 3 + v] = foundIdx;
 			}
-
-			// 保持原有 texCoords 布局（每三角 6 个 float）
-			texCoords[i * 6 + 0] = triTex[0];
-			texCoords[i * 6 + 1] = triTex[1];
-			texCoords[i * 6 + 2] = triTex[2];
-			texCoords[i * 6 + 3] = triTex[3];
-			texCoords[i * 6 + 4] = triTex[4];
-			texCoords[i * 6 + 5] = triTex[5];
 		}
 
+		// 4. 组装返回结果
 		VertexData data = new VertexData();
 		data.positions = uniquePositions.toArray(new Vec3d[0]);
 		data.positionIndices = indices;
 		data.texCoords = texCoords;
-		// 确保缓存初始状态为空
 		data.invalidateCache();
 		return data;
 	}
-
 
 	public static VertexData[] cutAndCapModelBox(ModelBox b, float[] plane, @Nullable Matrix4f transform){
 		return cutAndCapConvex(triangulate(b, transform), plane);
