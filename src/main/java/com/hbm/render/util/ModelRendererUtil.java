@@ -381,8 +381,9 @@ public class ModelRendererUtil {
 		data.positions = uniquePositions.toArray(new Vec3d[0]);
 		data.positionIndices = indices;
 		data.texCoords = texCoords;
-		data.invalidateCache();
+		data.buildVertexArrayIfNeeded();
 		return data;
+
 	}
 
 	public static VertexData[] cutAndCapModelBox(ModelBox b, float[] plane, @Nullable Matrix4f transform){
@@ -633,20 +634,22 @@ public class ModelRendererUtil {
 		return particles.toArray(new ParticleSlicedMob[particles.size()]);
 	}
 
+	private static final float[] EMPTY_FLOAT_ARRAY = new float[0];
+	private static final int[] EMPTY_INT_ARRAY = new int[0];
+
 	private static int computeChunkHash(List<CutModelData> l, boolean cap) {
 		int h = 1;
 		for (CutModelData d : l) {
 			VertexData vd = cap ? d.cap : d.data;
 			if (vd == null) continue;
-			float[] va = vd.vertexArray();
-			h = 31 * h + java.util.Arrays.hashCode(va);
-			h = 31 * h + java.util.Arrays.hashCode(vd.texCoords == null ? new float[0] : vd.texCoords);
-			h = 31 * h + java.util.Arrays.hashCode(vd.positionIndices == null ? new int[0] : vd.positionIndices);
-			// include flip flag to avoid reusing lists with different winding/normals
+			h = 31 * h + vd.vertexArrayHash(); // 直接读取缓存哈希
+			h = 31 * h + java.util.Arrays.hashCode(vd.texCoords == null ? EMPTY_FLOAT_ARRAY : vd.texCoords);
+			h = 31 * h + java.util.Arrays.hashCode(vd.positionIndices == null ? EMPTY_INT_ARRAY : vd.positionIndices);
 			h = 31 * h + (d.flip ? 1231 : 1237);
 		}
 		return h;
 	}
+
 
 	private static int getOrCreateDisplayListForChunk(List<CutModelData> l, boolean cap, BufferBuilder buf) {
 		int key = computeChunkHash(l, cap);
@@ -790,7 +793,6 @@ public class ModelRendererUtil {
 			this.flip = flip;
 			this.collider = collider;
 		}
-
 	}
 
 	public static class VertexData {
@@ -799,7 +801,8 @@ public class ModelRendererUtil {
 		public float[] texCoords;
 
 		private transient float[] cachedVertexArray;
-		private transient int cachedHash = 0;
+		private transient int cachedVertexArrayHash = 0;
+		private transient boolean cacheValid = false;
 		private static final ThreadLocal<float[]> TL_NORMAL = ThreadLocal.withInitial(() -> new float[3]);
 
 		public void tessellate(BufferBuilder buf, boolean normal){
@@ -843,23 +846,38 @@ public class ModelRendererUtil {
 			}
 		}
 
+		// Public accessor: returns cached vertex array (builds if needed)
 		public float[] vertexArray() {
-			int hash = java.util.Arrays.hashCode(positionIndices) ^ java.util.Arrays.hashCode(texCoords);
-			if (cachedVertexArray != null && cachedHash == hash) return cachedVertexArray;
-			cachedVertexArray = new float[positions.length * 3];
-			for (int i = 0; i < positions.length; i++) {
+			buildVertexArrayIfNeeded();
+			return cachedVertexArray;
+		}
+
+		// Public accessor: returns cached hash of vertex array (for computeChunkHash)
+		public int vertexArrayHash() {
+			buildVertexArrayIfNeeded();
+			return cachedVertexArrayHash;
+		}
+
+		// Build and cache flattened vertex array and its hash
+		void buildVertexArrayIfNeeded() {
+			if (cacheValid && cachedVertexArray != null) return;
+			int len = (positions == null) ? 0 : positions.length;
+			cachedVertexArray = new float[len * 3];
+			for (int i = 0; i < len; i++) {
 				Vec3d p = positions[i];
 				cachedVertexArray[i*3 + 0] = (float)p.x;
 				cachedVertexArray[i*3 + 1] = (float)p.y;
 				cachedVertexArray[i*3 + 2] = (float)p.z;
 			}
-			cachedHash = hash;
-			return cachedVertexArray;
+			cachedVertexArrayHash = java.util.Arrays.hashCode(cachedVertexArray);
+			cacheValid = true;
 		}
 
+		// Mark cache invalid when data changes
 		public void invalidateCache() {
 			cachedVertexArray = null;
-			cachedHash = 0;
+			cachedVertexArrayHash = 0;
+			cacheValid = false;
 		}
 	}
 }

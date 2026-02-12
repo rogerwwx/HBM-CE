@@ -162,6 +162,15 @@ public abstract class MixinEntityLivingBase extends Entity implements IHealthDir
         }
     }
 
+    @Inject(
+            method = "onDeathUpdate",
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/EntityLivingBase;setDead()V", shift = At.Shift.AFTER)
+    )
+    private void afterSetDead(CallbackInfo ci) {
+        EntityLivingBase self = (EntityLivingBase)(Object)this;
+        self.isDead = true; // 再次标记死亡，不影响史莱姆分裂
+    }
+
     @ModifyVariable(
             method = "setHealth",
             at = @At("HEAD"),
