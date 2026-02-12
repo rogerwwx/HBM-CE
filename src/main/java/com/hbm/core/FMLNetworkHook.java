@@ -123,7 +123,8 @@ public final class FMLNetworkHook {
             }
         } finally {
             // We retained slices for the packets, so we release the original reference from the FMLProxyPacket
-            payload.release();
+            if (payload.refCnt() > 0)
+                payload.release();
         }
     }
 
@@ -142,7 +143,8 @@ public final class FMLNetworkHook {
             }
 
             int parts = (int) Math.ceil(len / (double) (PART_SIZE - 1));
-            if (parts > MAX_PARTS) throw new IllegalArgumentException("Payload too large (parts=" + parts + ", max=" + MAX_PARTS + ")");
+            if (parts > MAX_PARTS)
+                throw new IllegalArgumentException("Payload too large (parts=" + parts + ", max=" + MAX_PARTS + ")");
 
             PacketBuffer preamble = new PacketBuffer(Unpooled.buffer());
             preamble.writeString(self.channel());
