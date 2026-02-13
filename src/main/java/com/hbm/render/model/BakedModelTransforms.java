@@ -64,7 +64,7 @@ public final class BakedModelTransforms {
         return new ItemCameraTransforms(thirdPerson, thirdPerson, firstPerson, firstPerson, head, gui, ground, fixed);
     }
 
-    static ItemCameraTransforms forDeco(ItemCameraTransforms standardBlock) {
+    public static ItemCameraTransforms forDeco(ItemCameraTransforms standardBlock) {
         ItemTransformVec3f gui = new ItemTransformVec3f(
                 new Vector3f(30, -45, 0),
                 new Vector3f(0, 0, 0),
