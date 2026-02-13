@@ -23,6 +23,8 @@ public final class HbmCoreTransformer implements IClassTransformer {
                     FMLNetworkTransformer.transformNetworkDispatcher(name, transformedName, basicClass);
             case FMLNetworkTransformer.TARGET_PACKET ->
                     FMLNetworkTransformer.transformFMLProxyPacket(name, transformedName, basicClass);
+            case AncientWarfare2NetworkTransformer.TARGET ->
+                    AncientWarfare2NetworkTransformer.transform(name, transformedName, basicClass);
             case EntityItemHazardTransformer.TARGET ->
                     EntityItemHazardTransformer.transform(name, transformedName, basicClass);
 //            case ResourceAccessTransformer.TARGET ->

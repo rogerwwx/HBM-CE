@@ -14,15 +14,6 @@ final class FMLNetworkTransformer {
     private static final ObfSafeName write = new ObfSafeName("write", "write");
     private static final ObfSafeName toS3FPackets = new ObfSafeName("toS3FPackets", "toS3FPackets");
 
-    private static void nuke(MethodNode mn, InsnList body) {
-        mn.instructions.clear();
-        mn.tryCatchBlocks.clear();
-        if (mn.localVariables != null) mn.localVariables.clear();
-        mn.instructions.add(body);
-        mn.maxStack = 0;
-        mn.maxLocals = 0;
-    }
-
     private static boolean patchNetworkDispatcher(ClassNode cn) {
         boolean patched = false;
 
@@ -39,7 +30,7 @@ final class FMLNetworkTransformer {
                         false));
                 body.add(new InsnNode(RETURN));
 
-                nuke(mn, body);
+                AsmHelper.clearAndSetInstructions(mn, body);
                 patched = true;
                 break;
             }
@@ -57,7 +48,7 @@ final class FMLNetworkTransformer {
                 body.add(new VarInsnNode(ALOAD, 0));
                 body.add(new MethodInsnNode(INVOKESTATIC, "com/hbm/core/FMLNetworkHook", "fmlProxyPacketToS3FPackets", "(Lnet/minecraftforge/fml/common/network/internal/FMLProxyPacket;)Ljava/util/List;", false));
                 body.add(new InsnNode(ARETURN));
-                nuke(mn, body);
+                AsmHelper.clearAndSetInstructions(mn, body);
                 patched = true;
                 break;
             }

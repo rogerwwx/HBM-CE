@@ -123,8 +123,11 @@ public final class FMLNetworkHook {
             }
         } finally {
             // We retained slices for the packets, so we release the original reference from the FMLProxyPacket
-            if (payload.refCnt() > 0)
-                payload.release();
+            // This may throw IllegalReferenceCountException iff some other mod a) reused packets without properly
+            // retaining them, or b) routed their packets through vanilla that reuses packet instances, or c) performed
+            // incorrect reference counting. This is a bug on their side. Known mods:
+            // - Ancient Warfare 2: problem b). Patched with AncientWarfareNetworkTransformer.
+            payload.release();
         }
     }
 

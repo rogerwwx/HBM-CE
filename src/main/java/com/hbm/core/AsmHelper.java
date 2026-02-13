@@ -39,4 +39,13 @@ public final class AsmHelper {
     private static boolean isSyntheticNode(AbstractInsnNode node) {
         return node instanceof LabelNode || node instanceof LineNumberNode || node instanceof FrameNode;
     }
+
+    static void clearAndSetInstructions(MethodNode mn, InsnList body) {
+        mn.instructions.clear();
+        mn.tryCatchBlocks.clear();
+        if (mn.localVariables != null) mn.localVariables.clear();
+        mn.instructions.add(body);
+        mn.maxStack = 0;
+        mn.maxLocals = 0;
+    }
 }
