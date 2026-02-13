@@ -103,8 +103,6 @@ public class PacketMobSlicer implements IMessage {
 				}
 
 				for (var victim : attack) {
-					victim.getEntityData().setBoolean("killedByMobSlicer", true);
-
 					var pos = m.pos.subtract(victim.posX, victim.posY, victim.posZ);
 					var data = new float[]{
 							(float) m.norm.x,

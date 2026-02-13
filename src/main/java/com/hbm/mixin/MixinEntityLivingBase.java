@@ -17,7 +17,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.ModifyVariable;
+import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
@@ -167,26 +167,25 @@ public abstract class MixinEntityLivingBase extends Entity implements IHealthDir
         EntityLivingBase self = (EntityLivingBase)(Object)this;
         self.isDead = true; // 再次标记死亡，不影响史莱姆分裂
     }
+    
 
-    @ModifyVariable(
+    @ModifyArg(
             method = "setHealth",
-            at = @At("HEAD"),
-            index = 1,
-            argsOnly = true
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraft/entity/EntityLivingBase;setHealth(F)V",
+                    shift = At.Shift.BEFORE
+            ),
+            index = 0
     )
-    private float modifyHealthArg(float health) {
+    private float modifyArgBeforeSuper(float health) {
         EntityLivingBase self = (EntityLivingBase)(Object)this;
-
         if (self.world == null || self.world.isRemote) {
             return health;
         }
-
-        if (dnsPlateCached) {
-            return 100.0F;
-        }
-
-        return health;
+        return dnsPlateCached ? 100.0F : health;
     }
+
 
     @Unique
     public void setHealthDirectly(float health) {
