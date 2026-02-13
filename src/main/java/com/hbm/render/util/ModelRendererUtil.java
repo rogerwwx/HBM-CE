@@ -293,9 +293,10 @@ public class ModelRendererUtil {
 
 	public static VertexData compress(Triangle[] tris) {
 		final int vertexCount = tris.length * 3;
-		final double posEps = 1e-6;
-		final double uvEps = 1e-6;
-		final double bucketScale = 1e-4;
+		// 让触手更容易脱离（更严格的合并，减少“焊接”）
+		final double posEps = 6e-7;
+		final double uvEps  = 1e-6;
+		final double bucketScale = 8e-5;
 
 		// 1. 预分配结果容器
 		List<Vec3d> uniquePositions = new ArrayList<>(vertexCount);
