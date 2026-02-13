@@ -112,34 +112,13 @@ public class PacketMobSlicer implements IMessage {
 							Float.intBitsToFloat(m.tex)
 					};
 
-					var source = (m.tex == 1) ? ModDamageSource.crucible : ModDamageSource.slicer;
+					// 立即处理死亡相关效果（保持原逻辑顺序）
+					applyDeathEffects(victim, m, data);
 
-					victim.getCombatTracker().trackDamage(source, victim.getHealth(), victim.getHealth());
-
-					if (victim instanceof EntityPlayerMP playerVictim) {
-						DropItem.dropPlayerInventory(playerVictim, true);
-						victim.getEntityData().setBoolean("NoDrop", true);
-					}
-
-					victim.onDeath(source);
-					victim.getEntityAttribute(SharedMonsterAttributes.MAX_HEALTH).setBaseValue(Double.NEGATIVE_INFINITY);
-					victim.heal(0.5f);
-					victim.setHealth(0.0F);
-					victim.onKillCommand();
-					victim.setDead();
-					victim.isDead = true;
-
-					PacketDispatcher.wrapper.sendToAllTracking(new PacketSpecialDeath(victim, 3, data), victim);
-					victim.world.setEntityState(victim, (byte)2);
-
-					if (victim instanceof EntityPlayerMP playerVictim) {
-						PacketDispatcher.wrapper.sendTo(new PacketSpecialDeath(victim, 3, data), playerVictim);
-						var deathText = source.getDeathMessage(victim).getFormattedText();
-						PacketDispatcher.sendTo(new GuiDeathPacket(deathText), playerVictim);
-					}
-
+					// 捕获 finalTarget 并按原逻辑安排延迟清理（但避免使用 instanceof pattern 绑定）
 					final Entity finalTarget = victim;
-					if (finalTarget.world instanceof WorldServer ws) {
+					if (finalTarget.world instanceof WorldServer) {
+						WorldServer ws = (WorldServer) finalTarget.world;
 						scheduler.schedule(() -> ws.addScheduledTask(() -> {
 							if (finalTarget instanceof EntityPlayerMP) return;
 
@@ -163,6 +142,38 @@ public class PacketMobSlicer implements IMessage {
 				}
 			});
 			return null;
+		}
+
+		/**
+		 * 对单个实体执行死亡相关的处理：发送特殊死亡包、设置死亡状态、处理玩家掉落、并发送玩家专属死亡 GUI。
+		 * 仅把原来循环内的死亡相关代码抽出，逻辑与原来完全一致。
+		 */
+		private static void applyDeathEffects(EntityLivingBase victim, PacketMobSlicer m, float[] data) {
+			var source = (m.tex == 1) ? ModDamageSource.crucible : ModDamageSource.slicer;
+
+			victim.getCombatTracker().trackDamage(source, victim.getHealth(), victim.getHealth());
+
+			if (victim instanceof EntityPlayerMP playerVictim) {
+				DropItem.dropPlayerInventory(playerVictim, true);
+				victim.getEntityData().setBoolean("NoDrop", true);
+			}
+
+			victim.onDeath(source);
+			victim.getEntityAttribute(SharedMonsterAttributes.MAX_HEALTH).setBaseValue(Double.NEGATIVE_INFINITY);
+			victim.heal(0.5f);
+			victim.setHealth(0.0F);
+			victim.onKillCommand();
+			victim.setDead();
+			victim.isDead = true;
+
+			PacketDispatcher.wrapper.sendToAllTracking(new PacketSpecialDeath(victim, 3, data), victim);
+			victim.world.setEntityState(victim, (byte)2);
+
+			if (victim instanceof EntityPlayerMP playerVictim) {
+				PacketDispatcher.wrapper.sendTo(new PacketSpecialDeath(victim, 3, data), playerVictim);
+				var deathText = source.getDeathMessage(victim).getFormattedText();
+				PacketDispatcher.sendTo(new GuiDeathPacket(deathText), playerVictim);
+			}
 		}
 	}
 }

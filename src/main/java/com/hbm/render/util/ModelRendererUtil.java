@@ -293,7 +293,7 @@ public class ModelRendererUtil {
 
 	public static VertexData compress(Triangle[] tris) {
 		final int vertexCount = tris.length * 3;
-		// 让触手更容易脱离（更严格的合并，减少“焊接”）
+		// 调整参数（折中：让触手更易脱落，同时尽量保护大块）
 		final double posEps = 6e-7;
 		final double uvEps  = 1e-6;
 		final double bucketScale = 8e-5;
@@ -306,18 +306,31 @@ public class ModelRendererUtil {
 		// 2. 用于比较 UV 的临时数组 (按唯一顶点索引存储)
 		float[] representativeUVs = new float[vertexCount * 2];
 
-		// 3. 高性能原始数组哈希表 (链式前向星思路)
-		// 使用 2 的幂作为大小，通过位运算代替取模，速度极快
-		final int HASH_SIZE = 4096;
+		// 3. 动态计算 HASH_SIZE（2 的幂），基于顶点估计，避免桶过小或过大
+		int minSize = 1024;
+		int maxSize = 16384;
+		int target = Math.max(minSize, vertexCount / 2); // 目标桶数，平均每桶 ~2 顶点
+		int HASH_SIZE = 1;
+		while (HASH_SIZE < target && HASH_SIZE < maxSize) {
+			HASH_SIZE <<= 1;
+		}
+		if (HASH_SIZE > maxSize) HASH_SIZE = maxSize;
+		if (HASH_SIZE < minSize) HASH_SIZE = minSize;
 		final int HASH_MASK = HASH_SIZE - 1;
-		int[] head = new int[HASH_SIZE];        // 存储每个桶的第一个顶点索引
-		int[] next = new int[vertexCount];      // 存储指向下一个冲突顶点的指针
-		java.util.Arrays.fill(head, -1);        // 初始化为 -1 表示空桶
+
+		// 初始化链表头与 next 数组
+		int[] head = new int[HASH_SIZE];
+		int[] next = new int[vertexCount];
+		java.util.Arrays.fill(head, -1);
+		java.util.Arrays.fill(next, -1);
+
+		// 预计算平方阈值用于快速筛选
+		final double posEps2 = posEps * posEps;
 
 		for (int i = 0; i < tris.length; i++) {
 			Triangle t = tris[i];
 
-			// 渲染核心：保持 UV 铺平，确保切块颜色和贴图绝对正确
+			// 保持 UV 顺序与渲染一致
 			int baseUV = i * 6;
 			texCoords[baseUV + 0] = t.p1.texX;
 			texCoords[baseUV + 1] = t.p1.texY;
@@ -326,14 +339,14 @@ public class ModelRendererUtil {
 			texCoords[baseUV + 4] = t.p3.texX;
 			texCoords[baseUV + 5] = t.p3.texY;
 
-			// 处理三个顶点
+			// 处理三顶点
 			for (int v = 0; v < 3; v++) {
 				Triangle.TexVertex tv = (v == 0) ? t.p1 : (v == 1) ? t.p2 : t.p3;
 				Vec3d pos = tv.pos;
 				float u = tv.texX;
 				float vv = tv.texY;
 
-				// --- 快速哈希计算 (与你的逻辑保持 1:1 兼容) ---
+				// 量化坐标到桶索引
 				long qx = Math.round(pos.x / bucketScale);
 				long qy = Math.round(pos.y / bucketScale);
 				long qz = Math.round(pos.z / bucketScale);
@@ -341,34 +354,36 @@ public class ModelRendererUtil {
 				key = (key << 21) ^ (qy & 0x1FFFFFL);
 				key = (key << 21) ^ (qz & 0x1FFFFFL);
 
-				// 将 64 位 key 转换为桶索引 (通过二次哈希减少碰撞)
-				int h = (int)(key ^ (key >>> 32));
+				int h = (int) (key ^ (key >>> 32));
 				int bucketIdx = h & HASH_MASK;
 
 				int foundIdx = -1;
-				// 遍历链表桶
+				// 遍历桶内链表，先做平方和快速筛选再精确比较
 				for (int curr = head[bucketIdx]; curr != -1; curr = next[curr]) {
 					Vec3d existingPos = uniquePositions.get(curr);
-					// 位置检查
-					if (BobMathUtil.epsilonEquals(pos, existingPos, posEps)) {
-						// UV 检查
-						float repU = representativeUVs[curr * 2];
-						float repV = representativeUVs[curr * 2 + 1];
-						if (Math.abs(repU - u) <= uvEps && Math.abs(repV - vv) <= uvEps) {
-							foundIdx = curr;
-							break;
+					double dx = existingPos.x - pos.x;
+					double dy = existingPos.y - pos.y;
+					double dz = existingPos.z - pos.z;
+					if (dx * dx + dy * dy + dz * dz <= posEps2) {
+						if (BobMathUtil.epsilonEquals(pos, existingPos, posEps)) {
+							float repU = representativeUVs[curr * 2];
+							float repV = representativeUVs[curr * 2 + 1];
+							if (Math.abs(repU - u) <= uvEps && Math.abs(repV - vv) <= uvEps) {
+								foundIdx = curr;
+								break;
+							}
 						}
 					}
 				}
 
 				if (foundIdx == -1) {
-					// 创建新唯一顶点
+					// 新唯一顶点
 					foundIdx = uniquePositions.size();
 					uniquePositions.add(pos);
 					representativeUVs[foundIdx * 2] = u;
 					representativeUVs[foundIdx * 2 + 1] = vv;
 
-					// 将新索引插入链表头部
+					// 插入链表头
 					next[foundIdx] = head[bucketIdx];
 					head[bucketIdx] = foundIdx;
 				}
@@ -384,8 +399,8 @@ public class ModelRendererUtil {
 		data.texCoords = texCoords;
 		data.buildVertexArrayIfNeeded();
 		return data;
-
 	}
+
 
 	public static VertexData[] cutAndCapModelBox(ModelBox b, float[] plane, @Nullable Matrix4f transform){
 		return cutAndCapConvex(triangulate(b, transform), plane);
