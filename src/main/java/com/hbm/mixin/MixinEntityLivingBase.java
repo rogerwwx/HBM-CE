@@ -24,9 +24,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(EntityLivingBase.class)
 public abstract class MixinEntityLivingBase extends Entity implements IHealthDirectAccess {
 
-    private MixinEntityLivingBase(World worldIn) {
-        super(worldIn);
-    }
+    private MixinEntityLivingBase(World worldIn) {super(worldIn);}
 
     @Shadow @Final private static DataParameter<Float> HEALTH;
 
@@ -80,7 +78,7 @@ public abstract class MixinEntityLivingBase extends Entity implements IHealthDir
         if (!inventoryAvailable) {
             // inventory 刚变为可用：立即做一次完整检查以恢复正确状态
             inventoryAvailable = true;
-            boolean activeNow = false;
+            boolean activeNow;
             try {
                 activeNow = isDnsPlateActive(self);
             } catch (Throwable t) {
@@ -155,7 +153,6 @@ public abstract class MixinEntityLivingBase extends Entity implements IHealthDir
 
     @Inject(method = "onDeathUpdate", at = @At("HEAD"), cancellable = true)
     private void cancelDeathUpdateIfDnsPlate(CallbackInfo ci) {
-        EntityLivingBase self = (EntityLivingBase) (Object) this;
 
         if (dnsPlateCached) {
             ci.cancel();
