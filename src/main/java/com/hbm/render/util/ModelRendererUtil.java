@@ -42,6 +42,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
 public class ModelRendererUtil {
@@ -55,6 +58,10 @@ public class ModelRendererUtil {
 		Render<T> eRenderer = Minecraft.getMinecraft().getRenderManager().getEntityRenderObject(e);
 		return getEntityTexture(e, eRenderer);
 	}
+
+	// 用于异步数据处理的线程池（可根据实际情况调整线程数）
+	private static final ExecutorService MODEL_UTIL_EXECUTOR = Executors.newFixedThreadPool(
+			Math.max(2, Runtime.getRuntime().availableProcessors() / 2));
 
 	public static @NotNull <T extends Entity> ResourceLocation getEntityTexture(T e, Render<T> eRenderer) {
 		ResourceLocation r = ((MixinRender) eRenderer).callGetEntityTexture(e);
@@ -294,9 +301,9 @@ public class ModelRendererUtil {
 	public static VertexData compress(Triangle[] tris) {
 		final int vertexCount = tris.length * 3;
 		// 让触手更容易脱离（更严格的合并，减少“焊接”）
-		final double posEps = 5e-7;       // 比 1e-6 更严格
+		final double posEps = 3e-7;       // 比 1e-6 更严格
 		final double uvEps  = 1e-6;       // UV 不必改太多
-		final double bucketScale = 5e-5;  // 比 1e-4 更小
+		final double bucketScale = 3e-5;  // 比 1e-4 更小
 
 
 		// 1. 预分配结果容器
@@ -649,6 +656,99 @@ public class ModelRendererUtil {
 		}
 
 		return particles.toArray(new ParticleSlicedMob[particles.size()]);
+	}
+
+	/**
+	 * 修正版：主线程先收集GL/模型相关数据，仅将数据处理部分异步化，最终GL相关和粒子生成回主线程。
+	 * @param ent 实体
+	 * @param plane 切割面
+	 * @param capTex 盖面贴图
+	 * @param capBloom 盖面泛光
+	 * @param capConsumer 盖面三角面回调
+	 * @param callback 处理完成后回调（主线程调用，参数为粒子数组）
+	 */
+	public static void generateCutParticlesAsync(Entity ent, float[] plane, ResourceLocation capTex, float capBloom, Consumer<List<Triangle>> capConsumer, Consumer<ParticleSlicedMob[]> callback) {
+		// 1. 主线程收集 GL/模型相关数据
+		List<Pair<Matrix4f, ModelRenderer>> boxes = ModelRendererUtil.getBoxesFromMob((EntityLivingBase) ent);
+
+		// 2. 异步执行数据处理 + 碰撞体构建 + 哈希计算
+		CompletableFuture.supplyAsync(() -> {
+			List<CutModelData> top = new ArrayList<>();
+			List<CutModelData> bottom = new ArrayList<>();
+
+			for (Pair<Matrix4f, ModelRenderer> r : boxes) {
+				for (ModelBox b : r.getRight().cubeList) {
+					VertexData[] dat = ModelRendererUtil.cutAndCapModelBox(b, plane, r.getLeft());
+					CutModelData tp = null;
+					CutModelData bt = null;
+
+					if (dat[0].positionIndices != null && dat[0].positionIndices.length > 0) {
+						tp = new CutModelData(dat[0], null, false,
+								new ConvexMeshCollider(dat[0].positionIndices, dat[0].vertexArray(), 1));
+						top.add(tp);
+					}
+					if (dat[1].positionIndices != null && dat[1].positionIndices.length > 0) {
+						bt = new CutModelData(dat[1], null, true,
+								new ConvexMeshCollider(dat[1].positionIndices, dat[1].vertexArray(), 1));
+						bottom.add(bt);
+					}
+					if (dat[2].positionIndices != null && dat[2].positionIndices.length > 0) {
+						if (tp != null) tp.cap = dat[2];
+						if (bt != null) bt.cap = dat[2];
+					}
+				}
+			}
+
+			// 可选：提前计算哈希值，避免主线程再算
+			int topHash = computeChunkHash(top, false);
+			int bottomHash = computeChunkHash(bottom, false);
+
+			return new Object[]{top, bottom, topHash, bottomHash};
+		}, MODEL_UTIL_EXECUTOR).thenAccept(result -> {
+			// 3. 回到主线程生成 Display List 和粒子对象
+			Minecraft.getMinecraft().addScheduledTask(() -> {
+				@SuppressWarnings("unchecked")
+				List<CutModelData> top = (List<CutModelData>) ((Object[]) result)[0];
+				@SuppressWarnings("unchecked")
+				List<CutModelData> bottom = (List<CutModelData>) ((Object[]) result)[1];
+
+				List<List<CutModelData>> particleChunks = new ArrayList<>();
+				generateChunks(particleChunks, top);
+				generateChunks(particleChunks, bottom);
+
+				List<ParticleSlicedMob> particles = new ArrayList<>(2);
+				Tessellator tes = Tessellator.getInstance();
+				BufferBuilder buf = tes.getBuffer();
+				ResourceLocation tex = getEntityTexture(ent);
+
+				for (List<CutModelData> l : particleChunks) {
+					float scale = 3.5F;
+					if (l.get(0).flip) {
+						scale = -scale;
+					}
+
+					// 主线程只负责 RigidBody 注册和 GL 调用
+					RigidBody body = new RigidBody(ent.world, ent.posX, ent.posY, ent.posZ);
+					Collider[] colliders = new Collider[l.size()];
+					int i = 0;
+					for (CutModelData dat : l) {
+						colliders[i++] = dat.collider;
+					}
+					body.addColliders(colliders);
+					body.impulseVelocityDirect(new Vec3(plane[0] * scale, plane[1] * scale, plane[2] * scale),
+							body.globalCentroid.add(0, 0, 0));
+
+					int bodyDL = getOrCreateDisplayListForChunk(l, false, buf);
+					int capDL = getOrCreateDisplayListForChunk(l, true, buf);
+
+					particles.add(new ParticleSlicedMob(ent.world, body, bodyDL, capDL, tex, capTex, capBloom));
+				}
+
+				if (callback != null) {
+					callback.accept(particles.toArray(new ParticleSlicedMob[0]));
+				}
+			});
+		});
 	}
 
 	private static final float[] EMPTY_FLOAT_ARRAY = new float[0];

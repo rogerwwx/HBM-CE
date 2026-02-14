@@ -1,3 +1,11 @@
+// 使用示例：
+// ModelRendererUtil.generateCutParticlesAsync(entity, plane, capTex, capBloom, null, particles -> {
+//     // 这里的particles为主线程可直接添加到粒子系统的ParticleSlicedMob[]
+//     for(ParticleSlicedMob p : particles) {
+//         Minecraft.getMinecraft().effectRenderer.addEffect(p);
+//     }
+// });
+
 package com.hbm.particle;
 
 import com.hbm.config.GeneralConfig;

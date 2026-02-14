@@ -86,135 +86,102 @@ public class PacketSpecialDeath implements IMessage {
 			EntityHitDataHandler.encodeData(serverEntity, buf);
 		}
 	}
-	
-	public static class Handler implements IMessageHandler<PacketSpecialDeath, IMessage> {
 
+	public static class Handler implements IMessageHandler<PacketSpecialDeath, IMessage> {
 		@Override
 		@SideOnly(Side.CLIENT)
 		public IMessage onMessage(PacketSpecialDeath m, MessageContext ctx) {
 			Minecraft.getMinecraft().addScheduledTask(() -> {
 				Entity ent = Minecraft.getMinecraft().world.getEntityByID(m.entId);
-				if(ent instanceof EntityLivingBase livingBase){
-					switch(m.effectId){
-					case 0:
-						ent.isDead=true;
-						ModEventHandlerClient.specialDeathEffectEntities.add(livingBase);
-						DisintegrationParticleHandler.spawnGluonDisintegrateParticles(ent);
-						break;
-					case 1:
-						livingBase.hurtTime = 2;
-						try {
-							SoundEvent s = (SoundEvent) rGetHurtSound.invokeExact(livingBase, ModDamageSource.radiation);
-							Minecraft.getMinecraft().world.playSound(ent.posX, ent.posY, ent.posZ, s, SoundCategory.MASTER, 1, 1, false);
-						} catch(Throwable e) {
-                            MainRegistry.logger.catching(e);
-                            throw new RuntimeException(e);
+				if (ent instanceof EntityLivingBase livingBase) {
+					switch (m.effectId) {
+						case 0 -> { ent.isDead = true; ModEventHandlerClient.specialDeathEffectEntities.add(livingBase); DisintegrationParticleHandler.spawnGluonDisintegrateParticles(ent); }
+						case 1 -> { livingBase.hurtTime = 2; try { SoundEvent s = (SoundEvent) rGetHurtSound.invokeExact(livingBase, ModDamageSource.radiation); Minecraft.getMinecraft().world.playSound(ent.posX, ent.posY, ent.posZ, s, SoundCategory.MASTER, 1, 1, false); } catch (Throwable e) { MainRegistry.logger.catching(e); throw new RuntimeException(e); } }
+						case 2 -> { ent.isDead = true; ModEventHandlerClient.specialDeathEffectEntities.add(livingBase); DisintegrationParticleHandler.spawnLightningDisintegrateParticles(ent, new Vec3(m.auxData[0], m.auxData[1], m.auxData[2])); }
+						case 3 -> {
+							ent.isDead = true;
+							float[] data = m.auxData;
+							int id = Float.floatToIntBits(data[4]);
+							ResourceLocation capTex = id == 0 ? ResourceManager.gore_generic : ResourceManager.crucible_cap;
+
+							ModelRendererUtil.generateCutParticlesAsync(
+									ent, data, capTex, id == 1 ? 1 : 0,
+									// capConsumer: 在主线程执行（生成血液与火花）
+									capTris -> {
+										if (capTris.isEmpty()) return;
+										Random rand = ent.world.rand;
+										int bloodCount = 5, cCount = id == 1 ? 8 : 0;
+										for (int i = 0; i < bloodCount + cCount; i++) {
+											Triangle tri = capTris.get(rand.nextInt(capTris.size()));
+											float r1 = rand.nextFloat(), r2 = rand.nextFloat();
+											if (r2 < r1) { float tmp = r2; r2 = r1; r1 = tmp; }
+											Vec3d pos = tri.p1.pos.scale(r1)
+													.add(tri.p2.pos.scale(r2 - r1))
+													.add(tri.p3.pos.scale(1 - r2))
+													.add(ent.posX, ent.posY, ent.posZ);
+
+											if (i < bloodCount) {
+												ParticleBlood blood = new ParticleBlood(ent.world, pos.x, pos.y, pos.z,
+														1, 0.4F + rand.nextFloat() * 0.4F, 18 + rand.nextInt(10), 0.05F);
+												Vec3d dir = Minecraft.getMinecraft().player.getLook(1)
+														.crossProduct(new Vec3d(data[0], data[1], data[2]))
+														.normalize().scale(-0.6F)
+														.add(new Vec3d(rand.nextDouble()*2-1, rand.nextDouble()*2-1, rand.nextDouble()*2-1).scale(0.2F));
+												blood.motion((float)dir.x,(float)dir.y,(float)dir.z);
+												blood.color(0.5F,0.1F,0.1F,1F);
+												blood.onUpdate();
+												Minecraft.getMinecraft().effectRenderer.addEffect(blood);
+											} else {
+												Vec3d dir = capTris.get(0).p2.pos.subtract(capTris.get(0).p1.pos)
+														.crossProduct(capTris.get(2).p2.pos.subtract(capTris.get(0).p1.pos))
+														.normalize().scale(i % 2 == 0 ? 0.4 : -0.4);
+												NBTTagCompound tag = new NBTTagCompound();
+												tag.setString("type","spark"); tag.setString("mode","coneBurst");
+												tag.setDouble("posX",pos.x); tag.setDouble("posY",pos.y); tag.setDouble("posZ",pos.z);
+												tag.setDouble("dirX",dir.x); tag.setDouble("dirY",dir.y); tag.setDouble("dirZ",dir.z);
+												tag.setFloat("r",0.8F); tag.setFloat("g",0.6F); tag.setFloat("b",0.5F); tag.setFloat("a",1.5F);
+												tag.setInteger("lifetime",20); tag.setFloat("width",0.02F); tag.setFloat("length",0.8F);
+												tag.setFloat("randLength",1.3F); tag.setFloat("gravity",0.1F); tag.setFloat("angle",60F);
+												tag.setInteger("count",12); tag.setFloat("randomVelocity",0.3F);
+												MainRegistry.proxy.effectNT(tag);
+											}
+										}
+									},
+									// callback: 在主线程执行，把生成的粒子加入 effectRenderer
+									particles -> {
+										for (ParticleSlicedMob p : particles) {
+											Minecraft.getMinecraft().effectRenderer.addEffect(p);
+										}
+									}
+							);
 						}
-						break;
-					case 2:
-						ent.isDead=true;
-						ModEventHandlerClient.specialDeathEffectEntities.add(livingBase);
-						DisintegrationParticleHandler.spawnLightningDisintegrateParticles(ent, new Vec3(m.auxData[0], m.auxData[1], m.auxData[2]));
-						break;
-					case 3:
-						ent.isDead=true;
-						//ModEventHandlerClient.specialDeathEffectEntities.add((EntityLivingBase) ent);
-						float[] data = m.auxData;
-						int id = Float.floatToIntBits(data[4]);
-						ResourceLocation capTex;
-						if(id == 0){
-							capTex = ResourceManager.gore_generic;
-						} else {
-							capTex = ResourceManager.crucible_cap;
-						}
-						ParticleSlicedMob[] particles = ModelRendererUtil.generateCutParticles(ent, data, capTex, id == 1 ? 1 : 0, capTris -> {
-							int bloodCount = 5;
-							int cCount = id == 1 ? 8 : 0;
-							if(capTris.isEmpty()){
-								return;
-							}
-							for(int i = 0; i < bloodCount+cCount; i ++){
-								Triangle randTriangle = capTris.get(ent.world.rand.nextInt(capTris.size()));
-								//Hopefully this works for getting a random position in a triangle
-								float rand1 = ent.world.rand.nextFloat();
-								float rand2 = ent.world.rand.nextFloat();
-								if(rand2 < rand1){
-									float tmp = rand2;
-									rand2 = rand1;
-									rand1 = tmp;
+						case 4 -> {
+							ent.setDead();
+							@SuppressWarnings("unchecked") List<BulletHit> bHits = (List<BulletHit>) m.auxObj;
+							List<Pair<Matrix4f, ModelRenderer>> boxes = ModelRendererUtil.getBoxesFromMob(livingBase);
+							RigidBody[] bodies = ModelRendererUtil.generateRigidBodiesFromBoxes(ent, boxes);
+							int[] displayLists = ModelRendererUtil.generateDisplayListsFromBoxes(boxes);
+							ResourceLocation tex = ModelRendererUtil.getEntityTexture(ent);
+							for (int i = 0; i < bodies.length; i++) {
+								for (BulletHit b : bHits) {
+									float dist = (float)b.pos.distanceTo(bodies[i].globalCentroid.toVec3d());
+									float falloff = pointLightFalloff(1, dist);
+									float regular = 1.5F * falloff;
+									bodies[i].impulseVelocityDirect(new Vec3(b.direction.scale(regular)), new Vec3(b.pos));
 								}
-								Vec3d pos = randTriangle.p1.pos.scale(rand1);
-								pos = pos.add(randTriangle.p2.pos.scale(rand2-rand1));
-								pos = pos.add(randTriangle.p3.pos.scale(1-rand2));
-								pos = pos.add(ent.posX, ent.posY, ent.posZ);
-								
-								Random rand = ent.world.rand;
-								if(i < bloodCount){
-									ParticleBlood blood = new ParticleBlood(ent.world, pos.x, pos.y, pos.z, 1, 0.4F+rand.nextFloat()*0.4F, 18+rand.nextInt(10), 0.05F);
-									Vec3d direction = Minecraft.getMinecraft().player.getLook(1).crossProduct(new Vec3d(data[0], data[1], data[2])).normalize().scale(-0.6F);
-									Vec3d randMotion = new Vec3d(rand.nextDouble()*2-1, rand.nextDouble()*2-1, rand.nextDouble()*2-1).scale(0.2F);
-									direction = direction.add(randMotion);
-									blood.motion((float)direction.x, (float)direction.y, (float)direction.z);
-									blood.color(0.5F, 0.1F, 0.1F, 1F);
-									blood.onUpdate();
-									Minecraft.getMinecraft().effectRenderer.addEffect(blood);
-								} else {
-									Vec3d direction = capTris.get(0).p2.pos.subtract(capTris.get(0).p1.pos).crossProduct(capTris.get(2).p2.pos.subtract(capTris.get(0).p1.pos)).normalize().scale(i%2==0 ? 0.4 : -0.4);
-									NBTTagCompound tag = new NBTTagCompound();
-									tag.setString("type", "spark");
-									tag.setString("mode", "coneBurst");
-									tag.setDouble("posX", pos.x);
-									tag.setDouble("posY", pos.y);
-									tag.setDouble("posZ", pos.z);
-									tag.setDouble("dirX", direction.x);
-									tag.setDouble("dirY", direction.y);
-									tag.setDouble("dirZ", direction.z);
-									tag.setFloat("r", 0.8F);
-									tag.setFloat("g", 0.6F);
-									tag.setFloat("b", 0.5F);
-									tag.setFloat("a", 1.5F);
-									tag.setInteger("lifetime", 20);
-									tag.setFloat("width", 0.02F);
-									tag.setFloat("length", 0.8F);
-									tag.setFloat("randLength", 1.3F);
-									tag.setFloat("gravity", 0.1F);
-									tag.setFloat("angle", 60F);
-									tag.setInteger("count", 12);
-									tag.setFloat("randomVelocity", 0.3F);
-									MainRegistry.proxy.effectNT(tag);
-								}
+								bodies[i].angularVelocity = bodies[i].angularVelocity.min(10).max(-10);
+								Minecraft.getMinecraft().effectRenderer.addEffect(new ParticleMobGib(ent.world, bodies[i], tex, displayLists[i]));
 							}
-						});
-						for(ParticleSlicedMob p : particles)
-							Minecraft.getMinecraft().effectRenderer.addEffect(p);
-						break;
-					case 4:
-						ent.setDead();
-						@SuppressWarnings("unchecked")
-						List<BulletHit> bHits = (List<BulletHit>) m.auxObj;
-						List<Pair<Matrix4f, ModelRenderer>> boxes = ModelRendererUtil.getBoxesFromMob(livingBase);
-						RigidBody[] bodies = ModelRendererUtil.generateRigidBodiesFromBoxes(ent, boxes);
-						int[] displayLists = ModelRendererUtil.generateDisplayListsFromBoxes(boxes);
-						ResourceLocation tex = ModelRendererUtil.getEntityTexture(ent);
-						for(int i = 0; i < bodies.length; i ++){
-							for(BulletHit b : bHits){
-								float dist = (float) b.pos.distanceTo(bodies[i].globalCentroid.toVec3d());
-								float falloff = pointLightFalloff(1, dist);
-								float regular = 1.5F*falloff;
-								bodies[i].impulseVelocityDirect(new Vec3(b.direction.scale(regular)), new Vec3(b.pos));
-							}
-							bodies[i].angularVelocity = bodies[i].angularVelocity.min(10).max(-10);
-							Minecraft.getMinecraft().effectRenderer.addEffect(new ParticleMobGib(ent.world, bodies[i], tex, displayLists[i]));
 						}
-						break;
 					}
 				}
 			});
 			return null;
 		}
-		
 	}
-	
+
+
+
 	//Epic games lighting model falloff
 	public static float pointLightFalloff(float radius, float dist){
 		float distOverRad = dist/radius;
