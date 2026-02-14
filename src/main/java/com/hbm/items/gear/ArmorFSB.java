@@ -4,6 +4,7 @@ import com.hbm.config.PotionConfig;
 import com.hbm.handler.radiation.ChunkRadiationManager;
 import com.hbm.interfaces.NotableComments;
 import com.hbm.items.ModItems;
+import com.hbm.items.armor.IArmorDisableModel;
 import com.hbm.lib.HBMSoundHandler;
 import com.hbm.render.NTMRenderHelper;
 import com.hbm.render.loader.IModelCustom;
@@ -49,6 +50,8 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 import org.lwjgl.opengl.GL11;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 
 // mlbv: heads up! The original 1.7 version has almost all the methods expect a param of EntityPlayer.
@@ -56,7 +59,7 @@ import java.util.List;
 // by making them accept EntityLivingBase instead and moving update methods to onLivingUpdate.
 // This is hereby reverted by me since I'd rather trade compatibility for convenience.
 @NotableComments
-public class ArmorFSB extends ItemArmor {
+public class ArmorFSB extends ItemArmor implements IArmorDisableModel {
 
 
     public List<PotionEffect> effects = new ArrayList<>();
@@ -151,6 +154,24 @@ public class ArmorFSB extends ItemArmor {
         }
 
         return false;
+    }
+
+    private HashSet<EnumPlayerPart> hidden = new HashSet<EnumPlayerPart>();
+    private boolean needsFullSet = false;
+
+    public ArmorFSB hides(EnumPlayerPart... parts) {
+        Collections.addAll(hidden, parts);
+        return this;
+    }
+
+    public ArmorFSB setFullSetForHide() {
+        needsFullSet = true;
+        return this;
+    }
+
+    @Override
+    public boolean disablesPart(EntityPlayer player, ItemStack stack, EnumPlayerPart part) {
+        return hidden.contains(part) && (!needsFullSet || hasFSBArmorIgnoreCharge(player));
     }
 
     public void handleAttack(LivingAttackEvent event) {
