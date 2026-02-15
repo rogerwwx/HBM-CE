@@ -43,8 +43,6 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
 public class ModelRendererUtil {
@@ -54,14 +52,30 @@ public class ModelRendererUtil {
 	private static final java.util.Map<Integer, Integer> DISPLAY_LIST_KEY_BY_LIST = new java.util.HashMap<>();
 	// refcount for list ids
 	private static final java.util.Map<Integer, Integer> DISPLAY_LIST_REFCOUNT = new java.util.HashMap<>();
+	// 复用缓冲，避免频繁 new 大数组
+	private static final ThreadLocal<float[]> TL_VERTEX_BUF = ThreadLocal.withInitial(() -> new float[16384]);
+	private static final ThreadLocal<int[]> TL_INDEX_BUF = ThreadLocal.withInitial(() -> new int[8192]);
+
 	public static @NotNull <T extends Entity> ResourceLocation getEntityTexture(T e) {
 		Render<T> eRenderer = Minecraft.getMinecraft().getRenderManager().getEntityRenderObject(e);
 		return getEntityTexture(e, eRenderer);
 	}
 
-	// 用于异步数据处理的线程池（可根据实际情况调整线程数）
-	private static final ExecutorService MODEL_UTIL_EXECUTOR = Executors.newFixedThreadPool(
-			Math.max(2, Runtime.getRuntime().availableProcessors() / 2));
+	private static final int ASYNC_THREADS = Math.max(1, Math.min(Runtime.getRuntime().availableProcessors() - 1, 6));
+	private static final java.util.concurrent.ThreadPoolExecutor MODEL_UTIL_EXECUTOR =
+			new java.util.concurrent.ThreadPoolExecutor(
+					ASYNC_THREADS,
+					ASYNC_THREADS,
+					60L, java.util.concurrent.TimeUnit.SECONDS,
+					new java.util.concurrent.LinkedBlockingQueue<>(64), // 有界队列，避免爆发
+					r -> {
+						Thread t = new Thread(r, "model-util-" + r.hashCode());
+						t.setDaemon(true);
+						return t;
+					},
+					new java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy() // 队列满时回退到提交线程
+			);
+
 
 	public static @NotNull <T extends Entity> ResourceLocation getEntityTexture(T e, Render<T> eRenderer) {
 		ResourceLocation r = ((MixinRender) eRenderer).callGetEntityTexture(e);
@@ -673,6 +687,7 @@ public class ModelRendererUtil {
 
 		// 2. 异步执行数据处理 + 碰撞体构建 + 哈希计算
 		CompletableFuture.supplyAsync(() -> {
+			// 后台：几何切割 + 碰撞体构建 + 数据准备
 			List<CutModelData> top = new ArrayList<>();
 			List<CutModelData> bottom = new ArrayList<>();
 
@@ -703,9 +718,10 @@ public class ModelRendererUtil {
 			int topHash = computeChunkHash(top, false);
 			int bottomHash = computeChunkHash(bottom, false);
 
+			// 返回结果对象，包含准备好的数据
 			return new Object[]{top, bottom, topHash, bottomHash};
 		}, MODEL_UTIL_EXECUTOR).thenAccept(result -> {
-			// 3. 回到主线程生成 Display List 和粒子对象
+			// 主线程：上传 GL 资源并创建粒子
 			Minecraft.getMinecraft().addScheduledTask(() -> {
 				@SuppressWarnings("unchecked")
 				List<CutModelData> top = (List<CutModelData>) ((Object[]) result)[0];
@@ -738,6 +754,7 @@ public class ModelRendererUtil {
 					body.impulseVelocityDirect(new Vec3(plane[0] * scale, plane[1] * scale, plane[2] * scale),
 							body.globalCentroid.add(0, 0, 0));
 
+					// 使用缓存的 DisplayList
 					int bodyDL = getOrCreateDisplayListForChunk(l, false, buf);
 					int capDL = getOrCreateDisplayListForChunk(l, true, buf);
 
@@ -768,32 +785,33 @@ public class ModelRendererUtil {
 	}
 
 
-	private static int getOrCreateDisplayListForChunk(List<CutModelData> l, boolean cap, BufferBuilder buf) {
-		int key = computeChunkHash(l, cap);
-		Integer existing = DISPLAY_LIST_CACHE.get(key);
-		if (existing != null) {
-			DISPLAY_LIST_REFCOUNT.put(existing, DISPLAY_LIST_REFCOUNT.getOrDefault(existing, 0) + 1);
-			return existing;
+	private static int getOrCreateDisplayListForChunk(List<CutModelData> chunk, boolean cap, BufferBuilder buf) {
+		int key = computeChunkHash(chunk, cap);
+		Integer cached = DISPLAY_LIST_CACHE.get(key);
+		if (cached != null) {
+			DISPLAY_LIST_REFCOUNT.put(cached, DISPLAY_LIST_REFCOUNT.getOrDefault(cached, 0) + 1);
+			return cached;
 		}
-		// create new list
+
 		int list = GL11.glGenLists(1);
 		GL11.glNewList(list, GL11.GL_COMPILE);
 		buf.begin(GL11.GL_TRIANGLES, DefaultVertexFormats.POSITION_TEX_NORMAL);
-		for (CutModelData dat : l) {
+		for (CutModelData dat : chunk) {
 			if (cap) {
-				if (dat.cap != null)
-					dat.cap.tessellate(buf, dat.flip, true);
+				if (dat.cap != null) dat.cap.tessellate(buf, dat.flip, true);
 			} else {
 				dat.data.tessellate(buf, true);
 			}
 		}
 		Tessellator.getInstance().draw();
 		GL11.glEndList();
+
 		DISPLAY_LIST_CACHE.put(key, list);
 		DISPLAY_LIST_KEY_BY_LIST.put(list, key);
 		DISPLAY_LIST_REFCOUNT.put(list, 1);
 		return list;
 	}
+
 
 	public static void releaseDisplayList(int list) {
 		Integer c = DISPLAY_LIST_REFCOUNT.get(list);
