@@ -8,11 +8,9 @@ import com.hbm.items.armor.IArmorDisableModel;
 import com.hbm.lib.HBMSoundHandler;
 import com.hbm.render.NTMRenderHelper;
 import com.hbm.render.loader.IModelCustom;
-import com.hbm.util.ContaminationUtil;
-import com.hbm.util.I18nUtil;
-import com.hbm.util.InventoryUtil;
-import com.hbm.util.ShadyUtil;
+import com.hbm.util.*;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
@@ -51,7 +49,6 @@ import org.lwjgl.opengl.GL11;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 
 // mlbv: heads up! The original 1.7 version has almost all the methods expect a param of EntityPlayer.
@@ -97,7 +94,7 @@ public class ArmorFSB extends ItemArmor implements IArmorDisableModel {
 
             boolean noHelmet = chestplate.noHelmet;
 
-            for (EntityEquipmentSlot slot : EntityEquipmentSlot.values()) {
+            for (EntityEquipmentSlot slot : EnumUtil.ENTITY_EQUIPMENT_SLOTS) {
                 if (slot == EntityEquipmentSlot.MAINHAND || slot == EntityEquipmentSlot.OFFHAND)
                     continue;
                 if (noHelmet && slot == EntityEquipmentSlot.HEAD)
@@ -137,7 +134,7 @@ public class ArmorFSB extends ItemArmor implements IArmorDisableModel {
         if (!plate.isEmpty() && plate.getItem() instanceof ArmorFSB chestplate) {
             boolean noHelmet = chestplate.noHelmet;
 
-            for (EntityEquipmentSlot slot : EntityEquipmentSlot.values()) {
+            for (EntityEquipmentSlot slot : EnumUtil.ENTITY_EQUIPMENT_SLOTS) {
                 if (slot == EntityEquipmentSlot.MAINHAND || slot == EntityEquipmentSlot.OFFHAND)
                     continue;
                 if (noHelmet && slot == EntityEquipmentSlot.HEAD)
@@ -156,10 +153,10 @@ public class ArmorFSB extends ItemArmor implements IArmorDisableModel {
         return false;
     }
 
-    private HashSet<EnumPlayerPart> hidden = new HashSet<EnumPlayerPart>();
+    private final ReferenceOpenHashSet<EnumPlayerPart> hidden = new ReferenceOpenHashSet<>();
     private boolean needsFullSet = false;
 
-    public ArmorFSB hides(EnumPlayerPart... parts) {
+    public ArmorFSB setHides(EnumPlayerPart... parts) {
         Collections.addAll(hidden, parts);
         return this;
     }
