@@ -457,7 +457,7 @@ public class Library {
         Vec3d vec32 = vec3.add(vec31.x * d, vec31.y * d, vec31.z * d);
         RayTraceResult result = rayTraceBlocks(player.world, vec3, vec32, false, true, true);
         if (result != null) vec32 = result.hitVec;
-        AxisAlignedBB box = new AxisAlignedBB(vec3.x, vec3.y, vec3.z, vec32.x, vec32.y, vec32.z).grow(2D);
+        AxisAlignedBB box = new AxisAlignedBB(vec3.x, vec3.y, vec3.z, vec32.x, vec32.y, vec32.z).grow(0.5D);
         List<Entity> ents = player.world.getEntitiesInAABBexcluding(player, box, Predicates.and(EntitySelectors.IS_ALIVE, entity -> entity instanceof EntityLiving && !(entity instanceof EntityPlayer p && p.isSpectator())));
 
         double sx = vec3.x;
@@ -480,7 +480,7 @@ public class Library {
         while (itr.hasNext()) {
             Entity ent = itr.next();
             AxisAlignedBB entityBox = ent.getEntityBoundingBox();
-            double t = intersectSegmentAabbHitTInv(sx, sy, sz, dx0, dy0, dz0, invDx, invDy, invDz, entityBox.minX - 0.1D, entityBox.minY - 0.1D, entityBox.minZ - 0.1D, entityBox.maxX + 0.1D, entityBox.maxY + 0.1D, entityBox.maxZ + 0.1D);
+            double t = intersectSegmentAabbHitTInv(sx, sy, sz, dx0, dy0, dz0, invDx, invDy, invDz, entityBox.minX - 0.8D, entityBox.minY - 0.8D, entityBox.minZ - 0.8D, entityBox.maxX + 0.8D, entityBox.maxY + 0.8D, entityBox.maxZ + 0.8D);
             if (Double.isNaN(t)) {
                 itr.remove();
             }

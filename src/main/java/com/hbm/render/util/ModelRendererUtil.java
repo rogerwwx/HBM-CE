@@ -315,9 +315,9 @@ public class ModelRendererUtil {
 	public static VertexData compress(Triangle[] tris) {
 		final int vertexCount = tris.length * 3;
 		// 让触手更容易脱离（更严格的合并，减少“焊接”）
-		final double posEps = 3e-7;       // 比 1e-6 更严格
+		final double posEps = 1e-6;       // 比 1e-6 更严格
 		final double uvEps  = 1e-6;       // UV 不必改太多
-		final double bucketScale = 3e-5;  // 比 1e-4 更小
+		final double bucketScale = 1e-4;  // 比 1e-4 更小
 
 
 		// 1. 预分配结果容器

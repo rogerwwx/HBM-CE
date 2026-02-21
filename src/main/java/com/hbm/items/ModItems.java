@@ -642,6 +642,7 @@ public class ModItems {
     public static final Item bj_boots = new ArmorBJ(MaterialRegistry.aMatBJ, 7, EntityEquipmentSlot.FEET, Tags.MODID + ":textures/armor/starmetal_1.png", 10000000, 10000, 1000, 100, "bj_boots").cloneStats((ArmorFSB) bj_helmet);
     public static final Item rpa_helmet = new ArmorRPA(MaterialRegistry.aMatRPA, -1, EntityEquipmentSlot.HEAD, Tags.MODID + ":textures/armor/starmetal_1.png", 2500000, 10000, 1000, 25, "RPA_helmet")
             .enableVATS(true)
+            .enableThermalSight(true)
             .setHasGeigerSound(true)
             .setHasHardLanding(true)
             .setHides(IArmorDisableModel.EnumPlayerPart.HAT)
@@ -668,6 +669,7 @@ public class ModItems {
             .addEffect(new PotionEffect(MobEffects.STRENGTH, 20, 9))
             .addEffect(new PotionEffect(MobEffects.HASTE, 20, 7))
             .addEffect(new PotionEffect(MobEffects.JUMP_BOOST, 20, 2))
+            .addEffect(new PotionEffect(MobEffects.SATURATION, 5, 127, true, false))
             .setHasGeigerSound(true)
             .enableVATS(true)
             .enableThermalSight(true)
