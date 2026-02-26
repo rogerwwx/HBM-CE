@@ -653,6 +653,18 @@ public class ModItems {
     public static final Item rpa_plate = new ArmorRPA(MaterialRegistry.aMatRPA, -1, EntityEquipmentSlot.CHEST, Tags.MODID + ":textures/armor/starmetal_1.png", 2500000, 10000, 10000, 25, "RPA_plate").cloneStats((ArmorFSB) rpa_helmet);
     public static final Item rpa_legs = new ArmorRPA(MaterialRegistry.aMatRPA, -1, EntityEquipmentSlot.LEGS, Tags.MODID + ":textures/armor/starmetal_2.png", 2500000, 10000, 10000, 25, "RPA_legs").cloneStats((ArmorFSB) rpa_helmet);
     public static final Item rpa_boots = new ArmorRPA(MaterialRegistry.aMatRPA, -1, EntityEquipmentSlot.FEET, Tags.MODID + ":textures/armor/starmetal_1.png", 2500000, 10000, 10000, 25, "RPA_boots").cloneStats((ArmorFSB) rpa_helmet);
+    public static final Item ncrpa_helmet = new ArmorNCRPA(MaterialRegistry.aMatAJR, -1, EntityEquipmentSlot.HEAD, Tags.MODID + ":textures/armor/starmetal_1.png", 2500000, 10000, 2000, 25, "ncrpa_helmet")
+				.enableVATS(true)
+				.setHasGeigerSound(true)
+				.setHasHardLanding(true)
+				.addEffect(new PotionEffect(MobEffects.STRENGTH, 20, 3))
+            .setStep(HBMSoundHandler.poweredStep)
+				.setJump(HBMSoundHandler.poweredStep)
+				.setFall(HBMSoundHandler.poweredStep)
+				.setHides(IArmorDisableModel.EnumPlayerPart.HAT);
+    public static final Item ncrpa_plate = new ArmorNCRPA(MaterialRegistry.aMatAJR, -1, EntityEquipmentSlot.CHEST, Tags.MODID + ":textures/armor/starmetal_1.png", 2500000, 10000, 2000, 25, "ncrpa_plate").cloneStats((ArmorFSB) rpa_helmet);
+    public static final Item ncrpa_legs = new ArmorNCRPA(MaterialRegistry.aMatAJR, -1, EntityEquipmentSlot.LEGS, Tags.MODID + ":textures/armor/starmetal_2.png", 2500000, 10000, 2000, 25, "ncrpa_legs").cloneStats((ArmorFSB) rpa_helmet);
+    public static final Item ncrpa_boots = new ArmorNCRPA(MaterialRegistry.aMatAJR, -1, EntityEquipmentSlot.FEET, Tags.MODID + ":textures/armor/starmetal_1.png", 2500000, 10000, 2000, 25, "ncrpa_boots").cloneStats((ArmorFSB) rpa_helmet);
     public static final Item fau_helmet = new ArmorDigamma(MaterialRegistry.aMatFau, -1, EntityEquipmentSlot.HEAD, Tags.MODID + ":textures/armor/starmetal_1.png", 10000000, 100000, 25000, 1000, "fau_helmet")
             .addEffect(new PotionEffect(MobEffects.JUMP_BOOST, 30, 1))
             .setHasGeigerSound(true)
@@ -1909,6 +1921,9 @@ public class ModItems {
     public static Item gun_drill;
     public static Item gun_fireext;
 
+    public static Item gun_pa_melee;
+    public static Item gun_pa_ranged;
+
     public static Item weapon_mod_test;
     public static Item weapon_mod_generic;
     public static Item weapon_mod_special;
@@ -2755,6 +2770,7 @@ public class ModItems {
     public static final Item ln2_9 = new EffectItem("ln2_9").setCreativeTab(null);
     public static final Item ln2_10 = new EffectItem("ln2_10").setCreativeTab(null);
     public static final Item nothing = new EffectItem("nothing").setCreativeTab(null);
+    public static final Item broken_item = new BrokenItem("broken_item").setCreativeTab(null);
     public static final Item ducc = new ItemBase("ducc").setCreativeTab(MainRegistry.controlTab);
     public static final Item discharge = new EffectItem("discharge").setCreativeTab(null);
     public static final Item undefined = new ItemCustomLore("undefined").setCreativeTab(MainRegistry.partsTab);

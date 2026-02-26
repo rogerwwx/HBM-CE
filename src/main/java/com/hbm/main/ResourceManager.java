@@ -285,6 +285,7 @@ public class ResourceManager {
     public static final IModelCustom armor_steamsuit = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/armor/steamsuit.obj")).asVBO();
     public static final IModelCustom armor_dieselsuit = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/armor/bnuuy.obj")).asVBO();
     public static final IModelCustom armor_remnant = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/armor/remnant.obj")).asVBO();
+    public static final IModelCustom armor_ncr = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/armor/ncrpa.obj")).asVBO();
     public static final IModelCustom armor_trenchmaster = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/armor/trenchmaster.obj")).asVBO();
     public static final IModelCustom armor_t51 = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/armor/t51.obj")).asVBO();
     public static final IModelCustom armor_taurun = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/armor/taurun.obj")).asVBO();
@@ -360,6 +361,8 @@ public class ResourceManager {
     public static final IModelCustom blast_door_tooth = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/blast_door_tooth.obj")).asVBO();
     public static final IModelCustom blast_door_slider = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/blast_door_slider.obj")).asVBO();
     public static final IModelCustom blast_door_block = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/blast_door_block.obj")).asVBO();
+    //Lights
+    //public static final IModelCustom lantern = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/trinkets/lantern.obj"));
     //Tesla Coil
     public static final IModelCustom tesla = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/tesla.obj")).asVBO();
     public static final IModelCustom teslacrab = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/mobs/teslacrab.obj")).asVBO();
@@ -893,6 +896,7 @@ public class ResourceManager {
     public static final ResourceLocation assemfac_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/assemfac.png");
     public static final ResourceLocation assembly_factory_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/assembly_factory.png");
     public static final ResourceLocation assembly_factory_sparks_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/assembly_factory_sparks.png");
+    public static final ResourceLocation precass_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/precass.png");
     //Chemplant
     public static final ResourceLocation chemplant_body_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/chemplant_base_new.png");
     public static final ResourceLocation chemplant_spinner_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/chemplant_spinner_new.png");
@@ -1259,10 +1263,17 @@ public class ResourceManager {
     public static final ResourceLocation ajro_leg = new ResourceLocation(Tags.MODID, "textures/armor/ajro_leg.png");
     public static final ResourceLocation ajro_chest = new ResourceLocation(Tags.MODID, "textures/armor/ajro_chest.png");
     public static final ResourceLocation ajro_arm = new ResourceLocation(Tags.MODID, "textures/armor/ajro_arm.png");
+
     public static final ResourceLocation rpa_helmet = new ResourceLocation(Tags.MODID, "textures/armor/rpa_helmet.png");
     public static final ResourceLocation rpa_leg = new ResourceLocation(Tags.MODID, "textures/armor/rpa_leg.png");
     public static final ResourceLocation rpa_chest = new ResourceLocation(Tags.MODID, "textures/armor/rpa_chest.png");
     public static final ResourceLocation rpa_arm = new ResourceLocation(Tags.MODID, "textures/armor/rpa_arm.png");
+
+    public static final ResourceLocation ncrpa_helmet = new ResourceLocation(Tags.MODID, "textures/armor/ncrpa_helmet.png");
+    public static final ResourceLocation ncrpa_leg = new ResourceLocation(Tags.MODID, "textures/armor/ncrpa_leg.png");
+    public static final ResourceLocation ncrpa_chest = new ResourceLocation(Tags.MODID, "textures/armor/ncrpa_chest.png");
+    public static final ResourceLocation ncrpa_arm = new ResourceLocation(Tags.MODID, "textures/armor/ncrpa_arm.png");
+
     public static final ResourceLocation fau_helmet = new ResourceLocation(Tags.MODID, "textures/armor/fau_helmet.png");
     public static final ResourceLocation fau_leg = new ResourceLocation(Tags.MODID, "textures/armor/fau_leg.png");
     public static final ResourceLocation fau_chest = new ResourceLocation(Tags.MODID, "textures/armor/fau_chest.png");
