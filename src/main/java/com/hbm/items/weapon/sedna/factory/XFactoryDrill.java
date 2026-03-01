@@ -58,48 +58,49 @@ public class XFactoryDrill {
         );
     }
 
-    public static BiConsumer<ItemStack, ItemGunBaseNT.LambdaContext> LAMBDA_DRILL_FIRE = (stack, ctx) -> {
-        doStandardFire(stack, ctx, true);
-    };
+    public static BiConsumer<ItemStack, ItemGunBaseNT.LambdaContext> LAMBDA_DRILL_FIRE = (stack, ctx) -> doStandardFire(stack, ctx, true);
+
 
     public static void doStandardFire(ItemStack stack, ItemGunBaseNT.LambdaContext ctx, boolean calcWear) {
         EntityPlayer player = ctx.getPlayer();
         int index = ctx.configIndex;
         if (player == null) return;
 
-        ItemGunBaseNT.playAnimation(player, stack, HbmAnimationsSedna.GunAnimation.CYCLE, ctx.configIndex);
+        Lego.spawnBullet(player.world, () -> {
+            ItemGunBaseNT.playAnimation(player, stack, HbmAnimationsSedna.GunAnimation.CYCLE, index);
 
-        Receiver primary = ctx.config.getReceivers(stack)[0];
-        IMagazine mag = primary.getMagazine(stack);
+            Receiver primary = ctx.config.getReceivers(stack)[0];
+            IMagazine mag = primary.getMagazine(stack);
 
-        RayTraceResult mop = EntityDamageUtil.getMouseOver(ctx.getPlayer(), getModdableReach(stack, 5.0D));
-        if(mop != null) {
-            if(mop.typeOfHit == mop.typeOfHit.ENTITY) {
-                float damage = primary.getBaseDamage(stack);
-                if(mop.entityHit instanceof EntityLivingBase) {
-                    EntityDamageUtil.attackEntityFromNT((EntityLivingBase) mop.entityHit, DamageSource.causePlayerDamage(ctx.getPlayer()), damage, true, true, 0.1F, getModdableDTNegation(stack, 2F), getModdablePiercing(stack, 0.15F));
-                } else {
-                    mop.entityHit.attackEntityFrom(DamageSource.causePlayerDamage(ctx.getPlayer()), damage);
+            RayTraceResult mop = EntityDamageUtil.getMouseOver(ctx.getPlayer(), getModdableReach(stack, 5.0D));
+            if(mop != null) {
+                if(mop.typeOfHit == RayTraceResult.Type.ENTITY) {
+                    float damage = primary.getBaseDamage(stack);
+                    if(mop.entityHit instanceof EntityLivingBase) {
+                        EntityDamageUtil.attackEntityFromNT((EntityLivingBase) mop.entityHit, DamageSource.causePlayerDamage(ctx.getPlayer()), damage, true, true, 0.1F, getModdableDTNegation(stack, 2F), getModdablePiercing(stack, 0.15F));
+                    } else {
+                        mop.entityHit.attackEntityFrom(DamageSource.causePlayerDamage(ctx.getPlayer()), damage);
+                    }
                 }
-            }
-            if(player != null && mop.typeOfHit == mop.typeOfHit.BLOCK) {
+                if(player != null && mop.typeOfHit == RayTraceResult.Type.BLOCK) {
 
-                int aoe = player.isSneaking() ? 0 : getModdableAoE(stack, 1);
-                for(int i = -aoe; i <= aoe; i++) {
-                    for(int j = -aoe; j <= aoe; j++) {
-                        for(int k = -aoe; k <= aoe; k++) {
-                            BlockPos targetPos = mop.getBlockPos().add(i, j, k);
-                            breakExtraBlock(player.world, targetPos, player, mop.getBlockPos());
+                    int aoe = player.isSneaking() ? 0 : getModdableAoE(stack, 1);
+                    for(int i = -aoe; i <= aoe; i++) {
+                        for(int j = -aoe; j <= aoe; j++) {
+                            for(int k = -aoe; k <= aoe; k++) {
+                                BlockPos targetPos = mop.getBlockPos().add(i, j, k);
+                                breakExtraBlock(player.world, targetPos, player, mop.getBlockPos());
+                            }
                         }
                     }
                 }
             }
-        }
-        int ammoToUse = 10;
+            int ammoToUse = 10;
 
-        if(XWeaponModManager.hasUpgrade(stack, 0, XWeaponModManager.ID_ENGINE_ELECTRIC)) ammoToUse = 1_000; // that's 1,000 operations
-        mag.useUpAmmo(stack, ctx.inventory, ammoToUse);
-        if(calcWear) ItemGunBaseNT.setWear(stack, index, Math.min(ItemGunBaseNT.getWear(stack, index), ctx.config.getDurability(stack)));
+            if(XWeaponModManager.hasUpgrade(stack, 0, XWeaponModManager.ID_ENGINE_ELECTRIC)) ammoToUse = 1_000; // that's 1,000 operations
+            mag.useUpAmmo(stack, ctx.inventory, ammoToUse);
+            if(calcWear) ItemGunBaseNT.setWear(stack, index, Math.min(ItemGunBaseNT.getWear(stack, index), ctx.config.getDurability(stack)));
+        });
     }
 
     public static void breakExtraBlock(World world, BlockPos pos, EntityPlayer playerEntity, BlockPos refPos) {
@@ -183,7 +184,7 @@ public class XFactoryDrill {
                                 .addPos(0, 0, 0, 250, BusAnimationKeyframeSedna.IType.SIN_FULL)
                         )
                         .addBus("SPIN", new BusAnimationSequenceSedna()
-                                .addPos(360 * 1, 0, 0, 1500, BusAnimationKeyframeSedna.IType.SIN_DOWN)
+                                .addPos(360, 0, 0, 1500, BusAnimationKeyframeSedna.IType.SIN_DOWN)
                         )
                         .addBus("SPEED", new BusAnimationSequenceSedna()
                             .addPos(0.75, 0, 0, 250)
