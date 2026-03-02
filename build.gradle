@@ -34,7 +34,7 @@ plugins {
     id 'eclipse'
     id 'maven-publish'
     id 'org.jetbrains.gradle.plugin.idea-ext' version '1.2'
-    id 'com.gtnewhorizons.retrofuturagradle' version '2.0.0'
+    id 'com.gtnewhorizons.retrofuturagradle' version '2.0.2'
     id 'net.darkhax.curseforgegradle' version '1.1.24' apply false
     id 'com.modrinth.minotaur' version '2.8.7' apply false
     id 'com.diffplug.spotless' version '6.13.0' apply false
@@ -44,7 +44,7 @@ plugins {
     id 'org.jetbrains.kotlin.kapt' version '1.8.0' apply false
     id 'com.google.devtools.ksp' version '1.8.0-1.0.9' apply false
     id 'de.undercouch.download' version '5.6.0' apply false
-    id 'xyz.wagyourtail.jvmdowngrader' version '1.3.4' apply false
+    id 'xyz.wagyourtail.jvmdowngrader' version '1.3.6' apply false
 }
 
 def out = services.get(StyledTextOutputFactory).create('an-output')
@@ -1766,18 +1766,6 @@ tasks.named('build').configure {it.finalizedBy(tasks.named('repatchSourcesForIDE
 
 // JVMDG configuration
 jvmdg {
-    // mlbv: my fork with proper switch bootstrap and Runtime.version()
-    def fileName = 'jvmdowngrader-java-api-1.3.4-downgraded-8.jar'
-    def src  = file("libs/$fileName")
-    if (!src.exists()) {
-        throw new GradleException("Missing source api jar: $src")
-    }
-    def dest = layout.buildDirectory.file("jvmdg/$fileName").get().asFile
-    copy {
-        from src
-        into dest.parentFile
-    }
-    apiJar = [dest]
     ignoreWarningsIn = ["com/hbm/lib/internal/TrustedLookupAccessor"] as Set
     shadeInlining = false
 }
