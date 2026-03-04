@@ -18,7 +18,11 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 
 import java.util.List;
 
-/// fake HE / RF converters
+/**
+ * Fake HE / RF converters
+ *
+ * @author Leafia
+ */
 public class FuckYou extends BlockBakeBase implements ILookOverlay {
 	public FuckYou(Material m,String s) {
 		super(m,s);
