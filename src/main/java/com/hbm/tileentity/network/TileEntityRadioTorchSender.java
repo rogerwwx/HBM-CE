@@ -37,9 +37,18 @@ public class TileEntityRadioTorchSender extends TileEntityRadioTorchBase impleme
             boolean shouldSend = this.polling;
 
             if (input != this.lastState) {
-                this.markDirty();
-                world.setBlockState(pos, world.getBlockState(pos).withProperty(LIT, input > 0), 2);
                 this.lastState = input;
+
+                IBlockState state = world.getBlockState(pos);
+
+                boolean oldLit = state.getValue(LIT);
+                boolean newLit = this.lastState > 0;
+
+                if (oldLit != newLit) {
+                    world.setBlockState(pos, state.withProperty(LIT, newLit), 3);
+                }
+
+                this.markDirty();
                 shouldSend = true;
             }
 

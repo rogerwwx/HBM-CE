@@ -146,12 +146,7 @@ public class TileEntityRadioTorchBase extends TileEntity implements IBufPacketRe
 
     @Override
     public void onDataPacket(@NotNull NetworkManager net, SPacketUpdateTileEntity pkt) {
-        int lastState = this.lastState;
         this.lastState = pkt.getNbtCompound().getByte("lastState");
-        if (this.lastState != lastState) {
-            IBlockState state = world.getBlockState(getPos());
-            world.notifyBlockUpdate(getPos(), state, state, 3);
-        }
     }
 
     @Override

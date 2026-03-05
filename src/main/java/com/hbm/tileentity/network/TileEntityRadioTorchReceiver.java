@@ -5,6 +5,7 @@ import com.hbm.inventory.container.ContainerRadioTorchReceiver;
 import com.hbm.inventory.gui.GUIScreenRadioTorch;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.tileentity.network.RTTYSystem.RTTYChannel;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.Container;
@@ -54,13 +55,20 @@ public class TileEntityRadioTorchReceiver extends TileEntityRadioTorchBase imple
 
                     if (this.lastState != nextState) {
                         this.lastState = nextState;
+
                         EnumFacing dir = getTorchFacing();
                         BlockPos strongPos = new BlockPos(pos.getX() + dir.getXOffset(), pos.getY() + dir.getYOffset(), pos.getZ() + dir.getZOffset());
-                        world.notifyNeighborsOfStateChange(pos, getBlockType(), true);
+                        IBlockState state = world.getBlockState(pos);
+
+                        boolean oldLit = state.getValue(LIT);
+                        boolean newLit = this.lastState > 0;
+
+                        if (oldLit != newLit) {
+                            world.setBlockState(pos, state.withProperty(LIT, newLit), 3);
+                        }
+
                         world.notifyNeighborsOfStateChange(strongPos, getBlockType(), true);
                         world.neighborChanged(strongPos, getBlockType(), pos);
-
-                        world.setBlockState(pos, world.getBlockState(pos).withProperty(LIT, this.lastState > 0), 2);
 
                         this.markDirty();
                     }
