@@ -10,6 +10,10 @@ import com.hbm.capability.HbmLivingCapability;
 import com.hbm.capability.HbmLivingProps;
 import com.hbm.config.*;
 import com.hbm.core.BlockMetaAir;
+import com.hbm.explosion.vanillant.ExplosionVNT;
+import com.hbm.explosion.vanillant.standard.EntityProcessorCrossSmooth;
+import com.hbm.explosion.vanillant.standard.ExplosionEffectWeapon;
+import com.hbm.explosion.vanillant.standard.PlayerProcessorStandard;
 import com.hbm.util.CompatBlockReplacer;
 import com.hbm.entity.logic.IChunkLoader;
 import com.hbm.entity.mob.EntityCreeperTainted;
@@ -540,6 +544,21 @@ public class ModEventHandler {
     public void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
         BlockPos pos = event.getPos();
         World world = event.getWorld();
+
+        if(GeneralConfig.enable528ExplosiveEnergistics && !world.isRemote) {
+            Block b = world.getBlockState(pos).getBlock();
+            ResourceLocation registryName = b.getRegistryName();
+
+            if(registryName != null && registryName.toString().startsWith("appliedenergistics2")) {
+                world.destroyBlock(pos, false);
+                ExplosionVNT vnt = new ExplosionVNT(world, pos, 5);
+                vnt.setEntityProcessor(new EntityProcessorCrossSmooth(1, 20).setupPiercing(5, 0.2F));
+                vnt.setPlayerProcessor(new PlayerProcessorStandard());
+                vnt.setSFX(new ExplosionEffectWeapon(10, 2.5F, 1F));
+                vnt.explode();
+                event.setCanceled(true);
+            }
+        }
 
         if (!world.isRemote && world.getTileEntity(pos) instanceof TileEntitySign sign) {
             String result = ShadyUtil.smoosh(sign.signText[0].getUnformattedText(), sign.signText[1].getUnformattedText(), sign.signText[2].getUnformattedText(), sign.signText[3].getUnformattedText());

@@ -151,7 +151,7 @@ public class Lego {
 
         if(smoking) {
             Vec3d prev = new Vec3d(-entity.motionX, -entity.motionY, -entity.motionZ);
-            prev.rotateYaw((float) (entity.rotationYaw * Math.PI / 180D));
+            prev = prev.rotateYaw((float) (entity.rotationYaw * Math.PI / 180D));
             double accel = 15D;
             double side = (entity.rotationYaw - entity.prevRotationYawHead) * 0.1D;
             double waggle = 0.025D;

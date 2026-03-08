@@ -155,6 +155,11 @@ public class Library {
         return pos != null && pos.typeOfHit != Type.MISS;
     }
 
+    public static boolean isObstructedOpaque(World world, double x, double y, double z, double a, double b, double c) {
+        RayTraceResult pos = rayTraceBlocks(world, new Vec3d(x, y, z), new Vec3d(a, b, c), false, true, false);
+        return pos != null && pos.typeOfHit != Type.MISS;
+    }
+
     public static int getColorProgress(double fraction) {
         int r = (int) (255 * Math.min(1, fraction * -2 + 2));
         int g = (int) (255 * Math.min(1, fraction * 2));

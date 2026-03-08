@@ -67,7 +67,8 @@ public class BlockScaffoldBakedModel extends AbstractWavefrontBakedModel {
             return Collections.emptyList();
         }
 
-        int orient = state.getValue(BlockScaffold.ORIENT);
+        BlockScaffold.EnumScaffoldOrient orient = state.getValue(BlockScaffold.ORIENT);
+        int orientIndex = orient.ordinal();
 
         float yaw = (float) (-Math.PI * 0.5);
         float pitch = 0.0f;
@@ -76,27 +77,27 @@ public class BlockScaffoldBakedModel extends AbstractWavefrontBakedModel {
         tz = 0.0f;
 
         switch (orient) {
-            case 3:
+            case VERTICAL_EW:
                 pitch = (float) (Math.PI * 0.5);
                 yaw = (float) (-Math.PI);
                 tx = -0.5f;
                 ty = 0.0f;
                 break;
-            case 1:
+            case HORIZONTAL_EW:
                 yaw = (float) (-Math.PI);
                 break;
-            case 2:
+            case VERTICAL_NS:
                 pitch = (float) (Math.PI * 0.5);
                 ty = 0.0f;
                 tz = 0.5f;
                 break;
-            case 0:
+            case HORIZONTAL_NS:
             default:
                 break;
         }
 
-        if (cache[orient] != null) return cache[orient];
-        return cache[orient] = Collections.unmodifiableList(buildWorldQuads(pitch, yaw));
+        if (cache[orientIndex] != null) return cache[orientIndex];
+        return cache[orientIndex] = Collections.unmodifiableList(buildWorldQuads(pitch, yaw));
     }
 
     private List<BakedQuad> buildWorldQuads(float pitch, float yaw) {
