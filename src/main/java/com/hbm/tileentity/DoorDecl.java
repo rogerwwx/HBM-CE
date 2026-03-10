@@ -2,11 +2,19 @@ package com.hbm.tileentity;
 
 import com.hbm.animloader.AnimatedModel;
 import com.hbm.animloader.Animation;
+import com.hbm.interfaces.IDoor.DoorState;
 import com.hbm.lib.HBMSoundHandler;
 import com.hbm.lib.Library;
 import com.hbm.main.ResourceManager;
+import com.hbm.render.anim.BusAnimationSequence;
+import com.hbm.render.anim.sedna.BusAnimationKeyframeSedna.IType;
+import com.hbm.render.anim.sedna.BusAnimationSedna;
+import com.hbm.render.anim.sedna.BusAnimationSequenceSedna;
+import com.hbm.render.anim.sedna.HbmAnimationsSedna;
 import com.hbm.render.loader.IModelCustomNamed;
+import com.hbm.render.tileentity.door.*;
 import com.hbm.util.BobMathUtil;
+import com.hbm.util.Clock;
 import net.minecraft.block.Block;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.SoundEvent;
@@ -16,7 +24,18 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import org.lwjgl.opengl.GL11; import net.minecraft.client.renderer.GlStateManager;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import java.util.function.Consumer;
+
 public abstract class DoorDecl {
+
+	public DoorDecl() {
+		if (hasSkins())
+			addSkins(getDefaultSkins());
+	}
 
 	public static final DoorDecl TRANSITION_SEAL = new DoorDecl(){
 		
@@ -113,34 +132,21 @@ public abstract class DoorDecl {
 		public float getSoundVolume(){
 			return 1;
 		}
-		
+
 		@Override
-		@SideOnly(Side.CLIENT)
-		public void getTranslation(String partName, float openTicks, boolean child, float[] trans) {
-			if(partName.startsWith("door")){
-				set(trans, 0, 0, Library.smoothstep(getNormTime(openTicks), 0, 1));
-			} else {
-				set(trans, 0, 0, 0);
-			}
-		};
-		
+		public IRenderDoors getSEDNARenderer() {
+			return RenderSealDoor.INSTANCE;
+		}
+
 		@Override
-		@SideOnly(Side.CLIENT)
-		public double[][] getClippingPlanes() {
-			return new double[][]{{0, 0, -1, 0.5001}};
-		};
-		
-		@Override
-		@SideOnly(Side.CLIENT)
-		public void doOffsetTransform() {
-			GlStateManager.translate(0.375, 0, 0);
-		};
-		
-		@Override
-		public int timeToOpen() {
-			return 15;
-		};
-		
+		public BusAnimationSedna getBusAnimation(DoorState state,byte skinIndex) {
+			if(state == DoorState.OPENING) return new BusAnimationSedna().addBus("DOOR", new BusAnimationSequenceSedna().setPos(0, 0, 0).addPos(0, 1, 0, this.timeToOpen() * 50));
+			if(state == DoorState.CLOSING) return new BusAnimationSedna().addBus("DOOR", new BusAnimationSequenceSedna().setPos(0, 1, 0).addPos(0, 0, 0, this.timeToOpen() * 50));
+			return null;
+		}
+
+		@Override public int timeToOpen() { return 20; };
+
 		@Override
 		public AxisAlignedBB getBlockBound(BlockPos relPos, boolean open) {
 			if(open){
@@ -151,28 +157,9 @@ public abstract class DoorDecl {
 				return new AxisAlignedBB(0, 0, 1-0.25, 1, 1, 1);
 			}
 		};
-		
-		@Override
-		public int[][] getDoorOpenRanges(){
-			return new int[][]{{0, 0, 0, 1, 2, 2}};
-		}
 
-		@Override
-		public int[] getDimensions(){
-			return new int[]{1, 0, 0, 0, 0, 0};
-		}
-
-		@Override
-		@SideOnly(Side.CLIENT)
-		public ResourceLocation getTextureForPart(String partName){
-			return ResourceManager.sliding_seal_door_tex;
-		}
-
-		@Override
-		@SideOnly(Side.CLIENT)
-		public IModelCustomNamed getModel(){
-			return ResourceManager.sliding_seal_door;
-		}
+		@Override public int[][] getDoorOpenRanges() { return new int[][] { { 0, 0, 0, 1, 2, 2 } }; }
+		@Override public int[] getDimensions() { return new int[] { 1, 0, 0, 0, 0, 0 }; }
 	};
 
 	public static final DoorDecl SLIDING_GATE_DOOR = new DoorDecl(){
@@ -266,43 +253,22 @@ public abstract class DoorDecl {
 		public float getSoundVolume(){
 			return 2;
 		}
-		
+
 		@Override
-		@SideOnly(Side.CLIENT)
-		public void getTranslation(String partName, float openTicks, boolean child, float[] trans) {
-			if(!partName.equals("base")){
-				set(trans, 0, 3.5F*getNormTime(openTicks), 0);
-			} else {
-				super.getTranslation(partName, openTicks, child, trans);
-			}
-		};
-		
-		@Override
-		@SideOnly(Side.CLIENT)
-		public void doOffsetTransform() {
-			GL11.glRotated(90, 0, 1, 0);
-		};
-		
-		@Override
-		@SideOnly(Side.CLIENT)
-		public double[][] getClippingPlanes() {
-			return new double[][]{{0, -1, 0, 5}};
-		};
-		
-		@Override
-		public int timeToOpen() {
-			return 120;
-		};
-		
-		@Override
-		public int[][] getDoorOpenRanges(){
-			return new int[][]{{-2, 1, 0, 4, 5, 1}};
+		public IRenderDoors getSEDNARenderer() {
+			return RenderSecureDoor.INSTANCE;
 		}
 
 		@Override
-		public int[] getDimensions(){
-			return new int[]{4, 0, 0, 0, 2, 2};
+		public BusAnimationSedna getBusAnimation(DoorState state,byte skinIndex) {
+			if(state == DoorState.OPENING) return new BusAnimationSedna().addBus("DOOR", new BusAnimationSequenceSedna().setPos(0, 0, 0).addPos(0, 1, 0, this.timeToOpen() * 50));
+			if(state == DoorState.CLOSING) return new BusAnimationSedna().addBus("DOOR", new BusAnimationSequenceSedna().setPos(0, 1, 0).addPos(0, 0, 0, this.timeToOpen() * 50));
+			return null;
 		}
+
+		@Override public int timeToOpen() { return 120; };
+		@Override public int[][] getDoorOpenRanges() { return new int[][] { { -2, 1, 0, 4, 5, 1 } }; }
+		@Override public int[] getDimensions() { return new int[] { 4, 0, 0, 0, 2, 2 }; }
 		
 		@Override
 		public AxisAlignedBB getBlockBound(BlockPos relPos, boolean open) {
@@ -321,16 +287,16 @@ public abstract class DoorDecl {
 			}
 		};
 
-		@Override
-		@SideOnly(Side.CLIENT)
-		public ResourceLocation getTextureForPart(String partName){
-			return ResourceManager.secure_access_door_tex;
+		@Override public ResourceLocation[] getDefaultSkins() {
+			return new ResourceLocation[] {
+					ResourceManager.pheo_secure_door_tex,
+					ResourceManager.pheo_secure_door_grey_tex
+			};
 		}
 
 		@Override
-		@SideOnly(Side.CLIENT)
-		public IModelCustomNamed getModel(){
-			return ResourceManager.secure_access_door;
+		public boolean hasSkins() {
+			return true;
 		}
 	};
 	
@@ -349,31 +315,33 @@ public abstract class DoorDecl {
 		public float getSoundVolume(){
 			return 2;
 		}
-		
+
 		@Override
-		@SideOnly(Side.CLIENT)
-		public void getTranslation(String partName, float openTicks, boolean child, float[] trans) {
-			if("doorLeft".equals(partName)){
-				set(trans, 0, 0, 1.5F*getNormTime(openTicks));
-			} else if("doorRight".equals(partName)){
-				set(trans, 0, 0, -1.5F*getNormTime(openTicks));
-			} else {
-				super.getTranslation(partName, openTicks, child, trans);
-			}
-		};
-		
+		public IRenderDoors getSEDNARenderer() {
+			return RenderAirlockDoor.INSTANCE;
+		}
+
 		@Override
-		@SideOnly(Side.CLIENT)
-		public void doOffsetTransform() {
-			GlStateManager.translate(0, 0, 0.5);
-		};
-		
+		public BusAnimationSedna getBusAnimation(DoorState state, byte skinIndex) {
+			if(state == DoorState.OPENING) return new BusAnimationSedna().addBus("DOOR", new BusAnimationSequenceSedna().setPos(0, 0, 0).addPos(0, 1, 0, this.timeToOpen() * 50));
+			if(state == DoorState.CLOSING) return new BusAnimationSedna().addBus("DOOR", new BusAnimationSequenceSedna().setPos(0, 1, 0).addPos(0, 0, 0, this.timeToOpen() * 50));
+			return null;
+		}
+
 		@Override
-		@SideOnly(Side.CLIENT)
-		public double[][] getClippingPlanes() {
-			return new double[][]{{0.0, 0.0, 1.0, 2.0001}, {0.0, 0.0, -1.0, 2.0001}};
-		};
-		
+		protected ResourceLocation[] getDefaultSkins() {
+			return new ResourceLocation[]{
+					ResourceManager.pheo_airlock_door_tex,
+					ResourceManager.pheo_airlock_door_clean_tex,
+					ResourceManager.pheo_airlock_door_green_tex
+			};
+		}
+
+		@Override
+		public boolean hasSkins() {
+			return true;
+		}
+
 		@Override
 		public AxisAlignedBB getBlockBound(BlockPos relPos, boolean open) {
 			if(!open)
@@ -389,33 +357,21 @@ public abstract class DoorDecl {
 			}
 			return super.getBlockBound(relPos, open);
 		};
-		
+
 		@Override
 		public int timeToOpen() {
 			return 60;
 		};
-		
+
 		@Override
 		public int[][] getDoorOpenRanges(){
 			return new int[][]{{0, 0, 0, -2, 4, 2}, {0, 0, 0, 3, 4, 2}};
 		}
-		
+
 		@Override
 		public int[] getDimensions() {
 			return new int[]{3, 0, 0, 0, 2, 1};
 		};
-
-		@Override
-		@SideOnly(Side.CLIENT)
-		public ResourceLocation getTextureForPart(String partName){
-			return ResourceManager.round_airlock_door_tex;
-		}
-
-		@Override
-		@SideOnly(Side.CLIENT)
-		public IModelCustomNamed getModel(){
-			return ResourceManager.round_airlock_door;
-		}
 	};
 	
 	public static final DoorDecl HATCH = new DoorDecl(){
@@ -536,49 +492,41 @@ public abstract class DoorDecl {
 		public SoundEvent getSoundLoop2() {
 			return HBMSoundHandler.alarm6;
 		};
-		
+
+
+		@Override
+		public IRenderDoors getSEDNARenderer() {
+			return RenderFireDoor.INSTANCE;
+		}
+
+		@Override
+		public BusAnimationSedna getBusAnimation(DoorState state,byte skinIndex) {
+			if(state == DoorState.OPENING) return new BusAnimationSedna().addBus("DOOR", new BusAnimationSequenceSedna().setPos(0, 0, 0).addPos(0, 1, 0, this.timeToOpen() * 50));
+			if(state == DoorState.CLOSING) return new BusAnimationSedna().addBus("DOOR", new BusAnimationSequenceSedna().setPos(0, 1, 0).addPos(0, 0, 0, this.timeToOpen() * 50));
+			return null;
+		}
+
+		@SideOnly(Side.CLIENT) @Override public ResourceLocation[] getDefaultSkins() {
+			return new ResourceLocation[] {
+					ResourceManager.pheo_fire_door_tex,
+					ResourceManager.pheo_fire_door_black_tex,
+					ResourceManager.pheo_fire_door_orange_tex,
+			};
+		}
+
+		@Override
+		public boolean hasSkins() {
+			return true;
+		}
+
+		@Override public int timeToOpen() { return 160; }
+		@Override public int[][] getDoorOpenRanges() { return new int[][] { { -1, 0, 0, 3, 4, 1 } }; }
+		@Override public int[] getDimensions() { return new int[] { 2, 0, 0, 0, 2, 1 }; }
+
 		@Override
 		public float getSoundVolume(){
 			return 2;
 		}
-		
-		@Override
-		@SideOnly(Side.CLIENT)
-		public void getTranslation(String partName, float openTicks, boolean child, float[] trans) {
-			if(!partName.equals("frame")){
-				set(trans, 0, 3*getNormTime(openTicks), 0);
-			} else {
-				super.getTranslation(partName, openTicks, child, trans);
-			}
-		};
-		
-		@Override
-		@SideOnly(Side.CLIENT)
-		public void doOffsetTransform() {
-			GlStateManager.translate(0, 0, 0.5);
-		};
-		
-		@Override
-		@SideOnly(Side.CLIENT)
-		public double[][] getClippingPlanes() {
-			return new double[][]{{0, -1, 0, 3.0001}};
-		};
-		
-		@Override
-		public int timeToOpen() {
-			return 160;
-		};
-		
-		@Override
-		public int[][] getDoorOpenRanges(){
-			return new int[][]{{-1, 0, 0, 3, 4, 1}};
-		}
-
-		@Override
-		public int[] getDimensions(){
-			return new int[]{2, 0, 0, 0, 2, 1};
-		}
-		
 		@Override
 		public AxisAlignedBB getBlockBound(BlockPos relPos, boolean open) {
 			if(!open)
@@ -595,18 +543,6 @@ public abstract class DoorDecl {
 				return super.getBlockBound(relPos, open);
 			}
 		};
-
-		@Override
-		@SideOnly(Side.CLIENT)
-		public ResourceLocation getTextureForPart(String partName){
-			return ResourceManager.fire_door_tex;
-		}
-
-		@Override
-		@SideOnly(Side.CLIENT)
-		public IModelCustomNamed getModel(){
-			return ResourceManager.fire_door;
-		}
 	};
 	
 	public static final DoorDecl QE_SLIDING = new DoorDecl(){
@@ -627,28 +563,20 @@ public abstract class DoorDecl {
 		public float getSoundVolume(){
 			return 2;
 		}
-		
+		@Override public int timeToOpen() { return 10; };
+
 		@Override
-		@SideOnly(Side.CLIENT)
-		public void getTranslation(String partName, float openTicks, boolean child, float[] trans) {
-			if(partName.startsWith("left")){
-				set(trans, 0, 0, 1*getNormTime(openTicks));
-			} else {
-				set(trans, 0, 0, -1*getNormTime(openTicks));
-			}
-		};
-		
+		public IRenderDoors getSEDNARenderer() {
+			return RenderSlidingDoor.INSTANCE;
+		}
+
 		@Override
-		@SideOnly(Side.CLIENT)
-		public void doOffsetTransform() {
-			GlStateManager.translate(0.4375, 0, 0.5);
-		};
-		
-		@Override
-		public int timeToOpen() {
-			return 10;
-		};
-		
+		public BusAnimationSedna getBusAnimation(DoorState state,byte skinIndex) {
+			if(state == DoorState.OPENING) return new BusAnimationSedna().addBus("DOOR", new BusAnimationSequenceSedna().setPos(0, 0, 0).addPos(0, 1, 0, this.timeToOpen() * 50));
+			if(state == DoorState.CLOSING) return new BusAnimationSedna().addBus("DOOR", new BusAnimationSequenceSedna().setPos(0, 1, 0).addPos(0, 0, 0, this.timeToOpen() * 50));
+			return null;
+		}
+
 		@Override
 		public AxisAlignedBB getBlockBound(BlockPos relPos, boolean open) {
 			if(open){
@@ -661,29 +589,9 @@ public abstract class DoorDecl {
 				return new AxisAlignedBB(0, 0, 1-0.125, 1, 1, 1);
 			}
 		};
-		
-		@Override
-		public int[][] getDoorOpenRanges(){
-			return new int[][]{{0, 0, 0, 2, 2, 2}};
-		}
 
-		@Override
-		public int[] getDimensions(){
-			return new int[]{1, 0, 0, 0, 1, 0};
-		}
-
-		@Override
-		@SideOnly(Side.CLIENT)
-		public ResourceLocation getTextureForPart(String partName){
-			return ResourceManager.qe_sliding_door_tex;
-		}
-
-		@Override
-		@SideOnly(Side.CLIENT)
-		public IModelCustomNamed getModel(){
-			return ResourceManager.qe_sliding_door;
-		}
-		
+		@Override public int[][] getDoorOpenRanges() { return new int[][] { { 0, 0, 0, 2, 2, 2 } }; }
+		@Override public int[] getDimensions() { return new int[] { 1, 0, 0, 0, 1, 0 }; }
 	};
 	
 	public static final DoorDecl QE_CONTAINMENT = new DoorDecl(){
@@ -701,44 +609,35 @@ public abstract class DoorDecl {
 		public float getSoundVolume(){
 			return 2;
 		}
-		
+
 		@Override
-		@SideOnly(Side.CLIENT)
-		public void getTranslation(String partName, float openTicks, boolean child, float[] trans) {
-			if(!partName.equals("frame")){
-				set(trans, 0, 3*getNormTime(openTicks), 0);
-			} else {
-				super.getTranslation(partName, openTicks, child, trans);
-			}
-		};
-		
-		@Override
-		@SideOnly(Side.CLIENT)
-		public void doOffsetTransform() {
-			GlStateManager.translate(0.25, 0, 0);
-		};
-		
-		@Override
-		@SideOnly(Side.CLIENT)
-		public double[][] getClippingPlanes() {
-			return new double[][]{{0, -1, 0, 3.0001}};
-		};
-		
-		@Override
-		public int timeToOpen() {
-			return 160;
-		};
-		
-		@Override
-		public int[][] getDoorOpenRanges(){
-			return new int[][]{{-1, 0, 0, 3, 3, 1}};
+		public IRenderDoors getSEDNARenderer() {
+			return RenderContainmentDoor.INSTANCE;
 		}
 
 		@Override
-		public int[] getDimensions(){
-			return new int[]{2, 0, 0, 0, 1, 1};
+		public BusAnimationSedna getBusAnimation(DoorState state,byte skinIndex) {
+			if(state == DoorState.OPENING) return new BusAnimationSedna().addBus("DOOR", new BusAnimationSequenceSedna().setPos(0, 0, 0).addPos(0, 1, 0, this.timeToOpen() * 50));
+			if(state == DoorState.CLOSING) return new BusAnimationSedna().addBus("DOOR", new BusAnimationSequenceSedna().setPos(0, 1, 0).addPos(0, 0, 0, this.timeToOpen() * 50));
+			return null;
 		}
-		
+
+		@SideOnly(Side.CLIENT) @Override public ResourceLocation[] getDefaultSkins() {
+			return new ResourceLocation[] {
+					ResourceManager.pheo_containment_door_tex,
+					ResourceManager.pheo_containment_door_trefoil_tex
+			};
+		}
+
+		@Override
+		public boolean hasSkins() {
+			return true;
+		}
+
+		@Override public int timeToOpen() { return 160; };
+		@Override public int[][] getDoorOpenRanges() { return new int[][] { { -1, 0, 0, 3, 3, 1 } }; }
+		@Override public int[] getDimensions() { return new int[] { 2, 0, 0, 0, 1, 1 }; }
+
 		@Override
 		public AxisAlignedBB getBlockBound(BlockPos relPos, boolean open) {
 			if(!open)
@@ -750,20 +649,6 @@ public abstract class DoorDecl {
 			return super.getBlockBound(relPos, open);
 		};
 
-		@Override
-		@SideOnly(Side.CLIENT)
-		public ResourceLocation getTextureForPart(String partName){
-			if(partName.equals("decal"))
-				return ResourceManager.qe_containment_decal;
-			return ResourceManager.qe_containment_tex;
-		}
-
-		@Override
-		@SideOnly(Side.CLIENT)
-		public IModelCustomNamed getModel(){
-			return ResourceManager.qe_containment_door;
-		}
-		
 	};
 	
 	public static final DoorDecl WATER_DOOR = new DoorDecl(){
@@ -793,66 +678,36 @@ public abstract class DoorDecl {
 		public float getSoundVolume(){
 			return 2;
 		}
-		
+
+
 		@Override
-		@SideOnly(Side.CLIENT)
-		public void getTranslation(String partName, float openTicks, boolean child, float[] trans) {
-			if("bolt".equals(partName)){
-				set(trans, 0, 0, 0.4F*Library.smoothstep(getNormTime(openTicks, 0, 30), 0, 1));
-			} else {
-				set(trans, 0, 0, 0);
-			}
-		};
-		
-		@Override
-		@SideOnly(Side.CLIENT)
-		public void doOffsetTransform(){
-			GlStateManager.translate(0.375, 0, 0);
+		public IRenderDoors getSEDNARenderer() {
+			return RenderWaterDoor.INSTANCE;
 		}
-		
+
 		@Override
-		@SideOnly(Side.CLIENT)
-		public void getOrigin(String partName, float[] orig) {
-			if("door".equals(partName) || "bolt".equals(partName)){
-				set(orig, 0.125F, 1.5F, 1.18F);
-				return;
-			} else if("spinny_upper".equals(partName)){
-				set(orig, 0.041499F, 2.43569F, -0.587849F);
-				return;
-			} else if("spinny_lower".equals(partName)){
-				set(orig, 0.041499F, 0.571054F, -0.587849F);
-				return;
-			}
-			super.getOrigin(partName, orig);
-		};
-		
+		public BusAnimationSedna getBusAnimation(DoorState state,byte skinIndex) {
+			if(state == DoorState.OPENING) return new BusAnimationSedna()
+					.addBus("DOOR", new BusAnimationSequenceSedna().setPos(0, 0, 0).addPos(0, 0, 0, 1500).addPos(0, 1, 0, 1500, IType.SIN_FULL))
+					.addBus("BOLT", new BusAnimationSequenceSedna().setPos(0, 0, 0).addPos(0, 0, 1, 1500, IType.SIN_FULL));
+			if(state == DoorState.CLOSING) return new BusAnimationSedna()
+					.addBus("DOOR", new BusAnimationSequenceSedna().setPos(0, 1, 0).addPos(0, 0, 0, 1500, IType.SIN_FULL))
+					.addBus("BOLT", new BusAnimationSequenceSedna().setPos(0, 0, 1).addPos(0, 0, 1, 1200).addPos(0, 0, 0, 1500, IType.SIN_FULL));
+			return null;
+		}
+
+		@SideOnly(Side.CLIENT) @Override public ResourceLocation[] getDefaultSkins() {
+			return  new ResourceLocation[] {
+					ResourceManager.pheo_water_door_tex,
+					ResourceManager.pheo_water_door_clean_tex
+			};
+		}
+
 		@Override
-		@SideOnly(Side.CLIENT)
-		public void getRotation(String partName, float openTicks, float[] rot) {
-			if(partName.startsWith("spinny")){
-				set(rot, Library.smoothstep(getNormTime(openTicks, 0, 30), 0, 1)*360, 0, 0);
-				return;
-			} else if("door".equals(partName) || "bolt".equals(partName)){
-				set(rot, 0, Library.smoothstep(getNormTime(openTicks, 30, 60), 0, 1)*-134, 0);
-				return;
-			}
-			super.getRotation(partName, openTicks, rot);
-		};
-		
-		@Override
-		@SideOnly(Side.CLIENT)
-		public boolean doesRender(String partName, boolean child) {
-			return child || !partName.startsWith("spinny");
-		};
-		
-		@Override
-		@SideOnly(Side.CLIENT)
-		public String[] getChildren(String partName) {
-			if("door".equals(partName))
-				return new String[]{"spinny_lower", "spinny_upper"};
-			return super.getChildren(partName);
-		};
-		
+		public boolean hasSkins() {
+			return true;
+		}
+
 		@Override
 		public AxisAlignedBB getBlockBound(BlockPos relPos, boolean open) {
 			if(!open){
@@ -864,53 +719,14 @@ public abstract class DoorDecl {
 			}
 			return super.getBlockBound(relPos, open);
 		};
-		
-		@Override
-		public int timeToOpen() {
-			return 60;
-		};
-		
-		@Override
-		public int[][] getDoorOpenRanges(){
-			return new int[][]{{1, 0, 0, -3, 3, 2}};
-		}
-		
-		public float getDoorRangeOpenTime(int ticks, int idx) {
-			return getNormTime(ticks, 35, 40);
-		};
 
-		@Override
-		public int[] getDimensions(){
-			return new int[]{2, 0, 0, 0, 1, 1};
-		}
-
-		@Override
-		@SideOnly(Side.CLIENT)
-		public ResourceLocation getTextureForPart(String partName){
-			return ResourceManager.water_door_tex;
-		}
-
-		@Override
-		@SideOnly(Side.CLIENT)
-		public IModelCustomNamed getModel(){
-			return ResourceManager.water_door;
-		}
-		
+		@Override public int timeToOpen() { return 60; };
+		@Override public int[][] getDoorOpenRanges() { return new int[][] { { 1, 0, 0, -3, 3, 2 } }; }
+		@Override public float getDoorRangeOpenTime(int ticks, int idx) { return getNormTime(ticks, 35, 40); };
+		@Override public int[] getDimensions() { return new int[] { 2, 0, 0, 0, 1, 1 }; }
 	};
 	
 	public static final DoorDecl LARGE_VEHICLE_DOOR = new DoorDecl(){
-
-		@Override
-		@SideOnly(Side.CLIENT)
-		public void getTranslation(String partName, float openTicks, boolean child, float[] trans) {
-			if("doorLeft".equals(partName)){
-				set(trans, 0, 0, 3*getNormTime(openTicks));
-			} else if("doorRight".equals(partName)){
-				set(trans, 0, 0, -3*getNormTime(openTicks));
-			} else {
-				super.getTranslation(partName, openTicks, child, trans);
-			}
-		};
 		
 		@Override
 		public SoundEvent getOpenSoundEnd() {
@@ -925,13 +741,19 @@ public abstract class DoorDecl {
 		public float getSoundVolume(){
 			return 2;
 		}
-		
+
 		@Override
-		@SideOnly(Side.CLIENT)
-		public double[][] getClippingPlanes() {
-			return new double[][]{{0.0, 0.0, 1.0, 3.50001}, {0.0, 0.0, -1.0, 3.50001}};
-		};
-		
+		public IRenderDoors getSEDNARenderer() {
+			return RenderVehicleDoor.INSTANCE;
+		}
+
+		@Override
+		public BusAnimationSedna getBusAnimation(DoorState state,byte skinIndex) {
+			if(state == DoorState.OPENING) return new BusAnimationSedna().addBus("DOOR", new BusAnimationSequenceSedna().setPos(0, 0, 0).addPos(0, 1, 0, this.timeToOpen() * 50));
+			if(state == DoorState.CLOSING) return new BusAnimationSedna().addBus("DOOR", new BusAnimationSequenceSedna().setPos(0, 1, 0).addPos(0, 0, 0, this.timeToOpen() * 50));
+			return null;
+		}
+
 		@Override
 		public AxisAlignedBB getBlockBound(BlockPos relPos, boolean open) {
 			if(!open)
@@ -943,34 +765,10 @@ public abstract class DoorDecl {
 			}
 			return super.getBlockBound(relPos, open);
 		};
-		
-		@Override
-		public int timeToOpen() {
-			return 60;
-		};
-		
-		@Override
-		public int[][] getDoorOpenRanges(){
-			return new int[][]{{0, 0, 0, -4, 6, 2}, {0, 0, 0, 4, 6, 2}};
-		}
-		
-		@Override
-		public int[] getDimensions() {
-			return new int[]{5, 0, 0, 0, 3, 3};
-		};
 
-		@Override
-		@SideOnly(Side.CLIENT)
-		public ResourceLocation getTextureForPart(String partName){
-			return ResourceManager.large_vehicle_door_tex;
-		}
-
-		@Override
-		@SideOnly(Side.CLIENT)
-		public IModelCustomNamed getModel(){
-			return ResourceManager.large_vehicle_door;
-		}
-		
+		@Override public int timeToOpen() { return 60; };
+		@Override public int[][] getDoorOpenRanges() { return new int[][] { { 0, 0, 0, -4, 6, 2 }, { 0, 0, 0, 4, 6, 2 } }; }
+		@Override public int[] getDimensions() { return new int[] { 5, 0, 0, 0, 3, 3 }; };
 	};
     public static final DoorDecl SILO_HATCH = new DoorDecl() {
 
@@ -1115,10 +913,10 @@ public abstract class DoorDecl {
 	}
 	
 	@SideOnly(Side.CLIENT)
-	public abstract ResourceLocation getTextureForPart(String partName);
+	public ResourceLocation getTextureForPart(String partName) { return null; }
 	
 	@SideOnly(Side.CLIENT)
-	public abstract IModelCustomNamed getModel();
+	public IModelCustomNamed getModel() { return null; }
 	
 	@SideOnly(Side.CLIENT)
 	public AnimatedModel getAnimatedModel(){
@@ -1213,4 +1011,65 @@ public abstract class DoorDecl {
 	}
 	
 	public float[] set(float[] f, float x, float y, float z){f[0] = x; f[1] = y; f[2] = z; return f;};
+
+	// NEW DOORS
+
+	/// Do NOT access this directly. Use getSEDNASkins()
+	private List<ResourceLocation> skins;
+
+	/// A little modification shouldn't hurt
+	/// -Leafia
+	public final List<ResourceLocation> getSEDNASkins() {
+		if (hasSkins() && skins == null)
+			skins = new ArrayList<>();
+		return skins;
+	}
+
+	/// Override this to enable skins.
+	public boolean hasSkins() { return false; }
+
+	/// Utility method for initializing skins. Called by constructor.
+	/// Made public for addons.
+	public final void addSkins(ResourceLocation... skins) {
+		getSEDNASkins().addAll(Arrays.asList(skins));
+	}
+
+	/// Override this method to initialize skins. Called by constructor.
+	protected ResourceLocation[] getDefaultSkins() {
+		return new ResourceLocation[0];
+	}
+
+	/// screw it
+	/// Override hasSkins to enable skins, otherwise this will always return 0.
+	public final int getSkinCount() {
+		if (!hasSkins())
+			return 0;
+		List<ResourceLocation> skins = getSEDNASkins();
+		if (skins == null) return 0;
+		return skins.size();
+	}
+
+	/// For item rendering
+	public ResourceLocation getCyclingSkins() {
+		List<ResourceLocation> skins = this.getSEDNASkins();
+		int index = (int) ((Clock.get_ms() % (skins.size() * 1000)) / 1000);
+		return skins.get(index);
+	}
+
+	public ResourceLocation getSkinFromIndex(int index) {
+		List<ResourceLocation> skins = this.getSEDNASkins();
+		return skins.get(Math.abs(index) % skins.size());
+	}
+
+	// keyframe animation system sneakily stitched into the door decl
+	public IRenderDoors getSEDNARenderer() { return null; }
+	public BusAnimationSedna getBusAnimation(DoorState state,byte skinIndex) { return null; }
+
+	public HbmAnimationsSedna.Animation getSEDNAAnim(DoorState state,byte skinIndex) {
+		BusAnimationSedna anim = this.getBusAnimation(state, skinIndex);
+		if(anim != null) return new HbmAnimationsSedna.Animation("DOOR_ANIM", System.currentTimeMillis(), anim);
+		return null;
+	}
+
+	public Consumer<TileEntityDoorGeneric> onDoorUpdate() { return null; }
 }

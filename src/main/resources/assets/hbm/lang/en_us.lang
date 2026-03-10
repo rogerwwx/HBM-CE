@@ -1288,6 +1288,7 @@ desc.creative=Creative-only item
 desc.debugwand=Used for debugging purposes.
 desc.depth=Depth: %sm
 desc.digammaed=mDRX/s
+desc.doors_skin=Sneak and use screwdriver to change skins! (if it has one)
 desc.duration=Duration: %ss
 desc.durpercents=Durability in percents:
 desc.durticks=Durability in ticks:

@@ -1,4 +1,4 @@
-package com.hbm.render.tileentity;
+package com.hbm.render.tileentity.door;
 
 import com.hbm.animloader.AnimationWrapper;
 import com.hbm.animloader.AnimationWrapper.EndResult;
@@ -19,6 +19,7 @@ import net.minecraft.util.ResourceLocation;
 import org.lwjgl.opengl.GL11;
 
 import java.nio.DoubleBuffer;
+/// Didn't update sliding blast doors because they dont have keypads in 1.7.10
 @AutoRegister
 public class RenderSlidingBlastDoor extends TileEntitySpecialRenderer<TileEntitySlidingBlastDoor> {
 
