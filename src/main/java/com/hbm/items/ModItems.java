@@ -746,10 +746,6 @@ public class ModItems {
     public static final Item gun_egon = new ItemGunEgon(GunEnergyFactory.getEgonConfig(), "gun_egon").setCreativeTab(MainRegistry.weaponTab);
     public static final Item gun_moist_nugget = new ItemNugget(3, false, "gun_moist_nugget").setCreativeTab(MainRegistry.weaponTab);
     public static final Item crucible = new ItemCrucible(500, 1F, MaterialRegistry.matCrucible, "crucible").setCreativeTab(MainRegistry.weaponTab);
-    //Yeah it's supposed to be "ultrahard steel", but I don't feel like adding that, so high-speed steel sword it is.
-    public static final Item hs_sword = new ItemSwordCutter(10F, 1F, MaterialRegistry.matCrucible, "hs_sword").setCreativeTab(MainRegistry.weaponTab);
-    //High frequency sword
-    public static final Item hf_sword = new ItemSwordCutter(15F, 1F, MaterialRegistry.matCrucible, "hf_sword").setCreativeTab(MainRegistry.weaponTab);
 
     public static final Item stick_dynamite = new ItemGrenade(3, "stick_dynamite").setCreativeTab(MainRegistry.weaponTab);
     public static final Item stick_dynamite_fishing = new ItemGrenadeFishing(3, "stick_dynamite_fishing").setCreativeTab(MainRegistry.weaponTab);
