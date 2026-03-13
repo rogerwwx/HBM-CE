@@ -30,7 +30,7 @@ public class SubElementLabel extends SubElementBaseConfig {
     GuiSlider slideScale;
 
     public SubElementLabel(GuiControlEdit gui, Map<String, DataValue> map) {
-        super(gui);
+        super(gui,map);
         this.colorR = map.get("colorR").getNumber();
         this.colorG = map.get("colorG").getNumber();
         this.colorB = map.get("colorB").getNumber();

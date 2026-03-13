@@ -17,7 +17,7 @@ public class SubElementDisplayText extends SubElementBaseConfig {
     GuiSlider slideWidth;
 
     public SubElementDisplayText(GuiControlEdit gui, Map<String, DataValue> map) {
-        super(gui);
+        super(gui,map);
         this.scale = (int) map.get("scale").getNumber();
         this.width = (int) map.get("width").getNumber();
     }

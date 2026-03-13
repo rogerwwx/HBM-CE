@@ -4,8 +4,8 @@ import net.minecraft.util.EnumFacing;
 
 public class FacingUtil {
     public static float getPitch(EnumFacing facing) {
-        if (facing == EnumFacing.UP) return (float)Math.PI * 0.5F;
-        if (facing == EnumFacing.DOWN) return (float)Math.PI * -0.5F;
+        if (facing == EnumFacing.UP) return (float)Math.PI * -0.5F;
+        if (facing == EnumFacing.DOWN) return (float)Math.PI * 0.5F;
         return 0;
     }
 

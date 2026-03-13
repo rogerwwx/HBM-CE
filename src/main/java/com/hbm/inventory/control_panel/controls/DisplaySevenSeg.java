@@ -1,5 +1,7 @@
 package com.hbm.inventory.control_panel.controls;
 
+import com.hbm.inventory.control_panel.controls.configs.SubElementBaseConfig;
+import com.hbm.inventory.control_panel.controls.configs.SubElementDisplaySevenSeg;
 import com.hbm.render.loader.WaveFrontObjectVAO;
 import com.hbm.inventory.control_panel.*;
 import com.hbm.main.ResourceManager;
@@ -23,14 +25,20 @@ public class DisplaySevenSeg extends Control {
     private int digitCount = 1;
     private boolean isDecimal = false;
 
-    public DisplaySevenSeg(String name, ControlPanel panel) {
-        super(name, panel);
+    public DisplaySevenSeg(String name,String registryName,ControlPanel panel) {
+        super(name,registryName, panel);
         vars.put("value", new DataValueFloat(0));
         configMap.put("colorR", new DataValueFloat(color[0]));
         configMap.put("colorG", new DataValueFloat(color[1]));
         configMap.put("colorB", new DataValueFloat(color[2]));
         configMap.put("digitCount", new DataValueFloat(digitCount));
         configMap.put("isDecimal", new DataValueFloat(0));
+    }
+
+    @Override
+    @SideOnly(Side.CLIENT)
+    public SubElementBaseConfig getConfigSubElement(GuiControlEdit gui,Map<String,DataValue> configs) {
+        return new SubElementDisplaySevenSeg(gui,configs);
     }
 
     @Override
@@ -161,6 +169,6 @@ public class DisplaySevenSeg extends Control {
 
     @Override
     public Control newControl(ControlPanel panel) {
-        return new DisplaySevenSeg(name, panel);
+        return new DisplaySevenSeg(name,registryName,panel);
     }
 }

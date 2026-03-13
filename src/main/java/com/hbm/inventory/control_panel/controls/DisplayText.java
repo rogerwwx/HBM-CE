@@ -1,6 +1,8 @@
 package com.hbm.inventory.control_panel.controls;
 
 import com.hbm.inventory.control_panel.*;
+import com.hbm.inventory.control_panel.controls.configs.SubElementBaseConfig;
+import com.hbm.inventory.control_panel.controls.configs.SubElementDisplayText;
 import com.hbm.main.ResourceManager;
 import com.hbm.render.loader.IModelCustom;
 import net.minecraft.client.Minecraft;
@@ -13,6 +15,8 @@ import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.item.EnumDyeColor;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.AxisAlignedBB;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 import org.lwjgl.opengl.GL11;
 
 import java.util.List;
@@ -25,13 +29,19 @@ public class DisplayText extends Control {
     private float textWidth = 0; //TODO: stop all-too-long text
     private float height = 0;
 
-    public DisplayText(String name, ControlPanel panel) {
-        super(name, panel);
+    public DisplayText(String name,String registryName,ControlPanel panel) {
+        super(name,registryName, panel);
         vars.put("isLit", new DataValueFloat(0));
         vars.put("text", new DataValueString("text"));
         vars.put("color", new DataValueEnum<>(EnumDyeColor.WHITE));
         configMap.put("scale", new DataValueFloat(scale));
         configMap.put("width", new DataValueFloat(width));
+    }
+
+    @Override
+    @SideOnly(Side.CLIENT)
+    public SubElementBaseConfig getConfigSubElement(GuiControlEdit gui,Map<String,DataValue> configs) {
+        return new SubElementDisplayText(gui,configs);
     }
 
     @Override
@@ -150,7 +160,7 @@ public class DisplayText extends Control {
 
     @Override
     public Control newControl(ControlPanel panel) {
-        return new DisplayText(name, panel);
+        return new DisplayText(name,registryName,panel);
     }
 
     @Override

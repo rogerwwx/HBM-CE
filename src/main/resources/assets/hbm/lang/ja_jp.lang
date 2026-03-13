@@ -1079,6 +1079,7 @@ desc.creative=クリエイティブのみ・チートアイテム
 desc.debugwand=デバッグ目的で使用されます。
 desc.depth=深さ %sm
 desc.digammaed=mDRX/s
+desc.doors_skin=スニーク+スクリュードライバーでスキンを変更できます!
 desc.duration=所要時間 %ss
 desc.durpercents=耐久値 (パーセント)
 desc.durticks=耐久値 (ティック)

@@ -921,9 +921,11 @@ public class HazardSystem {
 
         void applyActiveHazards() {
             if (player.isDead) return;
+            boolean sync = false;
 
             if (!activeApplicators.isEmpty()) {
                 activeApplicators.values().forEach(applier -> applier.accept(this.player));
+                sync = true;
             }
             HbmLivingProps.setNeutron(player, 0);
 
@@ -940,12 +942,13 @@ public class HazardSystem {
                         float totalActivationAmount = (float) activationRate * RadiationConfig.hazardRate;
                         if (ContaminationUtil.neutronActivateInventory(player, totalActivationAmount, 1.0F)) {
                             schedulePlayerUpdate(this.player);
+                            sync = true;
                         }
                     }
                 }
             }
 
-            if (this.player.inventoryContainer != null) {
+            if (sync && this.player.inventoryContainer != null) {
                 this.player.inventoryContainer.detectAndSendChanges();
             }
         }

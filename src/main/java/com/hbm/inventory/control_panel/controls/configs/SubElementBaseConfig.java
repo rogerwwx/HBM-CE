@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class SubElementBaseConfig extends SubElement {
-    public SubElementBaseConfig(GuiControlEdit gui) {
+    public SubElementBaseConfig(GuiControlEdit gui,Map<String, DataValue> map) {
         super(gui);
     }
 

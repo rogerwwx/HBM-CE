@@ -4,12 +4,14 @@ import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.block.model.ItemCameraTransforms.TransformType;
 import net.minecraft.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class ItemRenderBase extends TEISRBase {
 
 	@Override
-	public void renderByItem(@NotNull ItemStack itemStackIn) {
-		if (this.type == null) {
+	//Norwood: nowhere in the source of MC in context of rendering, itemstack is considered non-null
+	public void renderByItem(@Nullable ItemStack itemStackIn) {
+		if (this.type == null || itemStackIn == null) {
 			this.type = TransformType.NONE;
 		}
 

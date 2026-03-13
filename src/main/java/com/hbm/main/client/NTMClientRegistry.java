@@ -483,8 +483,6 @@ public class NTMClientRegistry {
         swapModels(ModItems.ingot_meteorite_forged, reg);
         swapModels(ModItems.blade_meteorite, reg);
         swapModels(ModItems.crucible, reg);
-        swapModels(ModItems.hs_sword, reg);
-        swapModels(ModItems.hf_sword, reg);
         swapModels(ModItems.gun_egon, reg);
         swapModels(ModItems.jshotgun, reg);
 

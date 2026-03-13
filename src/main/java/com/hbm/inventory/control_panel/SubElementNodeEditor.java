@@ -255,6 +255,7 @@ public class SubElementNodeEditor extends SubElement {
 			gui.popElement();
 		}
 		if (button == btn_variables) {
+			gui.currentEditControl = currentSystem.parent;
 			gui.pushElement(gui.variables);
 		}
 	}

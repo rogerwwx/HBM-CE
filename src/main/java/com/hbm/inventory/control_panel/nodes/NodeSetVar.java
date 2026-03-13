@@ -52,7 +52,6 @@ public class NodeSetVar extends NodeOutput {
 	@Override
 	public NBTTagCompound writeToNBT(NBTTagCompound tag, NodeSystem sys){
 		tag.setString("nodeType", "setVar");
-		tag.setInteger("controlIdx", sys.parent.panel.controls.indexOf(sys.parent));
 		tag.setBoolean("global", global);
 		tag.setString("varName", varName);
 		return super.writeToNBT(tag, sys);
@@ -81,13 +80,13 @@ public class NodeSetVar extends NodeOutput {
 	@Override
 	public boolean doOutput(IControllable from, Map<String, NodeSystem> sendNodeMap, List<BlockPos> positions){
 		if(varName.isEmpty())
-			return false;
+			return true;
 		if(global){
 			ctrl.panel.globalVars.put(varName, inputs.get(0).evaluate());
 		} else {
 			ctrl.vars.put(varName, inputs.get(0).evaluate());
 		}
-		return false;
+		return true;
 	}
 
 	public NodeSetVar setData(String varName, boolean isGlobal) {

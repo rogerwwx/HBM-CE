@@ -1765,52 +1765,6 @@ public class ClientProxy extends ServerProxy {
                             default -> throw new IllegalStateException("Unexpected value: " + mode);
                         }
                     }
-                    case "hs_sword" -> {
-                        switch (mode) {
-                            case "equip" -> HbmAnimations.hotbar[slot] =
-                                    new BlenderAnimation(player.getHeldItem(hand).getItem().getTranslationKey(),
-                                            System.currentTimeMillis(), 1, ResourceManager.hs_sword_equip,
-                                            new EndResult(EndType.STAY));
-                            case "swing" -> {
-                                BusAnimation animation = new BusAnimation()
-                                        .addBus("SWING", new BusAnimationSequence()
-                                                .addKeyframe(new BusAnimationKeyframe(120, 0, 0, 150))
-                                                .addKeyframe(new BusAnimationKeyframe(0, 0, 0, 500)));
-                                if (HbmAnimations.hotbar[slot] instanceof BlenderAnimation) {
-                                    HbmAnimations.hotbar[slot].animation = animation;
-                                    HbmAnimations.hotbar[slot].startMillis = System.currentTimeMillis();
-                                } else {
-                                    HbmAnimations.hotbar[slot] =
-                                            new Animation(player.getHeldItem(hand).getItem().getTranslationKey(),
-                                                    System.currentTimeMillis(), animation);
-                                }
-                            }
-                            default -> throw new IllegalStateException("Unexpected value: " + mode);
-                        }
-                    }
-                    case "hf_sword" -> {
-                        switch (mode) {
-                            case "equip" -> HbmAnimations.hotbar[slot] =
-                                    new BlenderAnimation(player.getHeldItem(hand).getItem().getTranslationKey(),
-                                            System.currentTimeMillis(), 1, ResourceManager.hf_sword_equip,
-                                            new EndResult(EndType.STAY));
-                            case "swing" -> {
-                                BusAnimation animation = new BusAnimation()
-                                        .addBus("SWING", new BusAnimationSequence()
-                                                .addKeyframe(new BusAnimationKeyframe(120, 0, 0, 150))
-                                                .addKeyframe(new BusAnimationKeyframe(0, 0, 0, 500)));
-                                if (HbmAnimations.hotbar[slot] instanceof BlenderAnimation) {
-                                    HbmAnimations.hotbar[slot].animation = animation;
-                                    HbmAnimations.hotbar[slot].startMillis = System.currentTimeMillis();
-                                } else {
-                                    HbmAnimations.hotbar[slot] =
-                                            new Animation(player.getHeldItem(hand).getItem().getTranslationKey(),
-                                                    System.currentTimeMillis(), animation);
-                                }
-                            }
-                            default -> throw new IllegalStateException("Unexpected value: " + mode);
-                        }
-                    }
                 }
 
                 if ("generic".equals(mode)) {
@@ -2008,6 +1962,8 @@ public class ClientProxy extends ServerProxy {
     public AudioWrapper getLoopedSound(SoundEvent sound, SoundCategory cat, float x, float y, float z, float volume, float pitch) {
         AudioWrapperClient audio = new AudioWrapperClient(sound, cat, false);
         audio.updatePosition(x, y, z);
+        audio.updateVolume(volume);
+        audio.updatePitch(pitch);
         return audio;
     }
 
@@ -2017,6 +1973,7 @@ public class ClientProxy extends ServerProxy {
         audio.updatePosition(x, y, z);
         audio.updateVolume(volume);
         audio.updateRange(range);
+        audio.updatePitch(pitch);
         audio.setKeepAlive(keepAlive);
         return audio;
     }
@@ -2027,6 +1984,7 @@ public class ClientProxy extends ServerProxy {
         audio.updatePosition(x, y, z);
         audio.updateVolume(volume);
         audio.updateRange(range);
+        audio.updatePitch(pitch);
         return audio;
     }
 
@@ -2034,6 +1992,7 @@ public class ClientProxy extends ServerProxy {
     public AudioWrapper getLoopedSoundStartStop(World world, SoundEvent sound, SoundEvent start, SoundEvent stop, SoundCategory cat, float x, float y, float z, float volume, float pitch) {
         AudioWrapperClientStartStop audio = new AudioWrapperClientStartStop(world, sound, start, stop, volume, cat);
         audio.updatePosition(x, y, z);
+        audio.updatePitch(pitch);
         return audio;
     }
 

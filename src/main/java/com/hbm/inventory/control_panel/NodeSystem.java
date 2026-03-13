@@ -6,6 +6,7 @@ import com.hbm.inventory.control_panel.nodes.NodeFunction;
 import com.hbm.inventory.control_panel.nodes.NodeInput;
 import com.hbm.inventory.control_panel.nodes.NodeOutput;
 import com.hbm.render.NTMRenderHelper;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
@@ -18,7 +19,6 @@ import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.GL11;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -51,11 +51,11 @@ public class NodeSystem {
 	public Control parent;
 	public List<Node> nodes = new ArrayList<>();
 	public List<NodeOutput> outputNodes = new ArrayList<>();
-	private Map<String, DataValue> vars = new HashMap<>();
+	private Map<String, DataValue> vars = new Object2ObjectOpenHashMap<>();
 
 	// an array of subsystems owned by the various nodes sharing a system layer (sublayering is then done recursively)
 	// ○|￣|_   <-- me
-	public Map<Node, NodeSystem> subSystems = new HashMap<>();
+	public Map<Node, NodeSystem> subSystems = new Object2ObjectOpenHashMap<>();
 
 	public NodeSystem(Control parent){
 		this.parent = parent;

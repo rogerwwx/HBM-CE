@@ -15,7 +15,7 @@ public class SubElementKnobControl extends SubElementBaseConfig {
     GuiSlider slidePositions;
 
     public SubElementKnobControl(GuiControlEdit gui, Map<String, DataValue> map) {
-        super(gui);
+        super(gui,map);
         this.positions = (int) map.get("positions").getNumber();
     }
 

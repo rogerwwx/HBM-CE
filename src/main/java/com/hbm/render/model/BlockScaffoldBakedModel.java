@@ -78,7 +78,7 @@ public class BlockScaffoldBakedModel extends AbstractWavefrontBakedModel {
 
         switch (orient) {
             case VERTICAL_EW:
-                pitch = (float) (Math.PI * 0.5);
+                pitch = (float) (Math.PI * -0.5);
                 yaw = (float) (-Math.PI);
                 tx = -0.5f;
                 ty = 0.0f;
@@ -87,7 +87,7 @@ public class BlockScaffoldBakedModel extends AbstractWavefrontBakedModel {
                 yaw = (float) (-Math.PI);
                 break;
             case VERTICAL_NS:
-                pitch = (float) (Math.PI * 0.5);
+                pitch = (float) (Math.PI * -0.5);
                 ty = 0.0f;
                 tz = 0.5f;
                 break;
@@ -105,7 +105,7 @@ public class BlockScaffoldBakedModel extends AbstractWavefrontBakedModel {
     }
 
     private List<BakedQuad> buildItemQuads() {
-        return new ArrayList<>(bakeSimpleQuads(Collections.singletonList("Scaffold"), 0, 0, (float) Math.PI, false, true, sprite));
+        return new ArrayList<>(bakeSimpleQuads(Collections.singleton("Scaffold"), 0, 0, (float) Math.PI, false, true, sprite));
     }
 
     @Override

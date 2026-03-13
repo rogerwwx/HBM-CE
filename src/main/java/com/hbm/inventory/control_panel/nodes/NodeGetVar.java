@@ -45,7 +45,6 @@ public class NodeGetVar extends Node {
 	@Override
 	public NBTTagCompound writeToNBT(NBTTagCompound tag, NodeSystem sys){
 		tag.setString("nodeType", "getVar");
-		tag.setInteger("controlIdx", sys.parent.panel.controls.indexOf(sys.parent));
 		tag.setBoolean("global", global);
 		tag.setString("varName", varName);
 		return super.writeToNBT(tag, sys);

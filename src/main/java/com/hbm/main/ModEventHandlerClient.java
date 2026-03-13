@@ -12,6 +12,7 @@ import com.hbm.config.GeneralConfig;
 import com.hbm.entity.mob.EntityHunterChopper;
 import com.hbm.entity.projectile.EntityChopperMine;
 import com.hbm.handler.*;
+import com.hbm.handler.radiation.RadVisOverlay;
 import com.hbm.hazard.HazardSystem;
 import com.hbm.interfaces.*;
 import com.hbm.inventory.RecipesCommon.ComparableStack;
@@ -19,9 +20,7 @@ import com.hbm.inventory.RecipesCommon.NbtComparableStack;
 import com.hbm.inventory.gui.GUIArmorTable;
 import com.hbm.inventory.recipes.loader.SerializableRecipe;
 import com.hbm.items.ModItems;
-import com.hbm.items.armor.ArmorNo9;
-import com.hbm.items.armor.ItemArmorMod;
-import com.hbm.items.armor.JetpackBase;
+import com.hbm.items.armor.*;
 import com.hbm.items.gear.ArmorFSB;
 import com.hbm.items.special.ItemCustomLore;
 import com.hbm.items.weapon.*;
@@ -57,7 +56,6 @@ import com.hbm.render.misc.SoyuzPronter;
 import com.hbm.render.modelrenderer.EgonBackpackRenderer;
 import com.hbm.render.util.RenderOverhead;
 import com.hbm.render.world.RenderNTMSkyboxChainloader;
-import com.hbm.handler.radiation.RadVisOverlay;
 import com.hbm.sound.*;
 import com.hbm.sound.MovingSoundPlayerLoop.EnumHbmSound;
 import com.hbm.tileentity.bomb.TileEntityNukeCustom;
@@ -106,10 +104,12 @@ import net.minecraft.util.math.*;
 import net.minecraft.util.math.RayTraceResult.Type;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
+import net.minecraftforge.client.GuiIngameForge;
 import net.minecraftforge.client.IRenderHandler;
 import net.minecraftforge.client.event.*;
 import net.minecraftforge.client.event.RenderGameOverlayEvent.ElementType;
 import net.minecraftforge.client.event.sound.PlaySoundEvent;
+import net.minecraftforge.common.ForgeHooks;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.common.eventhandler.EventPriority;
@@ -1169,6 +1169,124 @@ public class ModEventHandlerClient {
         }
     }
 
+    private List<Tuple.Pair<Float, Integer>> getBars(ItemStack stack, EntityPlayer player) {
+
+        List<Tuple.Pair<Float, Integer>> bars = new ArrayList<>();
+
+        if(stack.getItem() instanceof ArmorFSBPowered && ArmorFSBPowered.hasFSBArmorIgnoreCharge(player)) {
+            float charge = 1F - (float) stack.getItem().getDurabilityForDisplay(stack);
+
+            bars.add(new Tuple.Pair<>(charge, 0x00FF00));
+        }
+
+        if(stack.getItem() instanceof JetpackFueledBase jetpack) {
+            float fuel = (float) JetpackFueledBase.getFuel(stack) / jetpack.maxFuel;
+
+            bars.add(new Tuple.Pair<>(fuel, jetpack.fuel.getColor()));
+        }
+
+        return bars;
+    }
+
+    @SubscribeEvent(receiveCanceled = true, priority = EventPriority.LOW)
+    public void onHUDRenderBar(RenderGameOverlayEvent.Post event) {
+
+        /// HANDLE ELECTRIC FSB HUD ///
+
+        EntityPlayer player = Minecraft.getMinecraft().player;
+        Tessellator tess = Tessellator.getInstance();
+        BufferBuilder buffer = tess.getBuffer();
+
+        if(event.getType() == ElementType.ARMOR) {
+
+            List<List<Tuple.Pair<Float, Integer>>> barsList = new ArrayList<>();
+
+            for (int i = 0; i < 4; i++) {
+
+                barsList.add(new ArrayList<>());
+
+                ItemStack stack = player.inventory.armorInventory.get(i);
+
+                if(stack.isEmpty())
+                    continue;
+
+                barsList.get(i).addAll(getBars(stack, player));
+
+                if (!(ArmorModHandler.hasMods(stack)))
+                    continue;
+
+                for (ItemStack mod : ArmorModHandler.pryMods(stack)) {
+                    if (mod.isEmpty()) continue;
+
+                    barsList.get(i).addAll(getBars(mod, player));
+                }
+            }
+
+            GlStateManager.disableTexture2D();
+            buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
+
+            if(ForgeHooks.getTotalArmorValue(player) == 0) {
+                GuiIngameForge.left_height -= 10;
+            }
+
+            int width = event.getResolution().getScaledWidth();
+            int height = event.getResolution().getScaledHeight();
+            int left = width / 2 - 91;
+
+            for (List<Tuple.Pair<Float, Integer>> bars : barsList) {
+
+                if (bars.isEmpty())
+                    continue;
+
+                int top = height - GuiIngameForge.left_height + 7;
+
+                for (int i = 0; i < bars.size(); i++) {
+
+                    float val = bars.get(i).key;
+                    int hstart, hend;
+
+                    if (i == 0) {
+                        hstart = left;
+                        hend = hstart + (bars.size() == 1 ? 81 : 40);
+                    } else {
+                        int bl = (int) Math.ceil(40F / (bars.size() - 1));
+                        // :(
+                        hstart = left + 41 + bl * (i - 1);
+                        hend = i == bars.size() - 1 ? left + 81 : hstart + bl;
+
+                        if (i != 1) hstart += 1;
+                    }
+
+                    float r = 0.25f;
+                    float g = 0.25f;
+                    float b = 0.25f;
+
+                    buffer.pos(hstart, top - 1, 0).color(r, g, b, 1.0F).endVertex();
+                    buffer.pos(hstart, top + 2, 0).color(r, g, b, 1.0F).endVertex();
+                    buffer.pos(hend, top + 2, 0).color(r, g, b, 1.0F).endVertex();
+                    buffer.pos(hend, top - 1, 0).color(r, g, b, 1.0F).endVertex();
+
+                    float valx = hstart + (hend - hstart - 1) * val;
+
+                    int color = bars.get(i).value;
+                    r = ((color >> 16) & 0xFF) / 255F;
+                    g = ((color >> 8) & 0xFF) / 255F;
+                    b = (color & 0xFF) / 255F;
+
+                    buffer.pos(hstart + 1, top, 0).color(r, g, b, 1.0F).endVertex();
+                    buffer.pos(hstart + 1, top + 1, 0).color(r, g, b, 1.0F).endVertex();
+                    buffer.pos(valx, top + 1, 0).color(r, g, b, 1.0F).endVertex();
+                    buffer.pos(valx, top, 0).color(r, g, b, 1.0F).endVertex();
+                }
+
+                GuiIngameForge.left_height += 4;
+            }
+
+            tess.draw();
+            GlStateManager.enableTexture2D();
+        }
+    }
+
     @SubscribeEvent(priority = EventPriority.HIGH)
     public void preRenderPlayer(RenderPlayerEvent.Pre evt) {
         PotionEffect invis = evt.getEntityPlayer().getActivePotionEffect(MobEffects.INVISIBILITY);
@@ -1286,11 +1404,13 @@ public class ModEventHandlerClient {
     @SubscribeEvent
     public void clickHandler(MouseEvent event) {
         EntityPlayer player = Minecraft.getMinecraft().player;
-        /// OVERLAP HANDLING ///
-        HbmKeybinds.handleOverlap(event.isButtonstate(), event.getButton() - 100);
+        if (event.getButton() >= 0) {
+            /// OVERLAP HANDLING ///
+            HbmKeybinds.handleOverlap(event.isButtonstate(), event.getButton() - 100);
 
-        /// KEYBIND PROPS ///
-        HbmKeybinds.handleProps(event.isButtonstate(), event.getButton() - 100);
+            /// KEYBIND PROPS ///
+            HbmKeybinds.handleProps(event.isButtonstate(), event.getButton() - 100);
+        }
         if (event.getButton() == 1 && !event.isButtonstate())
             ItemSwordCutter.canClick = true;
 

@@ -16,7 +16,7 @@ public class SubElementDialSquare extends SubElementBaseConfig {
     GuiTextField textField;
 
     public SubElementDialSquare(GuiControlEdit gui, Map<String, DataValue> map) {
-        super(gui);
+        super(gui,map);
         this.text = map.get("label").toString();
     }
 

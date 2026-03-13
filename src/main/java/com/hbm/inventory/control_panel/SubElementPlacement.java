@@ -17,6 +17,7 @@ import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.item.EnumDyeColor;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.MathHelper;
+import org.jetbrains.annotations.Nullable;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
@@ -91,7 +92,7 @@ public class SubElementPlacement extends SubElement {
 		float dWheel = Mouse.getDWheel();
 		float dScale = dWheel*gridScale*0.00075F;
 
-		btn_editControl.enabled = selectedControl != null;
+		btn_editControl.enabled = isEditableControl(selectedControl);
 		btn_deleteControl.enabled = selectedControl != null;
 
 		//Correction so we scale around mouse position
@@ -304,7 +305,7 @@ public class SubElementPlacement extends SubElement {
 			gui.pushElement(gui.panelResize);
 		}
 		else if (button == btn_variables) {
-			gui.currentEditControl = selectedControl; // allows access to a selected control's local vars
+			gui.currentEditControl = isEditableControl(selectedControl) ? selectedControl : null; // allows access to a selected control's local vars
 			gui.variables.isGlobalScope = true;
 			gui.pushElement(gui.variables);
 		}
@@ -313,7 +314,7 @@ public class SubElementPlacement extends SubElement {
 			gui.pushElement(gui.choice);
 		}
 		else if (button == btn_editControl) {
-			if (selectedControl != null) {
+			if (isEditableControl(selectedControl)) {
 				gui.currentEditControl = selectedControl;
 				gui.itemConfig.last_control = null;
 				gui.itemConfig.variants = ControlRegistry.getAllControlsOfType(gui.currentEditControl.getControlType());
@@ -327,6 +328,33 @@ public class SubElementPlacement extends SubElement {
 			gui.control.panel.controls.remove(selectedControl);
 			selectedControl = null;
 		}
+	}
+
+	@Override
+	protected void keyTyped(char typedChar,int code) {
+		if (Keyboard.isKeyDown(Keyboard.KEY_LSHIFT)) {
+			if (gui.currentEditControl != null) return;
+			if (code == Keyboard.KEY_A) { // Add new
+				gui.isEditMode = false;
+				gui.pushElement(gui.choice);
+			} else if (code == Keyboard.KEY_D && isEditableControl(selectedControl)) { // Duplicate
+				Control duplicate = duplicateControl(selectedControl);
+				if(duplicate == null)
+					return;
+				gui.currentEditControl = duplicate;
+				float[] gridMouse = gui.placement.convertToGridSpace(gui.mouseX, gui.mouseY);
+				gui.currentEditControl.posX = gridMouse[0];
+				gui.currentEditControl.posY = gridMouse[1];
+				gui.placement.resetPrevPos();
+				controlGrabbed = false;
+				selectedControl = null;
+			}
+		}
+	}
+
+	private @Nullable Control duplicateControl(Control source) {
+		Control duplicate = gui.control.panel.cloneControl(source);
+		return isEditableControl(duplicate) ? duplicate : null;
 	}
 
 	protected boolean canPlace(){
@@ -365,7 +393,7 @@ public class SubElementPlacement extends SubElement {
 				for(Control c : gui.control.panel.controls){
 					if(NTMRenderHelper.intersects2DBox(gridMX, gridMY, c.getBox())){
 						selectedControl = c;
-						controlGrabbed = true;
+						controlGrabbed = isEditableControl(c);
 						return;
 					}
 				}
@@ -426,5 +454,9 @@ public class SubElementPlacement extends SubElement {
 		float x = ((gridMX-gridX)-gui.getGuiLeft())/gridScale+gui.getGuiLeft();
 		float y = ((gridMY+gridY)-gui.getGuiTop())/gridScale+gui.getGuiTop();
 		return new float[]{x, y};
+	}
+
+	private static boolean isEditableControl(Control control) {
+		return control != null && ControlRegistry.isRegistered(control.registryName) && !(control instanceof UnknownControl);
 	}
 }

@@ -1,5 +1,6 @@
 package com.hbm.render.anim.sedna;
 
+import com.hbm.render.anim.BusAnimation;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
@@ -70,6 +71,19 @@ public class HbmAnimationsSedna {
             this.animation = animation;
             this.holdLastFrame = holdLastFrame;
             this.type = type;
+        }
+
+        /// for the damn new doors
+        public Animation(String key, long startMillis, BusAnimationSedna animation) {
+            this.key = key;
+            this.startMillis = startMillis;
+            this.animation = animation;
+        }
+
+        /// for the damn new doors
+        public Animation(String key, long startMillis, BusAnimationSedna animation, boolean holdLastFrame) {
+            this(key, startMillis, animation);
+            this.holdLastFrame = holdLastFrame;
         }
     }
 
