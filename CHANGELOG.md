@@ -22,10 +22,14 @@
 - Removed legacy `machine_assembler`, `machine_assemfac`, `machine_chemplant`, and `machine_chemfac`, plus their legacy
 templates/JEI/category/render assets
 - Removed `hf_sword` and `hs_sword`
+- Removed `paa_helmet`; PaA armor now uses the chest/legs/boots only, while hazmat-capable helmet behavior lives on the
+hazmat helmet variants.
 - Reworked dynamic model/TEISR registration and placeholder handling; renderer/model registration integrations depending
 on the previous client-side binding path may require API updates
 
 ### Fixes
+- Fixed chunkloader ticket lifecycle for fallout effects, delivery drones, EMPs, missiles, artillery projectiles,
+railgun blasts, and other entity-backed chunkloaders so restored tickets are reused correctly and released on death
 - Fixed gas centrifuge fluid rendering in GUI tanks
 - Fixed chlorine/mist/chemical effects being applied to creative or spectator players
 - Fixed fence connections for yellow barrels, storage drums, and tape recorders
@@ -46,8 +50,8 @@ on the previous client-side binding path may require API updates
 - Fixed gas centrifuge speed upgrades not being accepted
 - Fixed empty container returns being deleted in autocrafters
 - Fixed Heatex multiblock parts opening the wrong GUI instead of the core
-- Fixed gas mask filter removal, Mass Storage capacity sync, and Assembly Machine slot validation for meteorite alloyed
-sword recipes
+- Fixed hazmat/gas-mask helmet behavior parity, gas mask filter removal, Mass Storage capacity sync, and Assembly Machine
+slot validation for meteorite alloyed sword recipes
 - Fixed low-pressure steam pipes not visually connecting to Industrial Steam Turbines
 - Fixed missing radiation resistance on the M1TTY Environment Suit armor set
 - Fixed special-model rendering/orientation issues across modular spotlights, scaffolds, wavefront-based models, cable

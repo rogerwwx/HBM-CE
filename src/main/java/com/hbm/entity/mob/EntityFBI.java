@@ -99,7 +99,7 @@ public class EntityFBI extends EntityMob implements IRangedAttackMob {
         }
 
         if(this.world != null && this.world.provider.getDimension() != 0) {
-        	this.setItemStackToSlot(EntityEquipmentSlot.HEAD, new ItemStack(ModItems.paa_helmet));
+        	this.setItemStackToSlot(EntityEquipmentSlot.HEAD, new ItemStack(Blocks.GLASS));
         	this.setItemStackToSlot(EntityEquipmentSlot.CHEST, new ItemStack(ModItems.paa_plate));
         	this.setItemStackToSlot(EntityEquipmentSlot.LEGS, new ItemStack(ModItems.paa_legs));
         	this.setItemStackToSlot(EntityEquipmentSlot.FEET, new ItemStack(ModItems.paa_boots));

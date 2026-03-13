@@ -198,7 +198,6 @@ public class HazmatRegistry {
 		HazmatRegistry.registerHazmat(ModItems.dns_legs, fixRounding(dns * legs));
 		HazmatRegistry.registerHazmat(ModItems.dns_boots, fixRounding(dns * boots));
 
-		HazmatRegistry.registerHazmat(ModItems.paa_helmet, fixRounding(paa * helmet));
 		HazmatRegistry.registerHazmat(ModItems.paa_plate, fixRounding(paa * chest));
 		HazmatRegistry.registerHazmat(ModItems.paa_legs, fixRounding(paa * legs));
 		HazmatRegistry.registerHazmat(ModItems.paa_boots, fixRounding(paa * boots));
