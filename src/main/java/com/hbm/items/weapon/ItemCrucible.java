@@ -36,7 +36,6 @@ import net.minecraft.world.World;
 import net.minecraftforge.fml.common.network.NetworkRegistry.TargetPoint;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.UUID;
@@ -68,14 +67,14 @@ public class ItemCrucible extends ItemSwordCutter implements IPostRender {
 	}
 	
 	@Override
-	public void getSubItems(@NotNull CreativeTabs tab, @NotNull NonNullList<ItemStack> items){
+	public void getSubItems(CreativeTabs tab, NonNullList<ItemStack> items){
 		if(tab == this.getCreativeTab() || tab == CreativeTabs.SEARCH){
 			items.add(charge(new ItemStack(this)));
 		}
 	}
 	
 	@Override
-	public boolean onEntitySwing(EntityLivingBase entityLiving, @NotNull ItemStack stack) {
+	public boolean onEntitySwing(EntityLivingBase entityLiving, ItemStack stack) {
 		if(!(entityLiving instanceof EntityPlayerMP)){
 			super.onEntitySwing(entityLiving, stack);
 			return true;
@@ -102,7 +101,7 @@ public class ItemCrucible extends ItemSwordCutter implements IPostRender {
 	}
 	
 	@Override
-	public void onUpdate(@NotNull ItemStack stack, @NotNull World worldIn, @NotNull Entity entityIn, int itemSlot, boolean isSelected) {
+	public void onUpdate(ItemStack stack, World worldIn, Entity entityIn, int itemSlot, boolean isSelected) {
 		if(isSelected && worldIn.isRemote && getCharges(stack) > 0 && entityIn instanceof EntityPlayer){
 			updateClient(worldIn, (EntityPlayer) entityIn, itemSlot);
 		}
@@ -150,18 +149,18 @@ public class ItemCrucible extends ItemSwordCutter implements IPostRender {
 	
 	@Override
 	public void addInformation(ItemStack stack, World worldIn, List<String> list, ITooltipFlag flagIn){
-		StringBuilder charge = new StringBuilder(TextFormatting.RED + "Charge [");
+		String charge = TextFormatting.RED + "Charge [";
 		
 		int charges = getCharges(stack);
 		for(int i = 0; i < GeneralConfig.crucibleMaxCharges; i++)
 			if(charges > i)
-				charge.append("||||||");
+				charge += "||||||";
 			else
-				charge.append("   ");
+				charge += "   ";
 		
-		charge.append("]");
+		charge += "]";
 		
-		list.add(charge.toString());
+		list.add(charge);
 	}
 	
 	public static int getCharges(ItemStack stack){
@@ -185,18 +184,18 @@ public class ItemCrucible extends ItemSwordCutter implements IPostRender {
 	}
 	
 	@Override
-	public boolean showDurabilityBar(@NotNull ItemStack stack){
+	public boolean showDurabilityBar(ItemStack stack){
 		return true;
 	}
 	
 	@Override
-	public double getDurabilityForDisplay(@NotNull ItemStack stack){
+	public double getDurabilityForDisplay(ItemStack stack){
 		return 1-(double)getCharges(stack)/GeneralConfig.crucibleMaxCharges;
 	}
 	
 	@Override
-	public @NotNull Multimap<String, AttributeModifier> getAttributeModifiers(@NotNull EntityEquipmentSlot slot, @NotNull ItemStack stack){
-		Multimap<String, AttributeModifier> map = HashMultimap.create();
+	public Multimap<String, AttributeModifier> getAttributeModifiers(EntityEquipmentSlot slot, ItemStack stack){
+		Multimap<String, AttributeModifier> map = HashMultimap.<String, AttributeModifier> create();
 		boolean charged = getCharges(stack) > 0;
 		if(slot == EntityEquipmentSlot.MAINHAND) {
 			map.put(SharedMonsterAttributes.MOVEMENT_SPEED.getName(), new AttributeModifier(UUID.fromString("91AEAA56-376B-4498-935B-2F7F68070635"), "Tool modifier", charged ? movement : movement*0.8F, 1));

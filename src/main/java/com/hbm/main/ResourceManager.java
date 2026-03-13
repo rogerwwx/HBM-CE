@@ -1109,6 +1109,8 @@ public class ResourceManager {
     public static final ResourceLocation crucible_blade = new ResourceLocation(Tags.MODID, "textures/models/weapons/crucible_blade.png");
     public static final ResourceLocation crucible_blade_bloom = new ResourceLocation(Tags.MODID, "textures/models/weapons/crucible_blade_bloom.png");
     public static final ResourceLocation boltgun_tex = new ResourceLocation(Tags.MODID, "textures/models/weapons/boltgun.png");
+    public static final ResourceLocation hs_sword_tex = new ResourceLocation(Tags.MODID, "textures/models/weapons/hs_sword.png");
+    public static final ResourceLocation hf_sword_tex = new ResourceLocation(Tags.MODID, "textures/models/weapons/hf_sword.png");
     public static final ResourceLocation stinger_tex = new ResourceLocation(Tags.MODID, "textures/models/weapons/stinger.png");
     public static final ResourceLocation remington_tex = new ResourceLocation(Tags.MODID, "textures/models/weapons/remington.png");
     public static final ResourceLocation spas_12_tex = new ResourceLocation(Tags.MODID, "textures/models/weapons/spas-12.png");
@@ -1720,6 +1722,10 @@ public class ResourceManager {
     public static Animation jshotgun_anim1;
     public static AnimatedModel crucible_anim;
     public static Animation crucible_equip;
+    public static AnimatedModel hs_sword;
+    public static Animation hs_sword_equip;
+    public static AnimatedModel hf_sword;
+    public static Animation hf_sword_equip;
     //SHADERS
     public static Shader lit_particles = HbmShaderManager2.loadShader(new ResourceLocation(Tags.MODID, "shaders/lit_particles"), shader -> {
         GLCompat.bindAttribLocation(shader, 0, "pos");
@@ -1906,6 +1912,10 @@ public class ResourceManager {
 
         crucible_anim = ColladaLoader.load(new ResourceLocation(Tags.MODID, "models/anim/crucible_equip.dae"), true);
         crucible_equip = ColladaLoader.loadAnim(1060, new ResourceLocation(Tags.MODID, "models/anim/crucible_equip.dae"));
+        hs_sword = ColladaLoader.load(new ResourceLocation(Tags.MODID, "models/anim/hs_sword_equip.dae"), true);
+        hs_sword_equip = ColladaLoader.loadAnim(800, new ResourceLocation(Tags.MODID, "models/anim/hs_sword_equip.dae"));
+        hf_sword = ColladaLoader.load(new ResourceLocation(Tags.MODID, "models/anim/hf_sword_equip.dae"), true);
+        hf_sword_equip = ColladaLoader.loadAnim(900, new ResourceLocation(Tags.MODID, "models/anim/hf_sword_equip.dae"));
 
         jshotgun = ColladaLoader.load(new ResourceLocation(Tags.MODID, "models/anim/jshotgun_anim1.dae"), true);
         jshotgun_anim0 = ColladaLoader.loadAnim(1500, new ResourceLocation(Tags.MODID, "models/anim/jshotgun_anim0.dae"));
