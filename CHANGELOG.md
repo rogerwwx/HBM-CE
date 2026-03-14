@@ -61,6 +61,7 @@ and laser pistol/bobble sound registration
 - Fixed bedrock ore crumbs crystallizing with `Slop` instead of `Nitric Acid`
 - Hardened control panel save/load and editor flows so duplicated controls round-trip through serialized state, unresolved
 links are preserved, and missing controls are kept as placeholders instead of being discarded
+- Fixed latent bugs affecting Forge Fluid item tank I/O in NTM tanks
 
 ### Changes
 - Diesel Generator now uses a refreshed animated model/GUI, rotates like other machines, emits smoke while running, supports a larger internal power buffer when fueled with Nitan, and has corrected block/item presentation
