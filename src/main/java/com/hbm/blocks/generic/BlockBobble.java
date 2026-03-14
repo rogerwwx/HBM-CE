@@ -7,6 +7,7 @@ import com.hbm.inventory.gui.GUIScreenBobble;
 import com.hbm.items.IModelRegister;
 import com.hbm.items.special.ItemPlasticScrap.ScrapType;
 import com.hbm.main.MainRegistry;
+import com.hbm.main.client.NTMClientRegistry;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.world.gen.nbt.INBTBlockTransformable;
 import com.hbm.world.gen.nbt.INBTTileEntityTransformable;
@@ -183,8 +184,9 @@ public class BlockBobble extends BlockContainer implements INBTBlockTransformabl
         @Override
         @SideOnly(Side.CLIENT)
         public void registerModels() {
+            ModelResourceLocation syntheticLocation = NTMClientRegistry.getSyntheticTeisrModelLocation(this);
             for (int meta = 0; meta < BobbleType.VALUES.length; meta++) {
-                ModelLoader.setCustomModelResourceLocation(this, meta, new ModelResourceLocation(this.getRegistryName(), "inventory"));
+                ModelLoader.setCustomModelResourceLocation(this, meta, syntheticLocation);
             }
         }
     }

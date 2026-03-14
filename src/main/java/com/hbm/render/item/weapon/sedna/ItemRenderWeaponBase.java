@@ -15,6 +15,7 @@ import net.minecraft.client.renderer.block.model.ItemCameraTransforms;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumHandSide;
 import net.minecraft.util.ResourceLocation;
@@ -48,6 +49,16 @@ public abstract class ItemRenderWeaponBase extends TEISRBase {
     private static final FloatBuffer DEPTH_RANGE_BUF = BufferUtils.createFloatBuffer(16);
 
     public boolean isAkimbo() { return false; }
+
+    @Override
+    public ModelBinding createModelBinding(Item item) {
+        return ModelBinding.inventory(item, ItemCameraTransforms.DEFAULT);
+    }
+
+    @Override
+    public boolean useIdentityTransform(Item item) {
+        return true;
+    }
 
     @Override
     public void renderByItem(@NotNull ItemStack itemStackIn) {

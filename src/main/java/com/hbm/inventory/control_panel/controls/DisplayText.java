@@ -55,15 +55,16 @@ public class DisplayText extends Control {
     }
 
     @Override
-    public float[] getBox() {
+    public void fillBox(float[] box) {
         float d = .1F;
-        return new float[] {posX-d, posY-d, posX + (width*1.5F*scale/500F)+d, posY + (height*scale/500F)+d};
+        box[0] = posX - d;
+        box[1] = posY - d;
+        box[2] = posX + (width * 1.5F * scale / 500F) + d;
+        box[3] = posY + (height * scale / 500F) + d;
     }
 
     @Override
-    public void applyConfigs(Map<String, DataValue> configs) {
-        super.applyConfigs(configs);
-
+    protected void onConfigMapChanged() {
         for (Map.Entry<String, DataValue> e : configMap.entrySet()) {
             switch (e.getKey()) {
                 case "scale": {

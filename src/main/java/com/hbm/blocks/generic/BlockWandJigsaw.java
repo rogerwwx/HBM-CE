@@ -67,7 +67,7 @@ public class BlockWandJigsaw extends BlockContainerBakeable implements IBlockSid
     public static final PropertyDirection FACING = PropertyDirection.create("facing");
 
     public BlockWandJigsaw(String regName) {
-        this(regName, new BlockBakeFrame(BlockBakeFrame.BlockForm.FULL_CUSTOM,
+        this(regName, BlockBakeFrame.cube(
                 "wand_jigsaw_top",   // up
                 "wand_jigsaw_top",   // down
                 "wand_jigsaw_back",  // north (back)
@@ -223,7 +223,7 @@ public class BlockWandJigsaw extends BlockContainerBakeable implements IBlockSid
     @Override
     public void bakeModel(ModelBakeEvent event) {
         try {
-            IModel baseModel = ModelLoaderRegistry.getModel(new ResourceLocation(blockFrame.getBaseModel()));
+            IModel baseModel = ModelLoaderRegistry.getModel(blockFrame.getBaseModelLocation());
             ImmutableMap.Builder<String, String> textureMap = ImmutableMap.builder();
             blockFrame.putTextures(textureMap);
 

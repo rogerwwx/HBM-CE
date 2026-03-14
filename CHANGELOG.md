@@ -14,6 +14,7 @@
 >   - Changes, New Features correspond to a minor bump.  
 >   - Fixes/Performance/Misc correspond to a minor or patch bump.
 > - Previous public release: 2.1.1.0
+> - Next release: at least 2.2.0.0
 
 ### SUBSTANTIAL CHANGES
 
@@ -21,6 +22,8 @@
 - Removed legacy `machine_assembler`, `machine_assemfac`, `machine_chemplant`, and `machine_chemfac`, plus their legacy
 templates/JEI/category/render assets
 - Removed `hf_sword` and `hs_sword`
+- Reworked dynamic model/TEISR registration and placeholder handling; renderer/model registration integrations depending
+on the previous client-side binding path may require API updates
 
 ### Fixes
 - Fixed gas centrifuge fluid rendering in GUI tanks
@@ -56,6 +59,9 @@ and laser pistol/bobble sound registration
 links are preserved, and missing controls are kept as placeholders instead of being discarded
 
 ### Changes
+- Diesel Generator now uses a refreshed animated model/GUI, rotates like other machines, emits smoke while running, supports a larger internal power buffer when fueled with Nitan, and has corrected block/item presentation
+- Reworked Autosaw tree felling to better handle complex trunk/leaf structures, sapling replanting, and nearby entity damage, and updated the Annihilator to pollute when burning off stored fluids
+- Refreshed RBMK presentation and behavior with new baked-model rendering for columns/rods/controls, updated textures/GUI art, corrected inventory models, and height-aware renderer caching
 - Assembly Factory now exposes truly separate recipe ports using position-aware slot access
 - Starter kit now provides new assembly/chemical machine variants instead of removed legacy ones
 - Template folder now focuses on crucible templates after removing legacy assembly/chem templates
@@ -73,6 +79,11 @@ longer trigger balefire/cloud effects
 - Removed phased bedrock coltan world generation from new chunks
 
 ### New Features
+- Added Satellite Laser Designator
+- Added Reinforced Glass Pane, Reinforced Laminate, and Reinforced Laminate Pane
+- Added UZH RBMK fuel rods and pellets with their recipes and item art
+- Added RBMK Display blocks with dedicated renderer/model support
+- Added control panel editor node graph copy/paste with improved per-control preview layouts and validation for incompatible pasted graphs/variables
 - Ported colored scaffold variants and their dynamic baked model
 - Added OpenComputers callbacks for artillery turrets, including manual coordinate queueing
 - Ported plushies with per-type models, sounds, and squish animation

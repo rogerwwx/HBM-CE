@@ -11,6 +11,10 @@ public class DataValueString extends DataValue {
 	private float floatVal;
 	
 	public DataValueString(String s){
+		set(s);
+	}
+
+	public void set(String s) {
 		this.str = s;
 		float num = 0;
 		try {
@@ -64,13 +68,7 @@ public class DataValueString extends DataValue {
 
 	@Override
 	public void readFromNBT(NBTBase nbt){
-		str = ((NBTTagString)nbt).getString();
-		float num = 0;
-		try {
-			num = Float.parseFloat(str);
-		} catch(Exception x){
-		}
-		floatVal = num;
+		set(((NBTTagString)nbt).getString());
 	}
 
 	@Override

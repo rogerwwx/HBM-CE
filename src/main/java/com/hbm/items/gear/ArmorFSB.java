@@ -8,6 +8,8 @@ import com.hbm.items.armor.IArmorDisableModel;
 import com.hbm.lib.HBMSoundHandler;
 import com.hbm.render.NTMRenderHelper;
 import com.hbm.render.loader.IModelCustom;
+import com.hbm.render.tileentity.IItemRendererProvider;
+import com.hbm.render.tileentity.ItemRendererProviderRegistry;
 import com.hbm.util.*;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
@@ -82,6 +84,9 @@ public class ArmorFSB extends ItemArmor implements IArmorDisableModel {
         this.texture = texture;
 
         ModItems.ALL_ITEMS.add(this);
+        if (this instanceof IItemRendererProvider provider) {
+            ItemRendererProviderRegistry.registerItemProvider(provider);
+        }
     }
 
     public static boolean hasFSBArmor(EntityPlayer entity) {

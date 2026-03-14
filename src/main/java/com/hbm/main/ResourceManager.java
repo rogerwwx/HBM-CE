@@ -443,6 +443,7 @@ public class ResourceManager {
     //IGen
     public static final IModelCustom igen = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/igen.obj")).asVBO();
     //Combustion Engine
+    public static final IModelCustom dieselgen = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/dieselgen.obj")).asVBO();
     public static final IModelCustom combustion_engine = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/combustion_engine.obj")).asVBO();
     //Firebox, and the lot
     public static final IModelCustom sawmill = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/sawmill.obj")).asVBO();
@@ -552,17 +553,20 @@ public class ResourceManager {
     //Projectiles
     public static final IModelCustom projectiles = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/projectiles/projectiles.obj")).asVBO();
     public static final IModelCustom casings = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/effect/casings.obj")).asVBO();
-    public static final IModelCustom rbmk_crane_console = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/rbmk/crane_console.obj")).asVBO();
-    public static final IModelCustom rbmk_crane = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/rbmk/crane.obj")).asVBO();
-    public static final IModelCustom rbmk_autoloader = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/rbmk/autoloader.obj")).asVBO();
+    public static final WaveFrontObjectVAO rbmk_crane_console = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/rbmk/crane_console.obj")).asVBO();
+    public static final WaveFrontObjectVAO rbmk_crane = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/rbmk/crane.obj")).asVBO();
+    public static final WaveFrontObjectVAO rbmk_autoloader = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/rbmk/autoloader.obj")).asVBO();
     public static final ResourceLocation rbmk_crane_console_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/crane_console.png");
     public static final ResourceLocation rbmk_crane_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/rbmk_crane.png");
     public static final ResourceLocation rbmk_autoloader_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/rbmk_autoloader.png");
     public static final ResourceLocation mini_nuke_tex = new ResourceLocation(Tags.MODID, "textures/models/projectiles/mini_nuke.png");
-    public static final IModelCustom rbmk_element = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/rbmk/rbmk_element.obj")).asVBO();
+    public static final HFRWavefrontObject rbmk_element = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/rbmk/rbmk_element.obj"), true);
+    public static final HFRWavefrontObject rbmk_element_rods = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/rbmk/rbmk_element_rods.obj"));
+    public static final WaveFrontObjectVAO rbmk_element_rods_vbo = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/rbmk/rbmk_element_rods.obj")).asVBO();
     public static final IModelCustom rbmk_reflector = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/rbmk/rbmk_reflector.obj")).asVBO();
-    public static final IModelCustom rbmk_rods = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/rbmk/rbmk_rods.obj")).asVBO();
-    public static final IModelCustom rbmk_console = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/rbmk/rbmk_console.obj")).asVBO();
+    public static final IModelCustom rbmk_rods = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/rbmk/rbmk_rods.obj"));
+    public static final WaveFrontObjectVAO rbmk_rods_vbo = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/rbmk/rbmk_rods.obj")).asVBO();
+    public static final WaveFrontObjectVAO rbmk_console = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/rbmk/rbmk_console.obj")).asVBO();
     public static final IModelCustom rbmk_debris = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/rbmk/debris.obj")).asVBO();
     public static final ResourceLocation rbmk_console_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/rbmk_control.png");
     public static final IModelCustom hev_battery = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/blocks/battery.obj")).asVBO();
@@ -853,6 +857,7 @@ public class ResourceManager {
     public static final ResourceLocation igen_arm = new ResourceLocation(Tags.MODID, "textures/models/machines/igen_arm.png");
     public static final ResourceLocation igen_pistons = new ResourceLocation(Tags.MODID, "textures/models/machines/igen_pistons.png");
     //Combustion Engine
+    public static final ResourceLocation dieselgen_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/dieselgen.png");
     public static final ResourceLocation combustion_engine_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/combustion_engine.png");
     //Firebox and the lot
     public static final ResourceLocation sawmill_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/sawmill.png");

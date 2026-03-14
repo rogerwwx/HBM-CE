@@ -53,14 +53,15 @@ public class Label extends Control {
     }
 
     @Override
-    public float[] getBox() {
-        return new float[] {posX, posY, posX + (width*scale/500F), posY + (height*scale/500F)};
+    public void fillBox(float[] box) {
+        box[0] = posX;
+        box[1] = posY;
+        box[2] = posX + (width * scale / 500F);
+        box[3] = posY + (height * scale / 500F);
     }
 
     @Override
-    public void applyConfigs(Map<String, DataValue> configs) {
-        super.applyConfigs(configs);
-
+    protected void onConfigMapChanged() {
         for (Map.Entry<String, DataValue> e : configMap.entrySet()) {
             switch (e.getKey()) {
                 case "colorR" : {

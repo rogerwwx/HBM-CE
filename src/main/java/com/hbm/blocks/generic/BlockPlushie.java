@@ -7,6 +7,7 @@ import com.hbm.blocks.ModBlocks;
 import com.hbm.interfaces.AutoRegister;
 import com.hbm.items.IModelRegister;
 import com.hbm.lib.HBMSoundHandler;
+import com.hbm.main.client.NTMClientRegistry;
 import com.hbm.world.gen.nbt.INBTBlockTransformable;
 import com.hbm.world.gen.nbt.INBTTileEntityTransformable;
 import net.minecraft.block.Block;
@@ -159,8 +160,9 @@ public class BlockPlushie extends BlockContainer implements IBlockMulti, IToolti
         @Override
         @SideOnly(Side.CLIENT)
         public void registerModels() {
+            ModelResourceLocation syntheticLocation = NTMClientRegistry.getSyntheticTeisrModelLocation(this);
             for (int meta = 0; meta < BlockPlushie.PlushieType.VALUES.length; meta++) {
-                ModelLoader.setCustomModelResourceLocation(this, meta, new ModelResourceLocation(Objects.requireNonNull(getRegistryName()), "inventory"));
+                ModelLoader.setCustomModelResourceLocation(this, meta, syntheticLocation);
             }
         }
 

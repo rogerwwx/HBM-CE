@@ -71,6 +71,14 @@ public abstract class Control {
 	}
 	public void applyConfigs(Map<String, DataValue> configs) {
 		configMap = new Object2ObjectLinkedOpenHashMap<>(configs);
+		refreshConfigs();
+	}
+
+	public void refreshConfigs() {
+		onConfigMapChanged();
+	}
+
+	protected void onConfigMapChanged() {
 	}
 
 	public void renderBatched(){};
@@ -93,9 +101,18 @@ public abstract class Control {
 	}
 
 	public float[] getBox() {
+		float[] box = new float[4];
+		fillBox(box);
+		return box;
+	}
+
+	public void fillBox(float[] box) {
 		float width = getSize()[0];
 		float length = getSize()[1];
-		return new float[] {posX, posY, posX + width, posY + length};
+		box[0] = posX;
+		box[1] = posY;
+		box[2] = posX + width;
+		box[3] = posY + length;
 	}
 
 	public abstract Control newControl(ControlPanel panel);

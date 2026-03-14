@@ -52,16 +52,17 @@ public class DisplaySevenSeg extends Control {
     }
 
     @Override
-    public float[] getBox() {
+    public void fillBox(float[] box) {
         float width = getSize()[0];
         float length = getSize()[1];
-        return new float[] {posX - (width*digitCount-((digitCount-1)*.125F)) + width, posY, posX + width, posY + length};
+        box[0] = posX - (width * digitCount - ((digitCount - 1) * .125F)) + width;
+        box[1] = posY;
+        box[2] = posX + width;
+        box[3] = posY + length;
     }
 
     @Override
-    public void applyConfigs(Map<String, DataValue> configs) {
-        super.applyConfigs(configs);
-
+    protected void onConfigMapChanged() {
         for (Map.Entry<String, DataValue> e : configMap.entrySet()) {
             switch (e.getKey()) {
                 case "colorR" : {

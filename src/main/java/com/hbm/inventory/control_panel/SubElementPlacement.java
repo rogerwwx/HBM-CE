@@ -47,6 +47,7 @@ public class SubElementPlacement extends SubElement {
 	protected float gridScale = 0.1F;
 	private float prevMouseX;
 	private float prevMouseY;
+	private final float[] renderBox = new float[4];
 
 	private int ctrl_index = 0;
 	
@@ -211,19 +212,25 @@ public class SubElementPlacement extends SubElement {
 		Tessellator tes = Tessellator.getInstance();
 		BufferBuilder buf = tes.getBuffer();
 		Minecraft.getMinecraft().getTextureManager().bindTexture(c.getGuiTexture());
+		c.fillBox(renderBox);
 
 		if (c instanceof DisplaySevenSeg) {
+			float boxMinX = renderBox[0];
+			float boxMinY = renderBox[1];
+			float boxMaxX = renderBox[2];
+			float boxMaxY = renderBox[3];
+			float digitWidth = (boxMaxX - boxMinX) / c.getConfigs().get("digitCount").getNumber();
+			float red = 1F;
+			float green = (c == selectedControl) ? .8F : 1F;
+			float blue = 1F;
 			for (int i = 0; i < c.getConfigs().get("digitCount").getNumber(); i++) {
+				float digitMinX = boxMinX + digitWidth * i;
+				float digitMaxX = digitMinX + digitWidth;
 				buf.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX_COLOR);
-				float[] box = c.getBox();
-				float cock = (box[2] - box[0]) / c.getConfigs().get("digitCount").getNumber();
-				box[0] += cock * i;
-				box[2] = box[0] + cock;
-				float[] rgb = new float[]{1, (c == selectedControl) ? .8F : 1F, 1F};
-				buf.pos(box[0], box[1], 0).tex(0, 0).color(rgb[0], rgb[1], rgb[2], 1).endVertex();
-				buf.pos(box[0], box[3], 0).tex(0, 1).color(rgb[0], rgb[1], rgb[2], 1).endVertex();
-				buf.pos(box[2], box[3], 0).tex(1, 1).color(rgb[0], rgb[1], rgb[2], 1).endVertex();
-				buf.pos(box[2], box[1], 0).tex(1, 0).color(rgb[0], rgb[1], rgb[2], 1).endVertex();
+				buf.pos(digitMinX, boxMinY, 0).tex(0, 0).color(red, green, blue, 1).endVertex();
+				buf.pos(digitMinX, boxMaxY, 0).tex(0, 1).color(red, green, blue, 1).endVertex();
+				buf.pos(digitMaxX, boxMaxY, 0).tex(1, 1).color(red, green, blue, 1).endVertex();
+				buf.pos(digitMaxX, boxMinY, 0).tex(1, 0).color(red, green, blue, 1).endVertex();
 				tes.draw();
 			}
 		}
@@ -252,12 +259,13 @@ public class SubElementPlacement extends SubElement {
 
 			Minecraft.getMinecraft().getTextureManager().bindTexture(ResourceManager.white);
 			buf.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX_COLOR);
-			float[] box = c.getBox();
-			float[] rgb = new float[]{.2F, (c == selectedControl) ? .1F : .2F, .2F};
-			buf.pos(box[0], box[1], 0).tex(0, 0).color(rgb[0], rgb[1], rgb[2], 1).endVertex();
-			buf.pos(box[0], box[3], 0).tex(0, 1).color(rgb[0], rgb[1], rgb[2], 1).endVertex();
-			buf.pos(box[2], box[3], 0).tex(1, 1).color(rgb[0], rgb[1], rgb[2], 1).endVertex();
-			buf.pos(box[2], box[1], 0).tex(1, 0).color(rgb[0], rgb[1], rgb[2], 1).endVertex();
+			float red = .2F;
+			float green = (c == selectedControl) ? .1F : .2F;
+			float blue = .2F;
+			buf.pos(renderBox[0], renderBox[1], 0).tex(0, 0).color(red, green, blue, 1).endVertex();
+			buf.pos(renderBox[0], renderBox[3], 0).tex(0, 1).color(red, green, blue, 1).endVertex();
+			buf.pos(renderBox[2], renderBox[3], 0).tex(1, 1).color(red, green, blue, 1).endVertex();
+			buf.pos(renderBox[2], renderBox[1], 0).tex(1, 0).color(red, green, blue, 1).endVertex();
 			tes.draw();
 
 			EnumDyeColor dyeColor = thing.getVar("color").getEnum(EnumDyeColor.class);
@@ -272,22 +280,24 @@ public class SubElementPlacement extends SubElement {
 		}
 		else if (c instanceof DialLarge) {
 			buf.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX_COLOR);
-			float[] box = c.getBox();
-			float[] rgb = new float[]{1, (c == selectedControl) ? .8F : 1F, 1F};
-			buf.pos(box[0], box[1], 0).tex(0, 0).color(rgb[0], rgb[1], rgb[2], 1).endVertex();
-			buf.pos(box[0], box[3], 0).tex(0, .5).color(rgb[0], rgb[1], rgb[2], 1).endVertex();
-			buf.pos(box[2], box[3], 0).tex(1, .5).color(rgb[0], rgb[1], rgb[2], 1).endVertex();
-			buf.pos(box[2], box[1], 0).tex(1, 0).color(rgb[0], rgb[1], rgb[2], 1).endVertex();
+			float red = 1F;
+			float green = (c == selectedControl) ? .8F : 1F;
+			float blue = 1F;
+			buf.pos(renderBox[0], renderBox[1], 0).tex(0, 0).color(red, green, blue, 1).endVertex();
+			buf.pos(renderBox[0], renderBox[3], 0).tex(0, .5).color(red, green, blue, 1).endVertex();
+			buf.pos(renderBox[2], renderBox[3], 0).tex(1, .5).color(red, green, blue, 1).endVertex();
+			buf.pos(renderBox[2], renderBox[1], 0).tex(1, 0).color(red, green, blue, 1).endVertex();
 			tes.draw();
 		}
 		else {
 			buf.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX_COLOR);
-			float[] box = c.getBox();
-			float[] rgb = new float[]{1, (c == selectedControl) ? .8F : 1F, 1F};
-			buf.pos(box[0], box[1], 0).tex(0, 0).color(rgb[0], rgb[1], rgb[2], 1).endVertex();
-			buf.pos(box[0], box[3], 0).tex(0, 1).color(rgb[0], rgb[1], rgb[2], 1).endVertex();
-			buf.pos(box[2], box[3], 0).tex(1, 1).color(rgb[0], rgb[1], rgb[2], 1).endVertex();
-			buf.pos(box[2], box[1], 0).tex(1, 0).color(rgb[0], rgb[1], rgb[2], 1).endVertex();
+			float red = 1F;
+			float green = (c == selectedControl) ? .8F : 1F;
+			float blue = 1F;
+			buf.pos(renderBox[0], renderBox[1], 0).tex(0, 0).color(red, green, blue, 1).endVertex();
+			buf.pos(renderBox[0], renderBox[3], 0).tex(0, 1).color(red, green, blue, 1).endVertex();
+			buf.pos(renderBox[2], renderBox[3], 0).tex(1, 1).color(red, green, blue, 1).endVertex();
+			buf.pos(renderBox[2], renderBox[1], 0).tex(1, 0).color(red, green, blue, 1).endVertex();
 			tes.draw();
 		}
 	}

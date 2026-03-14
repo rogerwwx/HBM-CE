@@ -12,12 +12,9 @@ import com.hbm.blocks.generic.BlockBedrockOreTE;
 import com.hbm.config.ClientConfig;
 import com.hbm.handler.HbmKeybinds;
 import com.hbm.handler.ability.*;
-import com.hbm.inventory.gui.GUIScreenToolAbility;
 import com.hbm.interfaces.IItemHUD;
-import com.hbm.items.IDynamicModels;
-import com.hbm.items.IItemControlReceiver;
-import com.hbm.items.IKeybindReceiver;
-import com.hbm.items.ModItems;
+import com.hbm.inventory.gui.GUIScreenToolAbility;
+import com.hbm.items.*;
 import com.hbm.lib.internal.MethodHandleHelper;
 import com.hbm.main.MainRegistry;
 import com.hbm.packet.PacketDispatcher;
@@ -78,7 +75,7 @@ import java.util.*;
 
 import static com.hbm.items.ItemEnumMulti.ROOT_PATH;
 
-public class ItemToolAbility extends ItemTool implements IDepthRockTool, IGUIProvider, IItemControlReceiver, IKeybindReceiver, IItemHUD, IDynamicModels {
+public class ItemToolAbility extends ItemTool implements IDepthRockTool, IGUIProvider, IItemControlReceiver, IKeybindReceiver, IItemHUD, IDynamicModels, IClaimedModelLocation {
 
 	protected boolean isShears = false;
 
@@ -144,6 +141,7 @@ public class ItemToolAbility extends ItemTool implements IDepthRockTool, IGUIPro
 		this.texturePath = s;
 		INSTANCES.add(this);
 		ModItems.ALL_ITEMS.add(this);
+        ClaimedModelLocationRegistry.register(this);
 	}
 
 	@Override
@@ -175,6 +173,12 @@ public class ItemToolAbility extends ItemTool implements IDepthRockTool, IGUIPro
 	@Override
 	public void registerSprite(TextureMap map) {
 		map.registerSprite(new ResourceLocation(Tags.MODID, ROOT_PATH + texturePath));
+	}
+
+	@Override
+	@SideOnly(Side.CLIENT)
+	public boolean ownsModelLocation(ModelResourceLocation location) {
+		return IClaimedModelLocation.isInventoryLocation(location, new ResourceLocation(Tags.MODID, ROOT_PATH + texturePath));
 	}
 
 	public ItemToolAbility addAbility(IBaseAbility ability, int level) {

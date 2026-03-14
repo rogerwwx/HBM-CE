@@ -68,7 +68,7 @@ public class FluidPump extends BlockContainerBakeable implements INBTBlockTransf
     public static final PropertyDirection FACING = PropertyDirection.create("facing", EnumFacing.Plane.HORIZONTAL);
 
     public FluidPump(Material material, String registryName) {
-        super(material, registryName, new BlockBakeFrame("block_steel"));
+        super(material, registryName, BlockBakeFrame.cubeAll("block_steel"));
         this.setDefaultState(this.blockState.getBaseState().withProperty(FACING, EnumFacing.NORTH));
     }
 
