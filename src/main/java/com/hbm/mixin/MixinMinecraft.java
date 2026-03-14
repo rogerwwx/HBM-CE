@@ -4,7 +4,6 @@ import com.hbm.items.weapon.ItemSwordCutter;
 import com.hbm.items.weapon.ItemCrucible;
 import net.minecraft.client.multiplayer.PlayerControllerMP;
 import net.minecraft.entity.Entity;
-import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumHand;
