@@ -544,12 +544,6 @@ public class ResourceManager {
     public static final IModelCustom mp_w_15_turbine = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/missile_parts/mp_w_15_turbine.obj")).asVBO();
     public static final IModelCustom mp_w_15_mirv = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/missile_parts/mp_w_15_mirv.obj")).asVBO();
     public static final IModelCustom mp_w_fairing = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/missile_parts/mp_w_fairing.obj")).asVBO();
-    //Anti Mass Spectrometer
-    public static final IModelCustom ams_base = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/ams_base.obj")).asVBO();
-    public static final IModelCustom ams_emitter = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/ams_emitter.obj")).asVBO();
-    public static final IModelCustom ams_emitter_destroyed = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/ams_emitter_destroyed.obj")).asVBO();
-    public static final IModelCustom ams_limiter = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/ams_limiter.obj")).asVBO();
-    public static final IModelCustom ams_limiter_destroyed = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/ams_limiter_destroyed.obj")).asVBO();
     //Projectiles
     public static final IModelCustom projectiles = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/projectiles/projectiles.obj")).asVBO();
     public static final IModelCustom casings = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/effect/casings.obj")).asVBO();
