@@ -1,40 +1,45 @@
 package com.hbm.entity.mob.ai;
 
-import com.hbm.render.amlfrom1710.Vec3;
+// REFACTORED: Remove the custom Vec3 import
+// import com.hbm.render.amlfrom1710.Vec3;
 
 import net.minecraft.entity.EntityCreature;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.ai.EntityAIBase;
-import net.minecraft.pathfinding.Path;
+import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.world.World;
-import net.minecraft.util.math.BlockPos;
+// REFACTORED: Use the standard Minecraft Vec3d class
+import net.minecraft.util.math.Vec3d;
 
 public class EntityAIMaskmanCasualApproach extends EntityAIBase {
 
-	World worldObj;
-	EntityCreature attacker;
-	int attackTick;
-	double speedTowardsTarget;
-	boolean longMemory;
-	Path entityPathEntity;
-	Class classTarget;
+	// --- Core Fields ---
+	private final EntityCreature attacker;
+	private final World worldObj;
+	private EntityLivingBase attackTarget;
 
-	private int pathTimer;
-	private int failedPathFindingPenalty;
+	// --- Movement & Targeting Parameters ---
+	private final double speedTowardsTarget;
+	private final boolean longMemory;
+	private Class<? extends EntityLivingBase> classTarget;
 
-	// 目标运动预测
-	private double lastTX, lastTZ;
-
-	// 战术距离
+	// --- Tactical Distance ---
 	private static final double ENGAGE_RANGE = 50.0;
 	private static final double IDEAL_MIN = 10.0;
 	private static final double IDEAL_MAX = 30.0;
 
-	// 理想作战距离：动态微调
-	private static final double IDEAL_DISTANCE = 16.0; // 可以微调
-	private static final double IDEAL_WOBBLE = 2.0; // 随机抖动范围
+	// --- AI State & Timers ---
+	private enum AIState { AGGRESSIVE, DEFENSIVE, STRAFING }
+	private AIState currentState = AIState.STRAFING;
+	private int pathUpdateCooldown;
+	private int failedPathFindingPenalty;
 
-	public EntityAIMaskmanCasualApproach(EntityCreature owner, Class target, double speed, boolean longMemory) {
+	// --- Advanced Movement & Prediction (Using Vec3d) ---
+	private Vec3d lastTargetPosition;
+	private Vec3d targetVelocity;
+	private int strafeDirection = 1;
+
+	public EntityAIMaskmanCasualApproach(EntityCreature owner, Class<? extends EntityLivingBase> target, double speed, boolean longMemory) {
 		this(owner, speed, longMemory);
 		this.classTarget = target;
 	}
@@ -53,157 +58,159 @@ public class EntityAIMaskmanCasualApproach extends EntityAIBase {
 		if (target == null || !target.isEntityAlive()) return false;
 		if (classTarget != null && !classTarget.isAssignableFrom(target.getClass())) return false;
 
-		double dist = attacker.getDistance(target);
-		return dist <= ENGAGE_RANGE || attacker.getEntitySenses().canSee(target);
+		this.attackTarget = target;
+		// REFACTORED: Instantiate standard Vec3d
+		this.lastTargetPosition = new Vec3d(target.posX, target.posY, target.posZ);
+		this.targetVelocity = Vec3d.ZERO; // Use the built-in zero vector constant
+		return true;
 	}
 
 	@Override
 	public boolean shouldContinueExecuting() {
-		EntityLivingBase target = attacker.getAttackTarget();
-		if (target == null || !target.isEntityAlive()) return false;
-
-		double dist = attacker.getDistance(target);
-		return !(dist > ENGAGE_RANGE * 1.5 && !attacker.getEntitySenses().canSee(target));
+		if (attackTarget == null || !attackTarget.isEntityAlive()) return false;
+		return !(attacker.getDistanceSq(attackTarget) > ENGAGE_RANGE * ENGAGE_RANGE && !attacker.getEntitySenses().canSee(attackTarget));
 	}
 
 	@Override
 	public void startExecuting() {
-		pathTimer = 0;
+		this.pathUpdateCooldown = 0;
+		this.failedPathFindingPenalty = 0;
+		this.strafeDirection = attacker.getRNG().nextBoolean() ? 1 : -1;
 	}
 
 	@Override
 	public void resetTask() {
+		this.attackTarget = null;
 		attacker.getNavigator().clearPath();
 	}
 
 	@Override
 	public void updateTask() {
-		EntityLivingBase target = attacker.getAttackTarget();
-		if (target == null) return;
+		if (attackTarget == null) return;
 
-		attacker.getLookHelper().setLookPositionWithEntity(target, 30F, 30F);
+		attacker.getLookHelper().setLookPositionWithEntity(attackTarget, 30F, 30F);
 
-		double dist = attacker.getDistance(target);
+		updateAIState();
+		predictTargetMovement();
 
-		// ===== 敌方运动预测（平滑速度） =====
-		double tx = target.posX;
-		double tz = target.posZ;
+		this.pathUpdateCooldown--;
+		if (this.pathUpdateCooldown > 0) return;
 
-		double vx = tx - lastTX;
-		double vz = tz - lastTZ;
+		this.pathUpdateCooldown = 4 + attacker.getRNG().nextInt(7) + failedPathFindingPenalty;
 
-		vx = 0.7 * vx + 0.3 * (tx - lastTX);
-		vz = 0.7 * vz + 0.3 * (tz - lastTZ);
+		Vec3d targetPos = calculateStrategicPosition();
 
-		lastTX = tx;
-		lastTZ = tz;
-
-		double predictX = tx + vx * 6;
-		double predictZ = tz + vz * 6;
-
-		Vec3 toPred = Vec3.createVectorHelper(
-				predictX - attacker.posX,
-				0,
-				predictZ - attacker.posZ
-		);
-
-		Vec3 dir = toPred.normalize();
-		Vec3 side = Vec3.createVectorHelper(-dir.zCoord, 0, dir.xCoord);
-
-		// ===== 动态理想距离（血量感知） =====
-		double healthRatio = attacker.getHealth() / attacker.getMaxHealth();
-		double dynamicIdeal = IDEAL_DISTANCE;
-
-		if (healthRatio > 0.7) {
-			dynamicIdeal = IDEAL_MIN + 2; // 高血量 → 更靠近
-		} else if (healthRatio < 0.3) {
-			dynamicIdeal = IDEAL_MAX;     // 低血量 → 拉远
+		if (!isPathClear(targetPos)) {
+			targetPos = findFlankPosition(targetPos);
 		}
 
-		// ===== 计算距离误差 =====
-		double dx = attacker.posX - predictX;
-		double dz = attacker.posZ - predictZ;
-		double currentDist = Math.sqrt(dx * dx + dz * dz);
-		double error = currentDist - dynamicIdeal;
+		double moveSpeed = getDynamicMoveSpeed();
 
-		Vec3 correction = Vec3.createVectorHelper(
-				dir.xCoord * error,
-				0,
-				dir.zCoord * error
-		);
-
-		// ===== 随机抖动 + 绕圈行为 =====
-		double wobble = attacker.getRNG().nextGaussian() * IDEAL_WOBBLE;
-		Vec3 finalMove = Vec3.createVectorHelper(
-				correction.xCoord + side.xCoord * wobble,
-				0,
-				correction.zCoord + side.zCoord * wobble
-		);
-
-		if (attacker.getRNG().nextBoolean()) {
-			finalMove = Vec3.createVectorHelper(
-					finalMove.xCoord + side.xCoord * 0.5,
-					0,
-					finalMove.zCoord + side.zCoord * 0.5
-			);
-		}
-
-		double px = attacker.posX + finalMove.xCoord;
-		double pz = attacker.posZ + finalMove.zCoord;
-
-		// ===== 环境感知 =====
-		if (!worldObj.isAirBlock(new BlockPos(px, attacker.posY - 1, pz))) {
-			px = attacker.posX + attacker.getRNG().nextGaussian() * 2;
-			pz = attacker.posZ + attacker.getRNG().nextGaussian() * 2;
-		}
-
-		// ===== 路径紧急打断 =====
-		boolean emergencyDisengage = dist <= IDEAL_MIN + 4;
-		if (emergencyDisengage) {
-			attacker.getNavigator().clearPath();
-			pathTimer = 0;
-		}
-
-		// ===== 路径调度 =====
-		pathTimer--;
-
-		if (pathTimer <= 0) {
-			pathTimer = Math.min(failedPathFindingPenalty + 6 + attacker.getRNG().nextInt(8), 40);
-
-			double moveSpeed = speedTowardsTarget;
-
-			// 血量高 → 更激进，靠近时加速
-			if (healthRatio > 0.7 && dist <= IDEAL_MIN) {
-				moveSpeed = 2.5 * speedTowardsTarget;
-			}
-			// 血量低 → 更保守，减速
-			else if (healthRatio < 0.3) {
-				moveSpeed = 0.6 * speedTowardsTarget;
-			}
-			// 原有逻辑：过远时减速
-			else if (dist > IDEAL_MAX) {
-				moveSpeed = 0.7 * speedTowardsTarget;
-			}
-
-			if (!attacker.getNavigator().tryMoveToXYZ(px, attacker.posY, pz, moveSpeed)) {
-				failedPathFindingPenalty = Math.min(failedPathFindingPenalty + 5, 40);
-			} else {
-				failedPathFindingPenalty = Math.max(failedPathFindingPenalty - 2, 0);
-			}
+		// REFACTORED: Vec3d fields are x, y, z
+		if (!attacker.getNavigator().tryMoveToXYZ(targetPos.x, targetPos.y, targetPos.z, moveSpeed)) {
+			this.failedPathFindingPenalty = Math.min(this.failedPathFindingPenalty + 15, 60);
+		} else {
+			this.failedPathFindingPenalty = Math.max(this.failedPathFindingPenalty - 10, 0);
 		}
 	}
 
-	// 原接口保持
-	public double[] getApproachPos() {
-		EntityLivingBase target = attacker.getAttackTarget();
-		Vec3 vec = Vec3.createVectorHelper(attacker.posX - target.posX, attacker.posY - target.posY, attacker.posZ - target.posZ);
-		double range = Math.min(vec.length(), 20) - 10;
-		vec = vec.normalize();
+	private void updateAIState() {
+		double healthRatio = attacker.getHealth() / attacker.getMaxHealth();
+		double distanceToTarget = attacker.getDistance(attackTarget);
 
-		double x = attacker.posX + vec.xCoord * range + attacker.getRNG().nextGaussian() * 2;
-		double y = attacker.posY + vec.yCoord - 5 + attacker.getRNG().nextInt(11);
-		double z = attacker.posZ + vec.zCoord * range + attacker.getRNG().nextGaussian() * 2;
+		if (healthRatio < 0.3 || distanceToTarget < IDEAL_MIN) {
+			currentState = AIState.DEFENSIVE;
+		} else if (healthRatio > 0.7 && distanceToTarget > IDEAL_MAX * 0.8) {
+			currentState = AIState.AGGRESSIVE;
+		} else {
+			currentState = AIState.STRAFING;
+		}
+	}
 
-		return new double[]{x, y, z};
+	private void predictTargetMovement() {
+		Vec3d currentTargetPos = new Vec3d(attackTarget.posX, attackTarget.posY, attackTarget.posZ);
+		Vec3d movementDelta = currentTargetPos.subtract(this.lastTargetPosition);
+
+		// REFACTORED: Vec3d is immutable, so we create a new instance for the updated velocity.
+		double newVelX = this.targetVelocity.x * 0.7 + movementDelta.x * 0.3;
+		double newVelZ = this.targetVelocity.z * 0.7 + movementDelta.z * 0.3;
+		this.targetVelocity = new Vec3d(newVelX, 0, newVelZ);
+
+		this.lastTargetPosition = currentTargetPos;
+	}
+
+	private Vec3d calculateStrategicPosition() {
+		int predictionTicks = 8;
+		// REFACTORED: Use built-in vector math for prediction.
+		Vec3d predictedTargetPos = new Vec3d(attackTarget.posX, attackTarget.posY, attackTarget.posZ)
+				.add(this.targetVelocity.scale(predictionTicks));
+
+		Vec3d attackerPos = new Vec3d(attacker.posX, attacker.posY, attacker.posZ);
+		Vec3d vectorToTarget = predictedTargetPos.subtract(attackerPos);
+		vectorToTarget = new Vec3d(vectorToTarget.x, 0, vectorToTarget.z); // Flatten to 2D plane
+
+		double currentDistance = vectorToTarget.length();
+		if (currentDistance < 0.001) return attackerPos; // Avoid division by zero
+
+		Vec3d directionToTarget = vectorToTarget.normalize();
+		Vec3d strafeVector = new Vec3d(-directionToTarget.z, 0, directionToTarget.x);
+
+		double idealDistance = getDynamicIdealDistance();
+		double distanceError = currentDistance - idealDistance;
+
+		Vec3d finalMoveVector = switch (currentState) {
+            case AGGRESSIVE ->
+                    directionToTarget.scale(-distanceError).add(strafeVector.scale(2.0 * this.strafeDirection));
+            case DEFENSIVE -> {
+                double retreatFactor = Math.max(0, idealDistance - currentDistance);
+                yield directionToTarget.scale(retreatFactor * 1.5).add(strafeVector.scale(4.0 * this.strafeDirection));
+            }
+            default ->
+                    directionToTarget.scale(-distanceError * 0.8).add(strafeVector.scale(3.0 * this.strafeDirection));
+        };
+
+		// REFACTORED: Simplified, readable, and efficient vector calculations.
+
+        return attackerPos.add(finalMoveVector);
+	}
+
+	private double getDynamicIdealDistance() {
+		double healthRatio = attacker.getHealth() / attacker.getMaxHealth();
+		if (healthRatio > 0.7) return IDEAL_MIN + 4.0;
+		if (healthRatio < 0.3) return IDEAL_MAX - 2.0;
+		return (IDEAL_MIN + IDEAL_MAX) / 2.0;
+	}
+
+	private double getDynamicMoveSpeed() {
+        return switch (currentState) {
+            case AGGRESSIVE -> speedTowardsTarget * 1.2;
+            case DEFENSIVE -> speedTowardsTarget * 1.0;
+            default -> speedTowardsTarget;
+        };
+	}
+
+	private boolean isPathClear(Vec3d targetPos) {
+		// REFACTORED: No type conversion needed. It's clean and simple.
+		Vec3d startPos = new Vec3d(attacker.posX, attacker.posY + attacker.getEyeHeight(), attacker.posZ);
+		Vec3d endPos = new Vec3d(targetPos.x, attacker.posY + attacker.getEyeHeight(), targetPos.z);
+		RayTraceResult result = worldObj.rayTraceBlocks(startPos, endPos, false, true, false);
+		return result == null || result.typeOfHit == RayTraceResult.Type.MISS;
+	}
+
+	private Vec3d findFlankPosition(Vec3d originalTargetPos) {
+		Vec3d attackerPos = new Vec3d(attacker.posX, attacker.posY, attacker.posZ);
+		Vec3d vectorToTarget = originalTargetPos.subtract(attackerPos).normalize();
+		Vec3d sideVector = new Vec3d(-vectorToTarget.z, 0, vectorToTarget.x);
+
+		for (int i = 1; i <= 3; i++) {
+			double offset = i * 4.0;
+			// REFACTORED: Clean vector math for finding flank positions
+			Vec3d flankPos = attackerPos.add(sideVector.scale(offset));
+			if (isPathClear(flankPos)) return flankPos;
+
+			flankPos = attackerPos.add(sideVector.scale(-offset));
+			if (isPathClear(flankPos)) return flankPos;
+		}
+		return originalTargetPos;
 	}
 }
