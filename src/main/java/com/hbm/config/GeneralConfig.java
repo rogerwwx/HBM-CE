@@ -3,11 +3,16 @@ package com.hbm.config;
 import com.hbm.inventory.recipes.PrecAssRecipes;
 import com.hbm.main.MainRegistry;
 import com.hbm.render.GLCompat;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
+import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.common.config.Property;
 
+import java.util.Set;
+
 public class GeneralConfig {
 
+	public static boolean enableFluidContainersV2 = false;
 	public static double conversionRateHeToRF = 1.0F;
 	public static boolean autoCableConversion = false;
 	public static boolean enablePacketThreading = true;
@@ -20,6 +25,7 @@ public class GeneralConfig {
 	public static boolean enableSkyboxes = true;
 	public static boolean enableKeybindOverlap = true;
 	public static boolean enableFluidContainerCompat = true;
+	public static Set<String> leadSafeForgeContainerWhitelist = new ObjectOpenHashSet<>();
 	public static boolean enableMycelium = false;
 	public static boolean enablePlutoniumOre = false;
 	public static boolean enableDungeons = true;
@@ -213,16 +219,19 @@ public class GeneralConfig {
 		if(crucibleMaxCharges <= 0){
 			crucibleMaxCharges = 16;
 		}
+
 		conversionRateHeToRF = CommonConfig.createConfigDouble(config, CommonConfig.CATEGORY_GENERAL, "1.35_conversionRateHeToRF", "One HE is (insert number) RF - <number> (double)", 1.0D);
 		autoCableConversion = CommonConfig.createConfigBool(config, CommonConfig.CATEGORY_GENERAL, "1.35.1_autoCableConversion", "If enabled, NTM cables will automatically convert FE <-> HE. Note: WILL MAKE ALL OTHER MODS' CABLES USELESS", false);
 
 		enableMOTD = config.get(CommonConfig.CATEGORY_GENERAL, "1.36_enableMOTD", true, "If enabled, shows the 'Loaded mod!' chat message as well as update notifications when joining a world").getBoolean(true);
 		enableFluidContainerCompat = config.get(CommonConfig.CATEGORY_GENERAL, "1.37_enableFluidContainerCompat", true, "If enabled, fluid containers will be oredicted and interchangable in recipes with other mods' containers. Should probably work with things like IE's/GC oil properly.").getBoolean(true);
-        enableGuideBook = config.get(CommonConfig.CATEGORY_GENERAL, "1.38_enableGuideBook", true, "If enabled, gives players the guide book when joining the world for the first time").getBoolean(true);
+		enableGuideBook = config.get(CommonConfig.CATEGORY_GENERAL, "1.38_enableGuideBook", true, "If enabled, gives players the guide book when joining the world for the first time").getBoolean(true);
         decoToIngotRate = CommonConfig.createConfigInt(config, CommonConfig.CATEGORY_GENERAL, "1.39_decoToIngotConversionRate", "Chance of successful turning a deco block into an ingot. Default is 25%", 25);
 		enableThreadedAtmospheres = CommonConfig.createConfigBool(config, CommonConfig.CATEGORY_GENERAL, "1.40_threadedAtmospheres", "If enabled, will run atmosphere blobbing in a separate thread for performance", true);
 		enableHardcoreDarkness = CommonConfig.createConfigBool(config, CommonConfig.CATEGORY_GENERAL, "1.41_hardcoreDarkness", "If enabled, sets night-time minimum fog to zero, to complement hardcore darkness mods", false);
 		enableKeybindOverlap = config.get(CommonConfig.CATEGORY_GENERAL, "1.42_enableKeybindOverlap", true, "If enabled, will handle keybinds that would otherwise be ignored due to overlapping.").getBoolean(true);
+		enableFluidContainersV2 = CommonConfig.createConfigBool(config, CommonConfig.CATEGORY_GENERAL, "1.99_CE_enableFluidContainersV2", "If enabled, 3 new enhanced version of base fluid barrels that supports partial fill and drain are added.", false);
+		leadSafeForgeContainerWhitelist = loadLeadSafeForgeContainerWhitelist(config);
 		enableExpensiveMode = config.get(CommonConfig.CATEGORY_GENERAL, "1.99_enableExpensiveMode", false, "It does what the name implies.").getBoolean(false);
         
 
@@ -293,5 +302,43 @@ public class GeneralConfig {
 		WorldConfig.craterBiomeInnerRad = (float) CommonConfig.createConfigDouble(config, CommonConfig.CATEGORY_BIOMES, "17.R01_craterBiomeInnerRad", "RAD/s for the inner crater biome", 25D);
 		WorldConfig.craterBiomeOuterRad = (float) CommonConfig.createConfigDouble(config, CommonConfig.CATEGORY_BIOMES, "17.R02_craterBiomeOuterRad", "RAD/s for the outer crater biome", 0.5D);
 		WorldConfig.craterBiomeWaterMult = (float) CommonConfig.createConfigDouble(config, CommonConfig.CATEGORY_BIOMES, "17.R03_craterBiomeWaterMult", "Multiplier for RAD/s in crater biomes when in water", 5D);
+	}
+
+	private static Set<String> loadLeadSafeForgeContainerWhitelist(Configuration config) {
+		String[] entries = CommonConfig.createConfigStringList(
+				config,
+				CommonConfig.CATEGORY_GENERAL,
+				"1.99_CE_forgeFluidLeadSafeContainers",
+				"Exact generic Forge Fluid containers that should be treated as lead-safe. Entries must use the format modid:item:meta. Default empty means generic Forge Fluid containers are not lead-safe.",
+				new String[0]
+		);
+
+		Set<String> result = new ObjectOpenHashSet<>(entries.length);
+		for (String entry : entries) {
+			String normalized = normalizeLeadSafeForgeContainerEntry(entry);
+			result.add(normalized);
+		}
+		return result;
+	}
+
+	private static String normalizeLeadSafeForgeContainerEntry(String entry) {
+		String trimmed = entry.trim();
+		int split = trimmed.lastIndexOf(':');
+		if (split <= 0 || split == trimmed.length() - 1) {
+			throw new IllegalArgumentException("Invalid forge fluid lead-safe container override '" + entry + "'. Expected modid:item:meta.");
+		}
+
+		ResourceLocation itemId = new ResourceLocation(trimmed.substring(0, split));
+		int meta;
+		try {
+			meta = Integer.parseInt(trimmed.substring(split + 1));
+		} catch (NumberFormatException e) {
+			throw new IllegalArgumentException("Invalid forge fluid lead-safe container override '" + entry + "'. Meta must be an integer.", e);
+		}
+		if (meta < 0) {
+			throw new IllegalArgumentException("Invalid forge fluid lead-safe container override '" + entry + "'. Meta must be >= 0.");
+		}
+
+		return itemId + ":" + meta;
 	}
 }

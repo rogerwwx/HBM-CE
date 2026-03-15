@@ -31,6 +31,7 @@ public class FluidLoaderForge implements IFluidLoadingHandler {
         ItemStack singleItem = slots.extractItem(in, 1, true);
         IFluidHandlerItem handler = getIFluidHandler(singleItem);
         if (handler == null) return false;
+        if (!NTMFluidCapabilityHandler.canForgeContainerStoreFluid(singleItem, tankType)) return false;
         int offer = tank.getFill();
         int canFill = handler.fill(new FluidStack(forgeFluid, offer), false);
         if (canFill <= 0) return false;
@@ -64,6 +65,7 @@ public class FluidLoaderForge implements IFluidLoadingHandler {
         if (contained == null || contained.amount <= 0) return false;
         FluidType itemType = NTMFluidCapabilityHandler.getFluidType(contained.getFluid());
         if (itemType == null || itemType == Fluids.NONE) return false;
+        if (!NTMFluidCapabilityHandler.canForgeContainerStoreFluid(singleItem, itemType)) return false;
         FluidType tankType = tank.getTankType();
         if (tankType != Fluids.NONE && tankType != itemType) return false;
         int space = tank.getMaxFill() - tank.getFill();

@@ -1276,6 +1276,8 @@ public class Library {
             IFluidHandlerItem handler = stack.getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY, null);
             FluidStack test = handler.drain(Integer.MAX_VALUE, false);
             if (test == null) return false;
+            FluidType incomingType = NTMFluidCapabilityHandler.getFluidType(test.getFluid());
+            if (!NTMFluidCapabilityHandler.canForgeContainerStoreFluid(stack, incomingType)) return false;
             return tank.fill(test, false) > 0;
         } else return false;
     }
@@ -1288,6 +1290,7 @@ public class Library {
             if (!NTMFluidCapabilityHandler.isEmptyNtmFluidContainer(item)) return false;
             return FluidContainerRegistry.getFillRecipe(stack, tank.getTankType()) != null;
         } else if (stack.hasCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY, null)) {
+            if (!NTMFluidCapabilityHandler.canForgeContainerStoreFluid(stack, tank.getTankType())) return false;
             IFluidHandlerItem handler = stack.getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY, null);
             return handler.fill(new FluidStack(tank.getTankTypeFF(), Integer.MAX_VALUE), false) > 0;
         } else return false;
