@@ -1,40 +1,33 @@
 package com.hbm.entity.mob.ai;
 
-// REFACTORED: Remove the custom Vec3 import
-// import com.hbm.render.amlfrom1710.Vec3;
-
 import net.minecraft.entity.EntityCreature;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.ai.EntityAIBase;
+import net.minecraft.entity.ai.RandomPositionGenerator;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.world.World;
-// REFACTORED: Use the standard Minecraft Vec3d class
 import net.minecraft.util.math.Vec3d;
 
 public class EntityAIMaskmanCasualApproach extends EntityAIBase {
 
-	// --- Core Fields ---
 	private final EntityCreature attacker;
 	private final World worldObj;
 	private EntityLivingBase attackTarget;
 
-	// --- Movement & Targeting Parameters ---
 	private final double speedTowardsTarget;
 	private final boolean longMemory;
 	private Class<? extends EntityLivingBase> classTarget;
 
-	// --- Tactical Distance ---
 	private static final double ENGAGE_RANGE = 50.0;
 	private static final double IDEAL_MIN = 10.0;
 	private static final double IDEAL_MAX = 30.0;
+	// MODIFIED: Define the emergency distance as a constant per your request
+	private static final double EMERGENCY_DISTANCE = 4.0;
 
-	// --- AI State & Timers ---
 	private enum AIState { AGGRESSIVE, DEFENSIVE, STRAFING }
 	private AIState currentState = AIState.STRAFING;
 	private int pathUpdateCooldown;
-	private int failedPathFindingPenalty;
 
-	// --- Advanced Movement & Prediction (Using Vec3d) ---
 	private Vec3d lastTargetPosition;
 	private Vec3d targetVelocity;
 	private int strafeDirection = 1;
@@ -59,9 +52,8 @@ public class EntityAIMaskmanCasualApproach extends EntityAIBase {
 		if (classTarget != null && !classTarget.isAssignableFrom(target.getClass())) return false;
 
 		this.attackTarget = target;
-		// REFACTORED: Instantiate standard Vec3d
 		this.lastTargetPosition = new Vec3d(target.posX, target.posY, target.posZ);
-		this.targetVelocity = Vec3d.ZERO; // Use the built-in zero vector constant
+		this.targetVelocity = Vec3d.ZERO;
 		return true;
 	}
 
@@ -74,7 +66,6 @@ public class EntityAIMaskmanCasualApproach extends EntityAIBase {
 	@Override
 	public void startExecuting() {
 		this.pathUpdateCooldown = 0;
-		this.failedPathFindingPenalty = 0;
 		this.strafeDirection = attacker.getRNG().nextBoolean() ? 1 : -1;
 	}
 
@@ -96,21 +87,41 @@ public class EntityAIMaskmanCasualApproach extends EntityAIBase {
 		this.pathUpdateCooldown--;
 		if (this.pathUpdateCooldown > 0) return;
 
-		this.pathUpdateCooldown = 4 + attacker.getRNG().nextInt(7) + failedPathFindingPenalty;
+		this.pathUpdateCooldown = 4 + attacker.getRNG().nextInt(7);
+
+		if (isEmergency()) {
+			executeFleeManeuver();
+			return;
+		}
 
 		Vec3d targetPos = calculateStrategicPosition();
-
 		if (!isPathClear(targetPos)) {
 			targetPos = findFlankPosition(targetPos);
 		}
 
 		double moveSpeed = getDynamicMoveSpeed();
 
-		// REFACTORED: Vec3d fields are x, y, z
 		if (!attacker.getNavigator().tryMoveToXYZ(targetPos.x, targetPos.y, targetPos.z, moveSpeed)) {
-			this.failedPathFindingPenalty = Math.min(this.failedPathFindingPenalty + 15, 60);
-		} else {
-			this.failedPathFindingPenalty = Math.max(this.failedPathFindingPenalty - 10, 0);
+			this.pathUpdateCooldown += 10;
+		}
+	}
+
+	/**
+	 * MODIFIED: Uses the new EMERGENCY_DISTANCE constant (4.0).
+	 */
+	private boolean isEmergency() {
+		return attacker.getDistance(attackTarget) < EMERGENCY_DISTANCE;
+	}
+
+	/**
+	 * MODIFIED: Flee speed is now clearly defined.
+	 */
+	private void executeFleeManeuver() {
+		Vec3d fleePos = RandomPositionGenerator.findRandomTargetBlockAwayFrom(this.attacker, 16, 7, new Vec3d(this.attackTarget.posX, this.attackTarget.posY, this.attackTarget.posZ));
+		if (fleePos != null) {
+			// This is the flee speed boost. You can adjust the 1.4 multiplier.
+			double fleeSpeed = this.speedTowardsTarget * 1.6;
+			this.attacker.getNavigator().tryMoveToXYZ(fleePos.x, fleePos.y, fleePos.z, fleeSpeed);
 		}
 	}
 
@@ -118,9 +129,9 @@ public class EntityAIMaskmanCasualApproach extends EntityAIBase {
 		double healthRatio = attacker.getHealth() / attacker.getMaxHealth();
 		double distanceToTarget = attacker.getDistance(attackTarget);
 
-		if (healthRatio < 0.3 || distanceToTarget < IDEAL_MIN) {
+		if (healthRatio < 0.4 || distanceToTarget < IDEAL_MIN) {
 			currentState = AIState.DEFENSIVE;
-		} else if (healthRatio > 0.7 && distanceToTarget > IDEAL_MAX * 0.8) {
+		} else if (healthRatio > 0.7 && distanceToTarget > IDEAL_MAX * 0.7) {
 			currentState = AIState.AGGRESSIVE;
 		} else {
 			currentState = AIState.STRAFING;
@@ -131,7 +142,6 @@ public class EntityAIMaskmanCasualApproach extends EntityAIBase {
 		Vec3d currentTargetPos = new Vec3d(attackTarget.posX, attackTarget.posY, attackTarget.posZ);
 		Vec3d movementDelta = currentTargetPos.subtract(this.lastTargetPosition);
 
-		// REFACTORED: Vec3d is immutable, so we create a new instance for the updated velocity.
 		double newVelX = this.targetVelocity.x * 0.7 + movementDelta.x * 0.3;
 		double newVelZ = this.targetVelocity.z * 0.7 + movementDelta.z * 0.3;
 		this.targetVelocity = new Vec3d(newVelX, 0, newVelZ);
@@ -141,16 +151,15 @@ public class EntityAIMaskmanCasualApproach extends EntityAIBase {
 
 	private Vec3d calculateStrategicPosition() {
 		int predictionTicks = 8;
-		// REFACTORED: Use built-in vector math for prediction.
 		Vec3d predictedTargetPos = new Vec3d(attackTarget.posX, attackTarget.posY, attackTarget.posZ)
 				.add(this.targetVelocity.scale(predictionTicks));
 
 		Vec3d attackerPos = new Vec3d(attacker.posX, attacker.posY, attacker.posZ);
 		Vec3d vectorToTarget = predictedTargetPos.subtract(attackerPos);
-		vectorToTarget = new Vec3d(vectorToTarget.x, 0, vectorToTarget.z); // Flatten to 2D plane
+		vectorToTarget = new Vec3d(vectorToTarget.x, 0, vectorToTarget.z);
 
 		double currentDistance = vectorToTarget.length();
-		if (currentDistance < 0.001) return attackerPos; // Avoid division by zero
+		if (currentDistance < 0.001) return attackerPos;
 
 		Vec3d directionToTarget = vectorToTarget.normalize();
 		Vec3d strafeVector = new Vec3d(-directionToTarget.z, 0, directionToTarget.x);
@@ -158,39 +167,52 @@ public class EntityAIMaskmanCasualApproach extends EntityAIBase {
 		double idealDistance = getDynamicIdealDistance();
 		double distanceError = currentDistance - idealDistance;
 
-		Vec3d finalMoveVector = switch (currentState) {
-            case AGGRESSIVE ->
-                    directionToTarget.scale(-distanceError).add(strafeVector.scale(2.0 * this.strafeDirection));
-            case DEFENSIVE -> {
-                double retreatFactor = Math.max(0, idealDistance - currentDistance);
-                yield directionToTarget.scale(retreatFactor * 1.5).add(strafeVector.scale(4.0 * this.strafeDirection));
-            }
-            default ->
-                    directionToTarget.scale(-distanceError * 0.8).add(strafeVector.scale(3.0 * this.strafeDirection));
-        };
+		Vec3d finalMoveVector;
 
-		// REFACTORED: Simplified, readable, and efficient vector calculations.
+		switch (currentState) {
+			case AGGRESSIVE:
+				finalMoveVector = directionToTarget.scale(-distanceError).add(strafeVector.scale(2.0 * this.strafeDirection));
+				break;
+			case DEFENSIVE:
+				double retreatFactor = Math.max(0, idealDistance - currentDistance);
+				finalMoveVector = directionToTarget.scale(retreatFactor * 1.2).add(strafeVector.scale(1.5 * this.strafeDirection));
+				break;
+			case STRAFING:
+			default:
+				finalMoveVector = directionToTarget.scale(-distanceError * 0.8).add(strafeVector.scale(3.0 * this.strafeDirection));
+				break;
+		}
 
-        return attackerPos.add(finalMoveVector);
+		return attackerPos.add(finalMoveVector);
 	}
 
 	private double getDynamicIdealDistance() {
 		double healthRatio = attacker.getHealth() / attacker.getMaxHealth();
 		if (healthRatio > 0.7) return IDEAL_MIN + 4.0;
-		if (healthRatio < 0.3) return IDEAL_MAX - 2.0;
+		if (healthRatio < 0.4) return IDEAL_MAX - 2.0;
 		return (IDEAL_MIN + IDEAL_MAX) / 2.0;
 	}
 
+	/**
+	 * MODIFIED: Re-integrates your original aggressive speed boost logic.
+	 */
 	private double getDynamicMoveSpeed() {
-        return switch (currentState) {
-            case AGGRESSIVE -> speedTowardsTarget * 1.2;
-            case DEFENSIVE -> speedTowardsTarget * 1.0;
-            default -> speedTowardsTarget;
-        };
+		double healthRatio = attacker.getHealth() / attacker.getMaxHealth();
+		double distanceToTarget = attacker.getDistance(attackTarget);
+
+		// Your original aggressive speed boost: If high health and too close, charge forward to create space.
+		if (healthRatio > 0.7 && distanceToTarget <= IDEAL_MIN) {
+			return this.speedTowardsTarget * 2.5;
+		}
+
+		switch (currentState) {
+			case AGGRESSIVE: return speedTowardsTarget * 1.2;
+			case DEFENSIVE: return speedTowardsTarget * 1.1;
+			case STRAFING: default: return speedTowardsTarget;
+		}
 	}
 
 	private boolean isPathClear(Vec3d targetPos) {
-		// REFACTORED: No type conversion needed. It's clean and simple.
 		Vec3d startPos = new Vec3d(attacker.posX, attacker.posY + attacker.getEyeHeight(), attacker.posZ);
 		Vec3d endPos = new Vec3d(targetPos.x, attacker.posY + attacker.getEyeHeight(), targetPos.z);
 		RayTraceResult result = worldObj.rayTraceBlocks(startPos, endPos, false, true, false);
@@ -204,7 +226,6 @@ public class EntityAIMaskmanCasualApproach extends EntityAIBase {
 
 		for (int i = 1; i <= 3; i++) {
 			double offset = i * 4.0;
-			// REFACTORED: Clean vector math for finding flank positions
 			Vec3d flankPos = attackerPos.add(sideVector.scale(offset));
 			if (isPathClear(flankPos)) return flankPos;
 
