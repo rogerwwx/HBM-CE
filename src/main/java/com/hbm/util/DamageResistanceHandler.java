@@ -28,6 +28,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map.Entry;
 
 /**
@@ -420,10 +421,10 @@ public class DamageResistanceHandler {
         if (source.isExplosion()) return CATEGORY_EXPLOSION;
         if (source.isFireDamage()) return CATEGORY_FIRE;
         if (source.isProjectile()) return CATEGORY_PHYSICAL;
-        if (source.getDamageType().equals(DamageClass.LASER.name())) return CATEGORY_ENERGY;
-        if (source.getDamageType().equals(DamageClass.MICROWAVE.name())) return CATEGORY_ENERGY;
-        if (source.getDamageType().equals(DamageClass.SUBATOMIC.name())) return CATEGORY_ENERGY;
-        if (source.getDamageType().equals(DamageClass.ELECTRIC.name())) return CATEGORY_ENERGY;
+        if (source.getDamageType().toLowerCase(Locale.US).equals(DamageClass.LASER.name())) return CATEGORY_ENERGY;
+        if (source.getDamageType().toLowerCase(Locale.US).equals(DamageClass.MICROWAVE.name())) return CATEGORY_ENERGY;
+        if (source.getDamageType().toLowerCase(Locale.US).equals(DamageClass.SUBATOMIC.name())) return CATEGORY_ENERGY;
+        if (source.getDamageType().toLowerCase(Locale.US).equals(DamageClass.ELECTRIC.name())) return CATEGORY_ENERGY;
         if (source == DamageSource.CACTUS) return CATEGORY_PHYSICAL;
         if (source instanceof EntityDamageSource) return CATEGORY_PHYSICAL;
         return source.getDamageType();
@@ -544,7 +545,7 @@ public class DamageResistanceHandler {
         }
 
         ResistanceStats addExact(String type, float threshold, float resistance) {
-            exactResistances.put(type, new Resistance(threshold, resistance));
+            exactResistances.put(type.toLowerCase(Locale.US), new Resistance(threshold, resistance));
             return this;
         }
 

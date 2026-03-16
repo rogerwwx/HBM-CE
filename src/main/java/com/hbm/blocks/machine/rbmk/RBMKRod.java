@@ -2,7 +2,9 @@ package com.hbm.blocks.machine.rbmk;
 
 import com.hbm.handler.BossSpawnHandler;
 import com.hbm.items.machine.ItemRBMKRod;
+import com.hbm.lib.HBMSoundHandler;
 import com.hbm.render.model.RBMKRodBakedModel;
+import com.hbm.tileentity.TileEntityProxyCombo;
 import com.hbm.tileentity.TileEntityProxyInventory;
 import com.hbm.tileentity.machine.rbmk.RBMKDials;
 import com.hbm.tileentity.machine.rbmk.TileEntityRBMKBase;
@@ -12,10 +14,12 @@ import net.minecraft.client.renderer.block.model.ModelResourceLocation;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.renderer.texture.TextureMap;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.EnumHand;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraftforge.client.event.ModelBakeEvent;
@@ -39,19 +43,26 @@ public class RBMKRod extends RBMKBase {
 
 	@Override
 	public TileEntity createNewTileEntity(@NotNull World world, int meta) {
-
-		if(meta >= offset)
-			return new TileEntityRBMKRod();
-
-		if(hasExtra(meta))
-			return new TileEntityProxyInventory();
-
+		if(meta >= offset) return new TileEntityRBMKRod();
+		if(hasExtra(meta)) return new TileEntityProxyCombo().inventory();
 		return null;
 	}
 
 	@Override
-	public boolean onBlockActivated(@NotNull World worldIn, BlockPos pos, @NotNull IBlockState state, @NotNull EntityPlayer playerIn, @NotNull EnumHand hand, @NotNull EnumFacing facing, float hitX, float hitY, float hitZ){
+	public boolean onBlockActivated(@NotNull World worldIn, @NotNull BlockPos pos, @NotNull IBlockState state, @NotNull EntityPlayer playerIn, @NotNull EnumHand hand, @NotNull EnumFacing facing, float hitX, float hitY, float hitZ){
 		BossSpawnHandler.markFBI(playerIn);
+		if(worldIn.isRemote) return true;
+
+		TileEntity te = this.findCoreTE(worldIn, pos);
+		if(!(te instanceof TileEntityRBMKRod rbmk)) return false;
+		if(!playerIn.getHeldItem(hand).isEmpty() && playerIn.getHeldItem(hand).getItem() instanceof ItemRBMKRod && rbmk.inventory.getStackInSlot(0).isEmpty()) {
+			ItemStack rod = playerIn.getHeldItem(hand).copy();
+			rod.setCount(1);
+			rbmk.inventory.setStackInSlot(0, rod);
+			if(!playerIn.capabilities.isCreativeMode) playerIn.getHeldItem(hand).shrink(1);
+			worldIn.playSound(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, HBMSoundHandler.upgradePlug, SoundCategory.BLOCKS, 1.0F, 1.0F);
+			return false;
+		}
 		return openInv(worldIn, pos.getX(), pos.getY(), pos.getZ(), playerIn, hand);
 	}
 

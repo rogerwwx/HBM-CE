@@ -2435,9 +2435,8 @@ public class ModItems {
     public static final Item nuke_starter_kit = new ItemStarterKit("nuke_starter_kit").setMaxStackSize(1).setCreativeTab(MainRegistry.consumableTab);
     public static final Item nuke_advanced_kit = new ItemStarterKit("nuke_advanced_kit").setMaxStackSize(1).setCreativeTab(MainRegistry.consumableTab);
     public static final Item nuke_commercially_kit = new ItemStarterKit("nuke_commercially_kit").setMaxStackSize(1).setCreativeTab(MainRegistry.consumableTab);
-    public static final Item kit_custom = new ItemKitCustom("kit_custom").setCreativeTab(MainRegistry.consumableTab);
+    public static final Item kit_custom = new ItemKitCustom("kit_custom").setCreativeTab(null);
     public static final Item toolbox = new ItemToolBox("toolbox").setCreativeTab(MainRegistry.consumableTab);
-    public static final Item legacy_toolbox = new ItemKitNBT("toolbox_legacy").setContainerItem(toolbox).setCreativeTab(MainRegistry.consumableTab);
     public static final Item loot_10 = new ItemLootCrate("loot_10").setMaxStackSize(1).setCreativeTab(MainRegistry.missileTab);
     public static final Item loot_15 = new ItemLootCrate("loot_15").setMaxStackSize(1).setCreativeTab(MainRegistry.missileTab);
     public static final Item loot_misc = new ItemLootCrate("loot_misc").setMaxStackSize(1).setCreativeTab(MainRegistry.missileTab);
