@@ -3,6 +3,7 @@ package com.hbm.render.model;
 import com.hbm.render.loader.HFRWavefrontObject;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.renderer.block.model.IBakedModel;
 import net.minecraft.client.renderer.block.model.ItemCameraTransforms;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
@@ -15,6 +16,8 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.vecmath.Matrix4f;
 import java.util.*;
+
+import static com.hbm.render.model.BakedModelMatrixUtil.*;
 
 @SideOnly(Side.CLIENT)
 public class StaticWavefrontItemBakedModel extends AbstractWavefrontBakedModel {
@@ -102,7 +105,7 @@ public class StaticWavefrontItemBakedModel extends AbstractWavefrontBakedModel {
     }
 
     @Override
-    public Pair<? extends net.minecraft.client.renderer.block.model.IBakedModel, Matrix4f> handlePerspective(ItemCameraTransforms.TransformType cameraTransformType) {
+    public Pair<? extends IBakedModel, Matrix4f> handlePerspective(ItemCameraTransforms.TransformType cameraTransformType) {
         Matrix4f matrix = perspectiveMatrices.get(cameraTransformType);
         return Pair.of(this, matrix != null ? new Matrix4f(matrix) : null);
     }
@@ -167,69 +170,11 @@ public class StaticWavefrontItemBakedModel extends AbstractWavefrontBakedModel {
         perspectiveMatrices.put(ItemCameraTransforms.TransformType.NONE, null);
     }
 
-    private static Matrix4f identity() {
-        Matrix4f matrix = new Matrix4f();
-        matrix.setIdentity();
-        return matrix;
-    }
-
-    private static Matrix4f compose(Matrix4f... operations) {
-        Matrix4f result = identity();
-        for (Matrix4f operation : operations) {
-            result.mul(operation);
-        }
-        return result;
-    }
-
     private static Matrix4f stageTransform(Matrix4f... oldTeisrOperations) {
         return compose(HALF_BLOCK_NEGATIVE, compose(oldTeisrOperations), HALF_BLOCK_POSITIVE);
     }
 
     private static Matrix4f leftHandStageTransform(Matrix4f... oldTeisrOperations) {
         return compose(FLIP_X, stageTransform(oldTeisrOperations), FLIP_X);
-    }
-
-    private static Matrix4f translate(double x, double y, double z) {
-        Matrix4f matrix = identity();
-        matrix.m03 = (float) x;
-        matrix.m13 = (float) y;
-        matrix.m23 = (float) z;
-        return matrix;
-    }
-
-    private static Matrix4f scale(double xyz) {
-        return scale(xyz, xyz, xyz);
-    }
-
-    private static Matrix4f scale(double x, double y, double z) {
-        Matrix4f matrix = identity();
-        matrix.m00 = (float) x;
-        matrix.m11 = (float) y;
-        matrix.m22 = (float) z;
-        return matrix;
-    }
-
-    private static Matrix4f rotateX(double degrees) {
-        double radians = Math.toRadians(degrees);
-        float cos = (float) Math.cos(radians);
-        float sin = (float) Math.sin(radians);
-        Matrix4f matrix = identity();
-        matrix.m11 = cos;
-        matrix.m12 = -sin;
-        matrix.m21 = sin;
-        matrix.m22 = cos;
-        return matrix;
-    }
-
-    private static Matrix4f rotateY(double degrees) {
-        double radians = Math.toRadians(degrees);
-        float cos = (float) Math.cos(radians);
-        float sin = (float) Math.sin(radians);
-        Matrix4f matrix = identity();
-        matrix.m00 = cos;
-        matrix.m02 = sin;
-        matrix.m20 = -sin;
-        matrix.m22 = cos;
-        return matrix;
     }
 }

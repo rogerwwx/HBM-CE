@@ -99,13 +99,6 @@ public class ResourceManager {
     public static final IModelCustom turret_howard_damaged = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/turrets/turret_howard_damaged.obj")).asVBO();
 
     //Satellites
-    public static final IModelCustom sat_base = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/sat_base.obj")).asVBO();
-    public static final IModelCustom sat_radar = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/sat_radar.obj")).asVBO();
-    public static final IModelCustom sat_resonator = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/sat_resonator.obj")).asVBO();
-    public static final IModelCustom sat_scanner = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/sat_scanner.obj")).asVBO();
-    public static final IModelCustom sat_mapper = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/sat_mapper.obj")).asVBO();
-    public static final IModelCustom sat_laser = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/sat_laser.obj")).asVBO();
-    public static final IModelCustom sat_foeq = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/sat_foeq.obj")).asVBO();
     public static final IModelCustom sat_foeq_burning = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/sat_foeq_burning.obj")).asVBO();
     public static final IModelCustom sat_foeq_fire = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/sat_foeq_fire.obj")).asVBO();
 
@@ -262,7 +255,6 @@ public class ResourceManager {
     //Cyclotron
     public static final IModelCustom cyclotron = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/cyclotron.obj")).asVBO();
     //Albion Particle Accelerator
-    public static final IModelCustom pa_beamline = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/particleaccelerator/beamline.obj")).asVBO();
     //Exposure Chamber
     public static final IModelCustom exposure_chamber = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/exposure_chamber.obj")).asVBO();
     //RTG
@@ -733,7 +725,6 @@ public class ResourceManager {
     public static final ResourceLocation cyclotron_coin = new ResourceLocation(Tags.MODID, "textures/models/machines/cyclotron_coin.png");
     public static final ResourceLocation cyclotron_coin_filled = new ResourceLocation(Tags.MODID, "textures/models/machines/cyclotron_coin_filled.png");
     //Albion Particle Accelerator
-    public static final ResourceLocation pa_beamline_tex = new ResourceLocation(Tags.MODID, "textures/models/particleaccelerator/beamline.png");
     //Exposure Chamber
     public static final ResourceLocation exposure_chamber_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/exposure_chamber.png");
     //RTG
@@ -765,12 +756,6 @@ public class ResourceManager {
     //Bombs
     public static final ResourceLocation fstbmb_tex = new ResourceLocation(Tags.MODID, "textures/models/bombs/fstbmb.png");
     //Satellites
-    public static final ResourceLocation sat_base_tex = new ResourceLocation(Tags.MODID, "textures/models/sat/sat_base.png");
-    public static final ResourceLocation sat_radar_tex = new ResourceLocation(Tags.MODID, "textures/models/sat/sat_radar.png");
-    public static final ResourceLocation sat_resonator_tex = new ResourceLocation(Tags.MODID, "textures/models/sat/sat_resonator.png");
-    public static final ResourceLocation sat_scanner_tex = new ResourceLocation(Tags.MODID, "textures/models/sat/sat_scanner.png");
-    public static final ResourceLocation sat_mapper_tex = new ResourceLocation(Tags.MODID, "textures/models/sat/sat_mapper.png");
-    public static final ResourceLocation sat_laser_tex = new ResourceLocation(Tags.MODID, "textures/models/sat/sat_laser.png");
     public static final ResourceLocation sat_foeq_tex = new ResourceLocation(Tags.MODID, "textures/models/sat/sat_foeq.png");
     public static final ResourceLocation sat_foeq_burning_tex = new ResourceLocation(Tags.MODID, "textures/sat/models/sat_foeq_burning.png");
     //Solar Tower

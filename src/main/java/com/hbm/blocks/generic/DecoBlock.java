@@ -20,6 +20,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumBlockRenderType;
 import net.minecraft.util.EnumFacing;
+import net.minecraft.util.BlockRenderLayer;
 import net.minecraft.util.Mirror;
 import net.minecraft.util.Rotation;
 import net.minecraft.util.math.AxisAlignedBB;
@@ -76,8 +77,21 @@ public class DecoBlock extends BlockContainer implements ICustomBlockHighlight, 
 
     @Override
     public @NotNull EnumBlockRenderType getRenderType(@NotNull IBlockState state) {
-        if (this == ModBlocks.steel_beam || this == ModBlocks.steel_scaffold) return EnumBlockRenderType.MODEL;
-        return EnumBlockRenderType.ENTITYBLOCK_ANIMATED;
+        return EnumBlockRenderType.MODEL;
+    }
+
+    @Override
+    @SideOnly(Side.CLIENT)
+    public @NotNull BlockRenderLayer getRenderLayer() {
+        if (this != ModBlocks.steel_beam) return BlockRenderLayer.CUTOUT;
+        return super.getRenderLayer();
+    }
+
+    @Override
+    @SideOnly(Side.CLIENT)
+    public boolean canRenderInLayer(IBlockState state, BlockRenderLayer layer) {
+        if (this != ModBlocks.steel_beam) return layer == BlockRenderLayer.CUTOUT;
+        return super.canRenderInLayer(state, layer);
     }
 
     @Override

@@ -240,6 +240,7 @@ public class NTMClientRegistry {
 
         IDynamicModels.registerSprites(map);
         StaticTesrBakedModels.registerSprites(map);
+        StaticDecoBakedModels.registerSprites(map);
 
         //Debug stuff
         debugPower = map.registerSprite(new ResourceLocation(Tags.MODID, "particle/debug_power"));
@@ -565,6 +566,7 @@ public class NTMClientRegistry {
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public void onModelBakeLast(ModelBakeEvent evt) {
         StaticTesrBakedModels.bakeModels(evt.getModelRegistry());
+        StaticDecoBakedModels.bakeModels(evt.getModelRegistry());
     }
 
     private void wrapModel(ModelBakeEvent event, ModelResourceLocation location) {

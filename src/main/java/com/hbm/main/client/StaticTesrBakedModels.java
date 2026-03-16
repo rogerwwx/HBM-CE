@@ -105,6 +105,7 @@ public final class StaticTesrBakedModels {
                     .item(1.0F, 0.0F, 1.5F, 0.0F, 0.0F, 0.0F, 0.0F)
                     .gui(0.0D, 0.0D, 0.0D, 2.25D),
             facingSpec(ModBlocks.bomb_multi, "models/bombs/BombGeneric.obj", "models/bombs/BombGeneric", yawMap().meta(2, 90).meta(3, 270).meta(4, 0).meta(5, 180).build())
+                    .doubleSided()
                     .worldAngles(180.0D, 0.0D)
                     .translate(0.0F, 0.5F, 0.0F)
                     .item(3.0F, (float) Math.toRadians(90), 0.75F, 0.5F, 0.0F, 0.0F, 0.0F)
@@ -178,6 +179,8 @@ public final class StaticTesrBakedModels {
             normalSpec(ModBlocks.heater_heatex, "models/machines/heatex.obj", "models/machines/heater_heatex", yawMap().meta(12, 90).meta(13, 270).meta(14, 180).meta(15, 0).build())
                     .item(1.9F, (float) Math.toRadians(180), 0.0F, 0.0F, 0.0F, 0.0F, 0.0F)
                     .gui(0.0D, -1.0D, 0.0D, 1.9D, 180.0D),
+            normalSpec(ModBlocks.heater_oilburner, "models/machines/oilburner.obj", "models/machines/oilburner", yawMap().meta(12, 0).meta(13, 0).meta(14, 0).meta(15, 0).build())
+                    .gui(0.0D, -1.5D, 0.0D, 3.25D),
             normalSpec(ModBlocks.machine_silex, "models/machines/silex.obj", "models/machines/silex", yawMap().meta(12, 90).meta(13, 270).meta(14, 180).meta(15, 0).build())
                     .item(1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F)
                     .gui(0.0D, -2.5D, 0.0D, 3.25D),
@@ -262,6 +265,9 @@ public final class StaticTesrBakedModels {
                     .translate(0.0F, -1.0F, 0.0F)
                     .item(0.5F, (float) Math.toRadians(90), 0.0F, 0.0F, 0.0F, 0.0F, 0.0F)
                     .gui(0.0D, -1.0D, 0.0D, 4.0D),
+            normalSpec(ModBlocks.pa_beamline, "models/particleaccelerator/beamline.obj", "models/particleaccelerator/beamline", yawMap().meta(12, 90).meta(13, 270).meta(14, 180).meta(15, 0).build())
+                    .item(1.0F, (float) Math.toRadians(90), 0.0F, 0.0F, 0.0F, 0.0F, 0.0F)
+                    .gui(0.0D, 0.0D, 0.0D, 4.0D),
             normalSpec(ModBlocks.pa_dipole, "models/particleaccelerator/dipole.obj", "models/particleaccelerator/dipole", yawMap().meta(12, 0).meta(13, 0).meta(14, 0).meta(15, 0).build())
                     .translate(0.0F, -1.0F, 0.0F)
                     .item(1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F)

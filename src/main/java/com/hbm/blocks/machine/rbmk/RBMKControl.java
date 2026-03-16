@@ -24,6 +24,7 @@ public class RBMKControl extends RBMKPipedBase {
 
 	public boolean moderated;
 	@SideOnly(Side.CLIENT) private TextureAtlasSprite bottomSprite;
+	@SideOnly(Side.CLIENT) private TextureAtlasSprite lidSprite;
 	
 	public RBMKControl(boolean moderated, String s, String c) {
 		super(s, c);
@@ -47,14 +48,15 @@ public class RBMKControl extends RBMKPipedBase {
 		super.registerSprite(map);
 		if(this == ModBlocks.rbmk_control_reasim) this.bottomSprite = map.registerSprite(new ResourceLocation("hbm", "blocks/rbmk/" + columnTexture + "_bottom"));
 		else this.bottomSprite = topSprite;
+		this.lidSprite = map.registerSprite(new ResourceLocation("hbm", "blocks/rbmk/rbmk_control"));
 	}
 
 	@Override
 	public void bakeModel(ModelBakeEvent event) {
 		event.getModelRegistry().putObject(new ModelResourceLocation(getRegistryName(), "inventory"),
-				new RBMKControlBakedModel(topSprite, sideSprite, pipeTop, pipeSide, null, null, null, null, topSprite, true).setBottomSprite(bottomSprite));
+				new RBMKControlBakedModel(topSprite, sideSprite, pipeTop, pipeSide, null, null, null, null, lidSprite, true).setBottomSprite(bottomSprite));
 
 		event.getModelRegistry().putObject(new ModelResourceLocation(getRegistryName(), "normal"),
-				new RBMKControlBakedModel(topSprite, sideSprite, pipeTop, pipeSide, null, null, null, null, topSprite, false).setBottomSprite(bottomSprite));
+				new RBMKControlBakedModel(topSprite, sideSprite, pipeTop, pipeSide, null, null, null, null, lidSprite, false).setBottomSprite(bottomSprite));
 	}
 }

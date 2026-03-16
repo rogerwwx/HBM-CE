@@ -34,7 +34,7 @@ public class RBMKControlBakedModel extends AbstractRBMKLiddedBakedModel {
                                  TextureAtlasSprite glassTop, TextureAtlasSprite glassSide,
                                  TextureAtlasSprite lidSprite,
                                  boolean isInventory) {
-        super((HFRWavefrontObject) ResourceManager.rbmk_rods, DefaultVertexFormats.BLOCK,
+        super((HFRWavefrontObject) ResourceManager.rbmk_rods, isInventory ? DefaultVertexFormats.ITEM : DefaultVertexFormats.BLOCK,
                 1.0F, 0.5F, 0.0F, 0.5F, BakedModelTransforms.rbmkColumn(),
                 coverTop, coverSide, glassTop, glassSide, isInventory);
         this.baseTopSprite = baseTop;
@@ -98,7 +98,7 @@ public class RBMKControlBakedModel extends AbstractRBMKLiddedBakedModel {
         float oldTy = this.ty;
         try {
             this.ty = oldTy + yOffsetBlocks;
-            return bakeSimpleQuads(parts, 0, 0, 0, true, false, sprite);
+            return bakeSimpleQuads(parts, 0, 0, 0, !isInventory, false, sprite);
         } finally {
             this.ty = oldTy;
         }

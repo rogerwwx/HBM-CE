@@ -61,10 +61,7 @@ public class SoyuzCapsule extends BlockContainer {
 	
 	@Override
 	public EnumBlockRenderType getRenderType(IBlockState state) {
-		if (StaticTesrBakedModels.isManagedBlock(this)) {
-			return EnumBlockRenderType.MODEL;
-		}
-		return EnumBlockRenderType.ENTITYBLOCK_ANIMATED;
+        return EnumBlockRenderType.MODEL;
 	}
 	
 	@Override
