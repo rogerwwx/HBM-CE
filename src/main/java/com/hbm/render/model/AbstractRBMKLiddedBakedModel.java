@@ -144,7 +144,7 @@ public abstract class AbstractRBMKLiddedBakedModel extends AbstractWavefrontBake
     public static int getColumnHeight() {
         Minecraft mc = Minecraft.getMinecraft();
         if (mc.world == null) return 0;
-        return RBMKDials.getColumnHeight(mc.world) + 2;
+        return RBMKDials.getColumnHeightRuleValue(mc.world);
     }
 
     @SuppressWarnings("unchecked")

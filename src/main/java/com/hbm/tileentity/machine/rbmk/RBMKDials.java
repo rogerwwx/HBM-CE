@@ -72,14 +72,27 @@ public class RBMKDials {
     }
 
     /**
-     * Simple integer that decides how tall the structure is.
+     * Returns the raw {@code dialColumnHeight} gamerule value.
+     * This is the total number of vertically stacked RBMK blocks, including the core block itself.
+     * Synchronization and persistence code should use this accessor when they need the literal gamerule payload.
      *
      * @param world
-     * @return [0;250]
+     * @return [2;16]
+     */
+    public static int getColumnHeightRuleValue(World world) {
+        return MathHelper.clamp(shittyWorkaroundParseInt(world.getGameRules().getString(RBMKKeys.KEY_COLUMN_HEIGHT.keyString),
+                (int) RBMKKeys.KEY_COLUMN_HEIGHT.defValue), 2, 16);
+    }
+
+    /**
+     * Returns the vertical offset from the RBMK core block to the topmost dummy/extra block.
+     * This is one less than the stored {@code dialColumnHeight} gamerule because that gamerule counts the core block too.
+     *
+     * @param world
+     * @return [1;15]
      */
     public static int getColumnHeight(World world) {
-        return MathHelper.clamp(shittyWorkaroundParseInt(world.getGameRules().getString(RBMKKeys.KEY_COLUMN_HEIGHT.keyString),
-                (int) RBMKKeys.KEY_COLUMN_HEIGHT.defValue), 2, 16) - 1;
+        return getColumnHeightRuleValue(world) - 1;
     }
 
     /**
@@ -321,6 +334,7 @@ public class RBMKDials {
         KEY_COLUMN_HEAT_FLOW("dialColumnHeatFlow", 0.2),
         KEY_FUEL_DIFFUSION_MOD("dialDiffusionMod", 1.0),
         KEY_HEAT_PROVISION("dialHeatProvision", 0.2),
+        // Stored as total stacked block count including the core; getColumnHeight(world) returns this value minus one.
         KEY_COLUMN_HEIGHT("dialColumnHeight", 4),
         KEY_PERMANENT_SCRAP("dialEnablePermaScrap", true),
         KEY_BOILER_HEAT_CONSUMPTION("dialBoilerHeatConsumption", 0.1),

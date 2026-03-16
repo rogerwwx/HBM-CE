@@ -155,7 +155,7 @@ public class ModEventHandler {
 
     public static final ResourceLocation ENT_HBM_PROP_ID = new ResourceLocation(Tags.MODID, "HBMLIVINGPROPS");
     public static final ResourceLocation DATA_LOC = new ResourceLocation(Tags.MODID, "HBMDATA");
-    public static final Int2IntOpenHashMap RBMK_COL_HEIGHT_MAP = new Int2IntOpenHashMap(); // server only, to avoid sending redundant packets
+    public static final Int2IntOpenHashMap RBMK_COL_HEIGHT_MAP = new Int2IntOpenHashMap(); // server only, stores raw dialColumnHeight values to avoid redundant packets
     public static Random rand = new Random();
     private static final ForkJoinPool THREAD_POOL = ForkJoinPool.commonPool();
 
@@ -527,7 +527,7 @@ public class ModEventHandler {
         Entity entity = event.getEntity();
         if(world.isRemote) return;
         if (entity instanceof EntityPlayerMP player) {
-            int height = RBMKDials.getColumnHeight(world);
+            int height = RBMKDials.getColumnHeightRuleValue(world);
             if (height != (int) RBMKDials.RBMKKeys.KEY_COLUMN_HEIGHT.defValue) {
                 PacketThreading.createSendToThreadedPacket(new SurveyPacket(height), player);
             }
@@ -652,7 +652,7 @@ public class ModEventHandler {
     @SubscribeEvent
     public void worldTick(WorldTickEvent event) {
         if (event.world == null || event.world.isRemote || event.phase != Phase.START) return;
-        int cur = RBMKDials.getColumnHeight(event.world);
+        int cur = RBMKDials.getColumnHeightRuleValue(event.world);
         int dim = event.world.provider.getDimension();
         if (RBMK_COL_HEIGHT_MAP.put(dim, cur) != cur) {
             //Drillgon200: Retarded hack because I'm not convinced game rules are client sync'd
