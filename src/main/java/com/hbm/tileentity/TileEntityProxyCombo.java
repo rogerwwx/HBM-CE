@@ -9,12 +9,17 @@ import com.hbm.api.redstoneoverradio.IRORInfo;
 import com.hbm.api.redstoneoverradio.IRORInteractive;
 import com.hbm.api.redstoneoverradio.IRORValueProvider;
 import com.hbm.api.tile.IHeatSource;
+import com.hbm.handler.CompatHandler;
 import com.hbm.interfaces.AutoRegister;
 import com.hbm.inventory.fluid.FluidType;
 import com.hbm.inventory.fluid.tank.FluidTankNTM;
 import com.hbm.inventory.material.Mats;
 import com.hbm.lib.CapabilityContextProvider;
 import com.hbm.lib.ForgeDirection;
+import com.hbm.util.Compat;
+import li.cil.oc.api.machine.Arguments;
+import li.cil.oc.api.machine.Context;
+import li.cil.oc.api.network.SimpleComponent;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.play.server.SPacketUpdateTileEntity;
 import net.minecraft.tileentity.TileEntity;
@@ -24,12 +29,16 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.energy.CapabilityEnergy;
 import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
+import net.minecraftforge.fml.common.Optional;
 import net.minecraftforge.items.CapabilityItemHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
+@Optional.InterfaceList({
+        @Optional.Interface(iface = "com.hbm.handler.CompatHandler.OCComponent", modid = "opencomputers"),
+        @Optional.Interface(iface = "li.cil.oc.api.network.SimpleComponent", modid = "opencomputers")
+})
 @AutoRegister
-public class TileEntityProxyCombo extends TileEntityProxyBase implements IEnergyReceiverMK2, IHeatSource, IFluidReceiverMK2, ICrucibleAcceptor, IRORValueProvider, IRORInteractive {
+public class TileEntityProxyCombo extends TileEntityProxyBase implements IEnergyReceiverMK2, IHeatSource, IFluidReceiverMK2, ICrucibleAcceptor, SimpleComponent, CompatHandler.OCComponent, IRORValueProvider, IRORInteractive {
 
     TileEntity tile;
     boolean inventory;
@@ -37,6 +46,10 @@ public class TileEntityProxyCombo extends TileEntityProxyBase implements IEnergy
     boolean conductor;
     boolean fluid;
     public boolean moltenMetal;
+
+    // due to some issues with OC deciding that it's gonna call the component name function before the worldObj is loaded
+    // the component name must be cached to prevent it from shitting itself
+    String componentName = CompatHandler.nullComponent;
 
     boolean heat;
 
@@ -236,6 +249,8 @@ public class TileEntityProxyCombo extends TileEntityProxyBase implements IEnergy
         power = compound.getBoolean("pow");
         conductor = compound.getBoolean("conductor");
         heat = compound.getBoolean("hea");
+        if(Compat.isOpenComputersLoaded())
+            this.componentName = compound.getString("ocname");
 
         super.readFromNBT(compound);
     }
@@ -248,6 +263,8 @@ public class TileEntityProxyCombo extends TileEntityProxyBase implements IEnergy
         compound.setBoolean("pow", power);
         compound.setBoolean("conductor", conductor);
         compound.setBoolean("hea", heat);
+        if(Compat.isOpenComputersLoaded())
+            compound.setString("ocname", componentName);
         return super.writeToNBT(compound);
     }
 
@@ -406,6 +423,57 @@ public class TileEntityProxyCombo extends TileEntityProxyBase implements IEnergy
     @Override
     public void handleUpdateTag(@NotNull NBTTagCompound tag) {
         this.readFromNBT(tag);
+    }
+
+    @Override // please work
+    @Optional.Method(modid = "OpenComputers")
+    public String getComponentName() {
+        if(this.world == null) // OC is going too fast, grab from NBT!
+            return componentName;
+        if(this.getCoreObject() instanceof CompatHandler.OCComponent) {
+            if (componentName == null || componentName.equals(CompatHandler.OCComponent.super.getComponentName())) {
+                componentName = ((CompatHandler.OCComponent) this.getCoreObject()).getComponentName();
+            }
+            return componentName;
+        }
+        return CompatHandler.OCComponent.super.getComponentName();
+    }
+
+    @Override
+    @Optional.Method(modid = "opencomputers")
+    public boolean canConnectNode(EnumFacing side) {
+        if(this.getCoreObject() instanceof CompatHandler.OCComponent) {
+            boolean isComponent = false;
+            if (this.world != null) {
+                Object nodeTE = Compat.getTileStandard(this.world, this.pos.getX() + side.getXOffset(), this.pos.getY() + side.getYOffset(), this.pos.getZ() + side.getZOffset());
+                if (nodeTE instanceof TileEntityProxyCombo proxy) {
+                    if (proxy.getCoreObject() == this.getCoreObject()) isComponent = true;
+                } else if (nodeTE == this.getCoreObject()) {
+                    isComponent = true;
+                }
+            }
+            return (this.getBlockMetadata() >= 6 && this.getBlockMetadata() <= 11)
+                    && (power || fluid) &&
+                    ((CompatHandler.OCComponent) this.getCoreObject()).canConnectNode(side) &&
+                    !isComponent;
+        }
+        return CompatHandler.OCComponent.super.canConnectNode(null);
+    }
+
+    @Override
+    @Optional.Method(modid = "opencomputers")
+    public String[] methods() {
+        if(this.getCoreObject() instanceof CompatHandler.OCComponent)
+            return ((CompatHandler.OCComponent) this.getCoreObject()).methods();
+        return CompatHandler.OCComponent.super.methods();
+    }
+
+    @Override
+    @Optional.Method(modid = "opencomputers")
+    public Object[] invoke(String method, Context context, Arguments args) throws Exception {
+        if(this.getCoreObject() instanceof CompatHandler.OCComponent)
+            return ((CompatHandler.OCComponent) this.getCoreObject()).invoke(method, context, args);
+        return CompatHandler.OCComponent.super.invoke(null, null, null);
     }
 
     @Override
