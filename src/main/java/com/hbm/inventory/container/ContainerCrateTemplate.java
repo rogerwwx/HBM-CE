@@ -54,13 +54,26 @@ public class ContainerCrateTemplate extends Container implements ISortableContai
     }
 
     @Override
+    public void detectAndSendChanges() {
+        super.detectAndSendChanges();
+        crate.flushPendingByteAudit();
+    }
+
+    @Override
+    public void onContainerClosed(@NotNull EntityPlayer player) {
+        super.onContainerClosed(player);
+        crate.flushPendingByteAudit();
+    }
+
+    @Override
     @Optional.Method(modid = "bogosorter")
     public void buildSortingContext(ISortingContextBuilder builder) {
         builder.addSlotGroup(0, crate.inventory.getSlots(), 9);
     }
 
     @Override
-    public @NotNull ItemStack slotClick(int slotId, int dragType, @NotNull ClickType clickTypeIn, @NotNull EntityPlayer player) {
+    public @NotNull ItemStack slotClick(int slotId, int dragType, @NotNull ClickType clickTypeIn,
+                                        @NotNull EntityPlayer player) {
         if (this.crate != null && !this.crate.boundItem.isEmpty()) {
             if (slotId >= 0 && slotId < this.inventorySlots.size()) {
                 Slot slot = this.inventorySlots.get(slotId);

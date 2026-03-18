@@ -1,9 +1,6 @@
 package com.hbm.render.util;
 
-import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.OpenGlHelper;
-import net.minecraft.client.renderer.WorldVertexBufferUploader;
+import net.minecraft.client.renderer.*;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.client.renderer.vertex.VertexFormat;
 import net.minecraftforge.fml.relauncher.Side;
@@ -15,14 +12,16 @@ import java.nio.ByteBuffer;
 @SideOnly(Side.CLIENT)
 public final class NTMImmediate {
 
-    public static final NTMImmediate INSTANCE = new NTMImmediate(262_144);
+    public static final NTMImmediate INSTANCE = new NTMImmediate();
 
-    private final NTMBufferBuilder buffer;
+    private final BufferBuilder buffer;
     private final WorldVertexBufferUploader genericUploader = new WorldVertexBufferUploader();
     private final SpecializedUploader[] uploaders = new SpecializedUploader[NTMBufferBuilder.NTMFastVertexFormat.values().length];
 
-    private NTMImmediate(int initialBufferSizeInInts) {
-        this.buffer = new NTMBufferBuilder(initialBufferSizeInInts);
+    private NTMImmediate() {
+        this.buffer = Tessellator.getInstance().getBuffer();
+        uploaders[NTMBufferBuilder.NTMFastVertexFormat.BLOCK.ordinal()] = NTMImmediate::drawBlock;
+        uploaders[NTMBufferBuilder.NTMFastVertexFormat.ITEM.ordinal()] = NTMImmediate::drawItem;
         uploaders[NTMBufferBuilder.NTMFastVertexFormat.POSITION.ordinal()] = NTMImmediate::drawPosition;
         uploaders[NTMBufferBuilder.NTMFastVertexFormat.POSITION_COLOR.ordinal()] = NTMImmediate::drawPositionColor;
         uploaders[NTMBufferBuilder.NTMFastVertexFormat.POSITION_TEX.ordinal()] = NTMImmediate::drawPositionTex;
@@ -34,69 +33,128 @@ public final class NTMImmediate {
         uploaders[NTMBufferBuilder.NTMFastVertexFormat.PARTICLE_POSITION_TEX_COLOR_LMAP.ordinal()] = NTMImmediate::drawParticlePositionTexColorLmap;
     }
 
+    private NTMBufferBuilder fastBuffer() {
+        return (NTMBufferBuilder) buffer;
+    }
+
     public BufferBuilder begin(int drawMode, VertexFormat format) {
         return begin(drawMode, format, 0);
     }
 
     public BufferBuilder begin(int drawMode, VertexFormat format, int expectedVertices) {
-        buffer.beginFast(drawMode, format, expectedVertices);
+        fastBuffer().beginFast(drawMode, format, expectedVertices);
         return buffer;
     }
 
-    public NTMBufferBuilder.PositionSink beginPosition(int drawMode, int expectedVertices) {
-        buffer.beginFast(drawMode, DefaultVertexFormats.POSITION, expectedVertices);
-        return buffer.position();
+    public NTMBufferBuilder beginPosition(int drawMode, int expectedVertices) {
+        NTMBufferBuilder fastBuffer = fastBuffer();
+        fastBuffer.beginFast(drawMode, DefaultVertexFormats.POSITION, expectedVertices);
+        return fastBuffer;
     }
 
-    public NTMBufferBuilder.PositionSink beginPositionQuads(int expectedQuads) {
+    public NTMBufferBuilder beginBlock(int drawMode, int expectedVertices) {
+        NTMBufferBuilder fastBuffer = fastBuffer();
+        fastBuffer.beginFast(drawMode, DefaultVertexFormats.BLOCK, expectedVertices);
+        return fastBuffer;
+    }
+
+    public NTMBufferBuilder beginBlockQuads(int expectedQuads) {
+        return beginBlock(GL11.GL_QUADS, expectedQuads * 4);
+    }
+
+    public NTMBufferBuilder beginItem(int drawMode, int expectedVertices) {
+        NTMBufferBuilder fastBuffer = fastBuffer();
+        fastBuffer.beginFast(drawMode, DefaultVertexFormats.ITEM, expectedVertices);
+        return fastBuffer;
+    }
+
+    public NTMBufferBuilder beginItemQuads(int expectedQuads) {
+        return beginItem(GL11.GL_QUADS, expectedQuads * 4);
+    }
+
+    public NTMBufferBuilder beginPositionQuads(int expectedQuads) {
         return beginPosition(GL11.GL_QUADS, expectedQuads * 4);
     }
 
-    public NTMBufferBuilder.PositionColorSink beginPositionColor(int drawMode, int expectedVertices) {
-        buffer.beginFast(drawMode, DefaultVertexFormats.POSITION_COLOR, expectedVertices);
-        return buffer.positionColor();
+    public NTMBufferBuilder beginPositionColor(int drawMode, int expectedVertices) {
+        NTMBufferBuilder fastBuffer = fastBuffer();
+        fastBuffer.beginFast(drawMode, DefaultVertexFormats.POSITION_COLOR, expectedVertices);
+        return fastBuffer;
     }
 
-    public NTMBufferBuilder.PositionColorSink beginPositionColorQuads(int expectedQuads) {
+    public NTMBufferBuilder beginPositionColorQuads(int expectedQuads) {
         return beginPositionColor(GL11.GL_QUADS, expectedQuads * 4);
     }
 
-    public NTMBufferBuilder.PositionTexSink beginPositionTex(int drawMode, int expectedVertices) {
-        buffer.beginFast(drawMode, DefaultVertexFormats.POSITION_TEX, expectedVertices);
-        return buffer.positionTex();
+    public NTMBufferBuilder beginPositionTex(int drawMode, int expectedVertices) {
+        NTMBufferBuilder fastBuffer = fastBuffer();
+        fastBuffer.beginFast(drawMode, DefaultVertexFormats.POSITION_TEX, expectedVertices);
+        return fastBuffer;
     }
 
-    public NTMBufferBuilder.PositionTexSink beginPositionTexQuads(int expectedQuads) {
+    public NTMBufferBuilder beginPositionTexQuads(int expectedQuads) {
         return beginPositionTex(GL11.GL_QUADS, expectedQuads * 4);
     }
 
-    public NTMBufferBuilder.PositionTexColorSink beginPositionTexColor(int drawMode, int expectedVertices) {
-        buffer.beginFast(drawMode, DefaultVertexFormats.POSITION_TEX_COLOR, expectedVertices);
-        return buffer.positionTexColor();
+    public NTMBufferBuilder beginPositionTexColor(int drawMode, int expectedVertices) {
+        NTMBufferBuilder fastBuffer = fastBuffer();
+        fastBuffer.beginFast(drawMode, DefaultVertexFormats.POSITION_TEX_COLOR, expectedVertices);
+        return fastBuffer;
     }
 
-    public NTMBufferBuilder.PositionTexColorSink beginPositionTexColorQuads(int expectedQuads) {
+    public NTMBufferBuilder beginPositionTexColorQuads(int expectedQuads) {
         return beginPositionTexColor(GL11.GL_QUADS, expectedQuads * 4);
     }
 
-    public NTMBufferBuilder.PositionNormalSink beginPositionNormal(int drawMode, int expectedVertices) {
-        buffer.beginFast(drawMode, DefaultVertexFormats.POSITION_NORMAL, expectedVertices);
-        return buffer.positionNormal();
+    public NTMBufferBuilder beginPositionTexNormal(int drawMode, int expectedVertices) {
+        NTMBufferBuilder fastBuffer = fastBuffer();
+        fastBuffer.beginFast(drawMode, DefaultVertexFormats.POSITION_TEX_NORMAL, expectedVertices);
+        return fastBuffer;
     }
 
-    public NTMBufferBuilder.ParticlePositionTexColorLmapSink beginParticlePositionTexColorLmap(int drawMode,
-                                                                                                int expectedVertices) {
-        buffer.beginFast(drawMode, DefaultVertexFormats.PARTICLE_POSITION_TEX_COLOR_LMAP, expectedVertices);
-        return buffer.particlePositionTexColorLmap();
+    public NTMBufferBuilder beginPositionTexNormalQuads(int expectedQuads) {
+        return beginPositionTexNormal(GL11.GL_QUADS, expectedQuads * 4);
+    }
+
+    public NTMBufferBuilder beginPositionTexLmapColor(int drawMode, int expectedVertices) {
+        NTMBufferBuilder fastBuffer = fastBuffer();
+        fastBuffer.beginFast(drawMode, DefaultVertexFormats.POSITION_TEX_LMAP_COLOR, expectedVertices);
+        return fastBuffer;
+    }
+
+    public NTMBufferBuilder beginPositionTexLmapColorQuads(int expectedQuads) {
+        return beginPositionTexLmapColor(GL11.GL_QUADS, expectedQuads * 4);
+    }
+
+    public NTMBufferBuilder beginPositionTexColorNormal(int drawMode, int expectedVertices) {
+        NTMBufferBuilder fastBuffer = fastBuffer();
+        fastBuffer.beginFast(drawMode, DefaultVertexFormats.POSITION_TEX_COLOR_NORMAL, expectedVertices);
+        return fastBuffer;
+    }
+
+    public NTMBufferBuilder beginPositionTexColorNormalQuads(int expectedQuads) {
+        return beginPositionTexColorNormal(GL11.GL_QUADS, expectedQuads * 4);
+    }
+
+    public NTMBufferBuilder beginPositionNormal(int drawMode, int expectedVertices) {
+        NTMBufferBuilder fastBuffer = fastBuffer();
+        fastBuffer.beginFast(drawMode, DefaultVertexFormats.POSITION_NORMAL, expectedVertices);
+        return fastBuffer;
+    }
+
+    public NTMBufferBuilder beginParticlePositionTexColorLmap(int drawMode, int expectedVertices) {
+        NTMBufferBuilder fastBuffer = fastBuffer();
+        fastBuffer.beginFast(drawMode, DefaultVertexFormats.PARTICLE_POSITION_TEX_COLOR_LMAP, expectedVertices);
+        return fastBuffer;
     }
 
     public NTMBufferBuilder getBuffer() {
-        return buffer;
+        return fastBuffer();
     }
 
     public void draw() {
         buffer.finishDrawing();
-        SpecializedUploader uploader = uploaders[buffer.getFastFormat().ordinal()];
+        SpecializedUploader uploader = uploaders[fastBuffer().getFastFormat().ordinal()];
         if (uploader != null) {
             uploader.draw(buffer);
             buffer.reset();
@@ -105,7 +163,7 @@ public final class NTMImmediate {
         }
     }
 
-    private static void drawPosition(NTMBufferBuilder buffer) {
+    private static void drawPosition(BufferBuilder buffer) {
         ByteBuffer byteBuffer = buffer.getByteBuffer();
         GlStateManager.glEnableClientState(GL11.GL_VERTEX_ARRAY);
         byteBuffer.position(0);
@@ -114,7 +172,57 @@ public final class NTMImmediate {
         GlStateManager.glDisableClientState(GL11.GL_VERTEX_ARRAY);
     }
 
-    private static void drawPositionColor(NTMBufferBuilder buffer) {
+    private static void drawBlock(BufferBuilder buffer) {
+        ByteBuffer byteBuffer = buffer.getByteBuffer();
+        GlStateManager.glEnableClientState(GL11.GL_VERTEX_ARRAY);
+        byteBuffer.position(0);
+        GlStateManager.glVertexPointer(3, GL11.GL_FLOAT, 28, byteBuffer);
+        GlStateManager.glEnableClientState(GL11.GL_COLOR_ARRAY);
+        byteBuffer.position(12);
+        GlStateManager.glColorPointer(4, GL11.GL_UNSIGNED_BYTE, 28, byteBuffer);
+        OpenGlHelper.setClientActiveTexture(OpenGlHelper.defaultTexUnit);
+        GlStateManager.glEnableClientState(GL11.GL_TEXTURE_COORD_ARRAY);
+        byteBuffer.position(16);
+        GlStateManager.glTexCoordPointer(2, GL11.GL_FLOAT, 28, byteBuffer);
+        OpenGlHelper.setClientActiveTexture(OpenGlHelper.lightmapTexUnit);
+        GlStateManager.glEnableClientState(GL11.GL_TEXTURE_COORD_ARRAY);
+        byteBuffer.position(24);
+        GlStateManager.glTexCoordPointer(2, GL11.GL_SHORT, 28, byteBuffer);
+        OpenGlHelper.setClientActiveTexture(OpenGlHelper.defaultTexUnit);
+        GlStateManager.glDrawArrays(buffer.getDrawMode(), 0, buffer.getVertexCount());
+        OpenGlHelper.setClientActiveTexture(OpenGlHelper.lightmapTexUnit);
+        GlStateManager.glDisableClientState(GL11.GL_TEXTURE_COORD_ARRAY);
+        OpenGlHelper.setClientActiveTexture(OpenGlHelper.defaultTexUnit);
+        GlStateManager.glDisableClientState(GL11.GL_TEXTURE_COORD_ARRAY);
+        GlStateManager.glDisableClientState(GL11.GL_COLOR_ARRAY);
+        GlStateManager.resetColor();
+        GlStateManager.glDisableClientState(GL11.GL_VERTEX_ARRAY);
+    }
+
+    private static void drawItem(BufferBuilder buffer) {
+        ByteBuffer byteBuffer = buffer.getByteBuffer();
+        GlStateManager.glEnableClientState(GL11.GL_VERTEX_ARRAY);
+        byteBuffer.position(0);
+        GlStateManager.glVertexPointer(3, GL11.GL_FLOAT, 28, byteBuffer);
+        GlStateManager.glEnableClientState(GL11.GL_COLOR_ARRAY);
+        byteBuffer.position(12);
+        GlStateManager.glColorPointer(4, GL11.GL_UNSIGNED_BYTE, 28, byteBuffer);
+        OpenGlHelper.setClientActiveTexture(OpenGlHelper.defaultTexUnit);
+        GlStateManager.glEnableClientState(GL11.GL_TEXTURE_COORD_ARRAY);
+        byteBuffer.position(16);
+        GlStateManager.glTexCoordPointer(2, GL11.GL_FLOAT, 28, byteBuffer);
+        GlStateManager.glEnableClientState(GL11.GL_NORMAL_ARRAY);
+        byteBuffer.position(24);
+        GlStateManager.glNormalPointer(GL11.GL_BYTE, 28, byteBuffer);
+        GlStateManager.glDrawArrays(buffer.getDrawMode(), 0, buffer.getVertexCount());
+        GlStateManager.glDisableClientState(GL11.GL_NORMAL_ARRAY);
+        GlStateManager.glDisableClientState(GL11.GL_TEXTURE_COORD_ARRAY);
+        GlStateManager.glDisableClientState(GL11.GL_COLOR_ARRAY);
+        GlStateManager.resetColor();
+        GlStateManager.glDisableClientState(GL11.GL_VERTEX_ARRAY);
+    }
+
+    private static void drawPositionColor(BufferBuilder buffer) {
         ByteBuffer byteBuffer = buffer.getByteBuffer();
         GlStateManager.glEnableClientState(GL11.GL_VERTEX_ARRAY);
         byteBuffer.position(0);
@@ -128,7 +236,7 @@ public final class NTMImmediate {
         GlStateManager.glDisableClientState(GL11.GL_VERTEX_ARRAY);
     }
 
-    private static void drawPositionTex(NTMBufferBuilder buffer) {
+    private static void drawPositionTex(BufferBuilder buffer) {
         ByteBuffer byteBuffer = buffer.getByteBuffer();
         GlStateManager.glEnableClientState(GL11.GL_VERTEX_ARRAY);
         byteBuffer.position(0);
@@ -142,7 +250,7 @@ public final class NTMImmediate {
         GlStateManager.glDisableClientState(GL11.GL_VERTEX_ARRAY);
     }
 
-    private static void drawPositionNormal(NTMBufferBuilder buffer) {
+    private static void drawPositionNormal(BufferBuilder buffer) {
         ByteBuffer byteBuffer = buffer.getByteBuffer();
         GlStateManager.glEnableClientState(GL11.GL_VERTEX_ARRAY);
         byteBuffer.position(0);
@@ -155,7 +263,7 @@ public final class NTMImmediate {
         GlStateManager.glDisableClientState(GL11.GL_VERTEX_ARRAY);
     }
 
-    private static void drawPositionTexColor(NTMBufferBuilder buffer) {
+    private static void drawPositionTexColor(BufferBuilder buffer) {
         ByteBuffer byteBuffer = buffer.getByteBuffer();
         GlStateManager.glEnableClientState(GL11.GL_VERTEX_ARRAY);
         byteBuffer.position(0);
@@ -174,7 +282,7 @@ public final class NTMImmediate {
         GlStateManager.glDisableClientState(GL11.GL_VERTEX_ARRAY);
     }
 
-    private static void drawPositionTexNormal(NTMBufferBuilder buffer) {
+    private static void drawPositionTexNormal(BufferBuilder buffer) {
         ByteBuffer byteBuffer = buffer.getByteBuffer();
         GlStateManager.glEnableClientState(GL11.GL_VERTEX_ARRAY);
         byteBuffer.position(0);
@@ -192,7 +300,7 @@ public final class NTMImmediate {
         GlStateManager.glDisableClientState(GL11.GL_VERTEX_ARRAY);
     }
 
-    private static void drawPositionTexLmapColor(NTMBufferBuilder buffer) {
+    private static void drawPositionTexLmapColor(BufferBuilder buffer) {
         ByteBuffer byteBuffer = buffer.getByteBuffer();
         GlStateManager.glEnableClientState(GL11.GL_VERTEX_ARRAY);
         byteBuffer.position(0);
@@ -219,7 +327,7 @@ public final class NTMImmediate {
         GlStateManager.glDisableClientState(GL11.GL_VERTEX_ARRAY);
     }
 
-    private static void drawPositionTexColorNormal(NTMBufferBuilder buffer) {
+    private static void drawPositionTexColorNormal(BufferBuilder buffer) {
         ByteBuffer byteBuffer = buffer.getByteBuffer();
         GlStateManager.glEnableClientState(GL11.GL_VERTEX_ARRAY);
         byteBuffer.position(0);
@@ -242,7 +350,7 @@ public final class NTMImmediate {
         GlStateManager.glDisableClientState(GL11.GL_VERTEX_ARRAY);
     }
 
-    private static void drawParticlePositionTexColorLmap(NTMBufferBuilder buffer) {
+    private static void drawParticlePositionTexColorLmap(BufferBuilder buffer) {
         ByteBuffer byteBuffer = buffer.getByteBuffer();
         GlStateManager.glEnableClientState(GL11.GL_VERTEX_ARRAY);
         byteBuffer.position(0);
@@ -271,6 +379,6 @@ public final class NTMImmediate {
 
     @FunctionalInterface
     private interface SpecializedUploader {
-        void draw(NTMBufferBuilder buffer);
+        void draw(BufferBuilder buffer);
     }
 }

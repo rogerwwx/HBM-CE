@@ -3,10 +3,10 @@ package com.hbm.render.tileentity;
 import com.hbm.Tags;
 import com.hbm.interfaces.AutoRegister;
 import com.hbm.main.ResourceManager;
+import com.hbm.render.util.NTMBufferBuilder;
+import com.hbm.render.util.NTMImmediate;
 import com.hbm.tileentity.machine.rbmk.RBMKDials;
 import com.hbm.tileentity.machine.rbmk.TileEntityRBMKRod;
-import com.hbm.render.util.NTMImmediate;
-import com.hbm.render.util.NTMBufferBuilder;
 import com.hbm.util.ColorUtil;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
@@ -36,10 +36,10 @@ public class RenderRBMKLid extends TileEntitySpecialRenderer<TileEntityRBMKRod> 
             ResourceManager.rbmk_element_rods_vbo.renderPart("Rods");
             GlStateManager.translate(0, 1, 0);
         }
-        GlStateManager.color(1, 1, 1, 1);
-        GlStateManager.popMatrix();
+		GlStateManager.color(1, 1, 1, 1);
+		GlStateManager.popMatrix();
 		if (te.fluxQuantity > 5) {
-			renderCherenkovEffect(0.4F, 0.9F, 1.0F, 0.1F, offset + 1);
+			renderCherenkovEffect(0.4F, 0.9F, 1.0F, 0.1F, offset);
 		}
 		GlStateManager.popMatrix();
 	}
@@ -51,13 +51,15 @@ public class RenderRBMKLid extends TileEntitySpecialRenderer<TileEntityRBMKRod> 
 		GlStateManager.disableLighting();
 		GlStateManager.enableBlend();
 		GlStateManager.disableTexture2D();
+        GlStateManager.disableAlpha();
 		GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE);
 
-        NTMBufferBuilder.PositionColorSink sink = NTMImmediate.INSTANCE.beginPositionColorQuads(height * 4 + 1);
+        int layerCount = height * 4 + 1;
+        NTMBufferBuilder buf = NTMImmediate.INSTANCE.beginPositionColorQuads(layerCount);
         int packedColor = NTMBufferBuilder.packColor(r, g, b, a);
 
 		for (double j = 0; j <= height; j += 0.25) {
-            sink.quadUnchecked(
+            buf.appendPositionColorQuadUnchecked(
                     -0.5, j, -0.5,
                     -0.5, j, 0.5,
                     0.5, j, 0.5,
@@ -66,6 +68,7 @@ public class RenderRBMKLid extends TileEntitySpecialRenderer<TileEntityRBMKRod> 
 		}
         NTMImmediate.INSTANCE.draw();
 
+        GlStateManager.enableAlpha();
 		GlStateManager.enableTexture2D();
 		GlStateManager.disableBlend();
 		GlStateManager.enableLighting();

@@ -26,6 +26,13 @@ templates/JEI/category/render assets
 hazmat helmet variants.
 - Reworked dynamic model/TEISR registration and placeholder handling; renderer/model registration integrations depending
 on the previous client-side binding path may require API updates
+- Removed legacy `toolbox_legacy`; serialized custom kits now use hidden `kit_custom` instead
+- Removed the legacy `relay` phased/worldgen structure and the `/hbmstruct relay` generator hook
+- Oil Well, Pumpjack, and Fracking Tower now serialize only the NTM-native tank/power fields; legacy fluid/power
+contents are not migrated on load
+- Tsar Bomba now uses the upstream six-slot inventory layout; contents from the removed legacy stage slots are
+discarded on load
+- Removed old `struct_plasma_core` and `marker_structure` 
 
 ### Fixes
 - Fixed chunkloader ticket lifecycle for fallout effects, delivery drones, EMPs, missiles, artillery projectiles,
@@ -68,10 +75,21 @@ links are preserved, and missing controls are kept as placeholders instead of be
 - Fixed gas flares not polluting while burning vented fluids
 - Fixed Electric Press and Shredder sided automation/input validation edge cases, corrected crane output textures, and
 avoided Sedna weapon-mod priority overflow
+- Fixed Assembly Machine, Assembly Factory, and Press recipe previews rendering with incorrect orientation/scaling
+(#845)
+- Fixed several custom-rendered armor and powered-suit items using incorrect fancy-missing-model perspective transforms
+in inventory/hand views
+- Fixed machine upgrade tooltips not showing machine-specific descriptions for `IUpgradeInfoProvider` GUIs, including
+oil drill family machines and Maxwell turrets (#1152)
+- Fixed oily terrain generation replacing the wrong surface layer and leaving floating snow layers/leaves behind (#1184)
+- Fixed OpenComputers component passthrough on combo proxies, preserving component names and delegated methods (#1305)
+- Fixed special-AABB block placement checks so cables, cable boxes, red wire connectors, and fluid pipe anchors use
+the actual placement state for preview/collision
+- Fixed RBMK client column-height sync
 
 ### Changes
 - Diesel Generator now uses a refreshed animated model/GUI, rotates like other machines, emits smoke while running, supports a larger internal power buffer when fueled with Nitan, and has corrected block/item presentation
-- Reworked Autosaw tree felling to better handle complex trunk/leaf structures, sapling replanting, and nearby entity damage, and updated the Annihilator to pollute when burning off stored fluids
+- Reworked Autosaw tree felling to better handle complex trunk/leaf structures, sapling replanting, and nearby entity damage
 - Refreshed RBMK presentation and behavior with new baked-model rendering for columns/rods/controls, updated textures/GUI art, corrected inventory models, and height-aware renderer caching
 - Assembly Factory now exposes truly separate recipe ports using position-aware slot access
 - Starter kit now provides new assembly/chemical machine variants instead of removed legacy ones
@@ -88,6 +106,13 @@ server-configurable keep-contents behavior
 - Normalized `glowing_stew`, `balefire_scrambled`, and `balefire_and_ham` into standard soups; the balefire variants no
 longer trigger balefire/cloud effects
 - Removed phased bedrock coltan world generation from new chunks
+- SPAS-12, Congolake, and Fat Man can now switch ammo types during reload
+- RBMK fuel channels can now accept rods directly by right-clicking an empty channel with an RBMK rod item
+- Exposed the Precision Assembly Machine in the machine creative tab
+- Refreshed bomb/crystallizer GUI art, moved bomb schematic textures under the weapon GUI namespace, and reworked
+Gadget, Fat Man, Ivy Mike, and Tsar Bomba screens toward the upstream info-panel style
+- Rebalanced SILEX MOX reprocessing yields and restored xenon output on the alternate MOX processing path
+- Updated `_explosive8`, steel tool, and plasma forge textures
 
 ### New Features
 - Added Satellite Laser Designator
@@ -99,14 +124,15 @@ longer trigger balefire/cloud effects
 - Added OpenComputers callbacks for artillery turrets, including manual coordinate queueing
 - Ported plushies with per-type models, sounds, and squish animation
 - Added fake HE/RF converters (PR #1396 by Leafia)
-- Added the 528 `Annihilator` multiblock with recycling pools, payout slots, JEI support, and blueprint milestone
-rewards
+- Added the 528 `Annihilator` multiblock with recycling pools, payout slots, JEI support, blueprint milestone
+rewards, pollution while burning off stored fluids, and radiation release when destroying radioactive items
 - Ported reeds with river/beach generation and proper long-distance rendering
 - Expanded Redstone-over-Radio with `Radio Torch Logic`, `Radio Torch Reader`, and `Radio Torch Controller`, broader
 machine read/write integration, and OpenComputers support for Fluid Tanks and Capacitors
 - Overhauled large animated doors with new models, skin support, screwdriver skin cycling, and a generic `vault_door`
 implementation, covering vault, airlock, containment, fire, seal, secure, QE sliding/containment, water, and vehicle
 doors (PR #1402 by Leafia)
+  - Some missing door textures are added in PR #1410 by nuhyuh
 - Reworked `ammo_container` into a functional default-ammo refill item, including a constrained variant that skips
 high-tier ammo
 - Added control panel addon instrument support, control duplication, and the new `Indicator Lamp (RGB)` instrument
@@ -121,6 +147,8 @@ conversions from the legacy tanks (PR #1370 by Hacker6329)
 - Added baked-quad caches for Combinator Funnel and Spotlight models
 - Reduced unnecessary Hazard System inventory syncs and optimized NBT lookup
 - Migrated a lot of machines / blocks / items from TESR/TEISR to baked models, thereby significantly reducing draw calls
+- Added specialized fast-immediate vertex buffers
+- Fixed laggy crates
 
 ### Misc
 - Expanded the in-game manual with Redstone-over-Radio, crude oil, and remaining QMAW/ammo pages

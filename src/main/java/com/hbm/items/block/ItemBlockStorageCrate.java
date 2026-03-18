@@ -1,7 +1,6 @@
 package com.hbm.items.block;
 
 import com.hbm.blocks.generic.BlockStorageCrate;
-import com.hbm.config.MachineConfig;
 import com.hbm.config.ServerConfig;
 import com.hbm.main.MainRegistry;
 import com.hbm.tileentity.IGUIProvider;
@@ -20,6 +19,7 @@ import net.minecraftforge.fml.common.network.internal.FMLNetworkHandler;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import org.jetbrains.annotations.NotNull;
+
 // Th3_Sl1ze: achtung! Logic slightly differs from 1.7 upstream, I wouldn't change it
 public class ItemBlockStorageCrate extends ItemBlock implements IGUIProvider {
 
@@ -29,19 +29,24 @@ public class ItemBlockStorageCrate extends ItemBlock implements IGUIProvider {
     }
 
     @Override
-    public @NotNull EnumActionResult onItemUse(@NotNull EntityPlayer player, @NotNull World worldIn, @NotNull BlockPos pos, @NotNull EnumHand hand, @NotNull EnumFacing facing, float hitX, float hitY, float hitZ) {
+    public @NotNull EnumActionResult onItemUse(@NotNull EntityPlayer player, @NotNull World worldIn,
+                                               @NotNull BlockPos pos, @NotNull EnumHand hand,
+                                               @NotNull EnumFacing facing, float hitX, float hitY, float hitZ) {
         return super.onItemUse(player, worldIn, pos, hand, facing, hitX, hitY, hitZ);
     }
 
     @Override
-    public @NotNull ActionResult<ItemStack> onItemRightClick(@NotNull World world, @NotNull EntityPlayer player, @NotNull EnumHand hand) {
-        if (!ServerConfig.CRATE_OPEN_HELD.get()) return new ActionResult<>(EnumActionResult.FAIL, player.getHeldItem(hand));
+    public @NotNull ActionResult<ItemStack> onItemRightClick(@NotNull World world, @NotNull EntityPlayer player,
+                                                             @NotNull EnumHand hand) {
+        if (!ServerConfig.CRATE_OPEN_HELD.get())
+            return new ActionResult<>(EnumActionResult.FAIL, player.getHeldItem(hand));
 
         if (!world.isRemote && !player.isSneaking()) {
             TileEntityCrate dummy = getDummyTE(player, world);
 
             if (dummy != null && dummy.canAccess(player)) {
-                FMLNetworkHandler.openGui(player, MainRegistry.instance, 0, world, (int) player.posX, -1, (int) player.posZ);
+                FMLNetworkHandler.openGui(player, MainRegistry.instance, 0, world, (int) player.posX, -1,
+                        (int) player.posZ);
             }
         }
         return new ActionResult<>(EnumActionResult.SUCCESS, player.getHeldItem(hand));
@@ -63,7 +68,6 @@ public class ItemBlockStorageCrate extends ItemBlock implements IGUIProvider {
 
             if (stack.hasTagCompound()) {
                 crate.readNBT(stack.getTagCompound());
-                crate.fillPercentage = (float) crate.getSize() / MachineConfig.crateByteSize * 100F;
             }
             return crate;
         }

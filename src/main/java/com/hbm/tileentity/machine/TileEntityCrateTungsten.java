@@ -44,16 +44,12 @@ public class TileEntityCrateTungsten extends TileEntityCrate implements IBufPack
     @Override
     public void update() {
         if (!world.isRemote) {
-            if (world.getTotalWorldTime() % 10 == 3 && needsUpdate){
-                scheduleCheck();
-                needsUpdate = false;
-            }
             if (heatTimer > 0)
                 heatTimer--;
 
             if (heatTimer > 0) {
                 PacketDispatcher.wrapper.sendToAllAround(new AuxParticlePacket(pos.getX(), pos.getY(), pos.getZ(), 4),
-						new TargetPoint(world.provider.getDimension(), pos.getX(), pos.getY(), pos.getZ(), 50));
+                        new TargetPoint(world.provider.getDimension(), pos.getX(), pos.getY(), pos.getZ(), 50));
             }
             age++;
             if (age > 20) {
