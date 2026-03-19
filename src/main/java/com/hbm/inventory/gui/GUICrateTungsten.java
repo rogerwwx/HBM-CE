@@ -22,7 +22,7 @@ public class GUICrateTungsten extends GUICrateBase {
 
     @Override
     protected void drawGuiContainerForegroundLayer(int i, int j) {
-        String title = I18n.format("container.crateTungsten");
+        String title = this.tungsten.hasCustomName() ? this.tungsten.getName() : I18n.format(this.tungsten.getName());
         this.fontRenderer.drawString(title, this.xSize / 2 - this.fontRenderer.getStringWidth(title) / 2, 6,
                 tungsten.heatTimer == 0 ? 0xA0A0A0 : 0xFFCA53);
         this.fontRenderer.drawString(I18n.format("container.inventory"), tungsten.getInventoryLabelX(), this.ySize - 96 + 2, tungsten.heatTimer == 0 ? 0xA0A0A0 : 0xFFCA53);

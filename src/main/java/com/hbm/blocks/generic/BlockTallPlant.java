@@ -59,7 +59,7 @@ public class BlockTallPlant extends BlockPlantEnumMeta<EnumTallPlantType> implem
     }
 
     @Override
-    public AxisAlignedBB getBoundingBox(IBlockState state, IBlockAccess source, BlockPos pos) {
+    public @NotNull AxisAlignedBB getBoundingBox(@NotNull IBlockState state, @NotNull IBlockAccess source, @NotNull BlockPos pos) {
         return FULL_BLOCK_AABB;
     }
 
@@ -113,7 +113,7 @@ public class BlockTallPlant extends BlockPlantEnumMeta<EnumTallPlantType> implem
     }
 
     @Override
-    public void neighborChanged(IBlockState state, World world, BlockPos pos, Block blockIn, BlockPos fromPos) {
+    public void neighborChanged(@NotNull IBlockState state, @NotNull World world, @NotNull BlockPos pos, @NotNull Block blockIn, @NotNull BlockPos fromPos) {
         EnumTallPlantType type = VALUES[state.getValue(META)];
 
         if (type.name().endsWith("_UPPER")) {
