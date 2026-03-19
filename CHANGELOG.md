@@ -19,6 +19,21 @@
 ### SUBSTANTIAL CHANGES
 
 ### Breaking Changes
+- Aligned RBMK cooling behavior to upstream. This MAY blow up your reactor! 1.7 Changelog copied verbatim below:
+  - RBMK absorber columns now heat up when exposed to neutrons
+    - The type of neutron does not matter, only the quantity
+    - 20 flux equals 1°C heatup
+  - RBMK passive cooling has changed
+    - The default value is now 2.5°C/t instead of 1
+    - This value only applies to rods that have exposed sides, i.e. the edges of a reactor
+    - There is now a second passive cooling variable used for rods on the inside (dialPassiveCoolingInner, 0.1°C/t by default)
+    - The effective passive cooling value is scaled smoothly depending on how many sides are exposed, using dialPassiveCoolingInner with no exposed sides and dialPassiveCooling for rods with four exposed sides
+    - Simply put, spindly RBMKs are now way less desirable, structural columns no longer just debuff the reactor and reactors that actually look like reactors are now more powerful
+  - Changed the way RBMK coolers work
+    - Instead of using cryogel, coolers use 50mB of cold PFM per tick and return an equal amount of warm PFM
+    - In a 5x5 square around the cooler, all components are cooled down by 200°C per tick, down to a minimum of 20°C
+    - This renders that section of the reactor unsuitable for boiling water, however it means very high heat fuels can be used
+    - Cold PFM is used up at a steady rate, even if the reactor is already cold
 - Removed legacy `machine_assembler`, `machine_assemfac`, `machine_chemplant`, and `machine_chemfac`, plus their legacy
 templates/JEI/category/render assets
 - Removed `hf_sword` and `hs_sword`
@@ -153,3 +168,4 @@ conversions from the legacy tanks (PR #1370 by Hacker6329)
 ### Misc
 - Expanded the in-game manual with Redstone-over-Radio, crude oil, and remaining QMAW/ammo pages
 - Corrected some translations
+- Added more JEI transfer handlers
