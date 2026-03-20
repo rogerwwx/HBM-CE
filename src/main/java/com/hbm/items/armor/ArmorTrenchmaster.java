@@ -72,7 +72,7 @@ public class ArmorTrenchmaster extends ArmorFSB implements IItemRendererProvider
   }
 
   @SideOnly(Side.CLIENT)
-  public void addInformation(ItemStack stack, World world, List<String> list, ITooltipFlag flagIn) {
+  public void addInformation(@NotNull ItemStack stack, World world, @NotNull List<String> list, @NotNull ITooltipFlag flagIn) {
     super.addInformation(stack, world, list, flagIn);
 
     // list.add(TextFormatting.RED + "  " + I18nUtil.resolveKey("armor.fasterReload"));

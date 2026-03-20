@@ -89,7 +89,7 @@ public class ArmorDiesel extends ArmorFSBFueled implements IItemRendererProvider
   }
 
   @Override
-  public void onArmorTick(World world, EntityPlayer player, ItemStack stack) {
+  public void onArmorTick(@NotNull World world, @NotNull EntityPlayer player, @NotNull ItemStack stack) {
     super.onArmorTick(world, player, stack);
 
     if (!world.isRemote

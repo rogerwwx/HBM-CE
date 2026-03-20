@@ -71,7 +71,7 @@ public class ArmorEnvsuit extends ArmorFSBPowered implements IItemRendererProvid
   private static final UUID speed = UUID.fromString("6ab858ba-d712-485c-bae9-e5e765fc555a");
 
   @Override
-  public void onArmorTick(World world, EntityPlayer player, ItemStack stack) {
+  public void onArmorTick(@NotNull World world, @NotNull EntityPlayer player, @NotNull ItemStack stack) {
 
     super.onArmorTick(world, player, stack);
 

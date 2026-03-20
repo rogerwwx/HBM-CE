@@ -71,7 +71,7 @@ public class ArmorDNT extends ArmorFSBPowered implements IItemRendererProvider {
 	private static final UUID speed = UUID.fromString("6ab858ba-d712-485c-bae9-e5e765fc555a");
 
 	@Override
-	public void onArmorTick(World world, EntityPlayer player, ItemStack stack) {
+	public void onArmorTick(@NotNull World world, @NotNull EntityPlayer player, @NotNull ItemStack stack) {
 
 		super.onArmorTick(world, player, stack);
 		
@@ -165,7 +165,7 @@ public class ArmorDNT extends ArmorFSBPowered implements IItemRendererProvider {
 	}
 	
 	@Override
-	public void addInformation(ItemStack stack, World worldIn, List<String> list, ITooltipFlag flagIn) {
+	public void addInformation(@NotNull ItemStack stack, World worldIn, @NotNull List<String> list, @NotNull ITooltipFlag flagIn) {
         list.add("Charge: " + BobMathUtil.getShortNumber(getCharge(stack)) + " / " + BobMathUtil.getShortNumber(this.getMaxCharge(stack)));
 
         list.add(ChatFormatting.GOLD + I18nUtil.resolveKey("armor.fullSetBonus"));

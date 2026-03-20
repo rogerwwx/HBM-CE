@@ -67,7 +67,7 @@ public class ArmorBJ extends ArmorFSBPowered implements IItemRendererProvider {
   }
 
   @Override
-  public void onArmorTick(World world, EntityPlayer player, ItemStack itemStack) {
+  public void onArmorTick(@NotNull World world, @NotNull EntityPlayer player, @NotNull ItemStack itemStack) {
     super.onArmorTick(world, player, itemStack);
 
     if (this == ModItems.bj_helmet

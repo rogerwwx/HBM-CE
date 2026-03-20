@@ -7,6 +7,7 @@ import com.hbm.blocks.ModBlocks;
 import com.hbm.blocks.generic.BlockModDoor;
 import com.hbm.blocks.machine.ItemSelfcharger;
 import com.hbm.config.BombConfig;
+import com.hbm.handler.ArmorUtil;
 import com.hbm.handler.ability.IToolAreaAbility;
 import com.hbm.handler.ability.IToolHarvestAbility;
 import com.hbm.handler.ability.IWeaponAbility;
@@ -532,6 +533,7 @@ public class ModItems {
             .setHasHardLanding(true)
             .addEffect(new PotionEffect(MobEffects.STRENGTH, 20, 0))
             .setHides(IArmorDisableModel.EnumPlayerPart.HAT)
+            .setHazardClass(ArmorUtil.FULL_NO_LIGHT).setRadResist(1D /*90%*/)
             .setStep(HBMSoundHandler.metalStep)
             .setJump(HBMSoundHandler.ironJump)
             .setFall(HBMSoundHandler.ironLand);
@@ -542,6 +544,7 @@ public class ModItems {
             .addEffect(new PotionEffect(MobEffects.HASTE, 30, 0))
             .setHasHardLanding(true)
             .setHides(IArmorDisableModel.EnumPlayerPart.HAT)
+            .setHazardClass(ArmorUtil.FULL_PACKAGE).setRadResist(1.3D /*95%*/)
             .setStep(HBMSoundHandler.iron) //Norwood: Upstream doesn't have it but i'll allow it
             .setJump(HBMSoundHandler.ironJump)
             .setFall(HBMSoundHandler.ironLand);
@@ -550,6 +553,8 @@ public class ModItems {
     public static final Item steamsuit_boots = new ArmorDesh(MaterialRegistry.aMatSteamsuit, 7, EntityEquipmentSlot.FEET, Tags.MODID + ":textures/armor/starmetal_1.png", Fluids.STEAM, 64000, 500, 50, 1, "steamsuit_boots").cloneStats((ArmorFSB) steamsuit_helmet);
     public static final Item trenchmaster_helmet = new ArmorTrenchmaster(MaterialRegistry.aMatTrench, -1, EntityEquipmentSlot.HEAD, Tags.MODID + ":textures/armor/starmetal_1.png", "trenchmaster_helmet")
             .setHides(IArmorDisableModel.EnumPlayerPart.HAT)
+            .setRadResist(1D /*90%*/)
+            .setHazardClass(ArmorUtil.FULL_PACKAGE)
             .addEffect(new PotionEffect(MobEffects.HASTE, 20, 1))
             .addEffect(new PotionEffect(MobEffects.STRENGTH, 20, 2))
             .addEffect(new PotionEffect(MobEffects.JUMP_BOOST, 20, 1))
@@ -559,7 +564,8 @@ public class ModItems {
     public static final Item trenchmaster_boots = new ArmorTrenchmaster(MaterialRegistry.aMatTrench, -1, EntityEquipmentSlot.FEET, Tags.MODID + ":textures/armor/starmetal_1.png", "trenchmaster_boots").cloneStats((ArmorFSB) trenchmaster_helmet).setMaxStackSize(1);
     public static final Item taurun_helmet = new ArmorTaurun(MaterialRegistry.aMatTaurun, -1, EntityEquipmentSlot.HEAD, Tags.MODID + ":textures/armor/starmetal_1.png", "taurun_helmet")
             .addEffect(new PotionEffect(MobEffects.STRENGTH, 20, 0))
-            .setHides(IArmorDisableModel.EnumPlayerPart.HAT);
+            .setHides(IArmorDisableModel.EnumPlayerPart.HAT)
+            .setHazardClass(ArmorUtil.FULL_PACKAGE).setRadResist(0.125D /*25%*/);
     public static final Item taurun_plate = new ArmorTaurun(MaterialRegistry.aMatTaurun, -1, EntityEquipmentSlot.CHEST, Tags.MODID + ":textures/armor/starmetal_1.png", "taurun_plate").cloneStats((ArmorFSB) taurun_helmet).setMaxStackSize(1);
     public static final Item taurun_legs = new ArmorTaurun(MaterialRegistry.aMatTaurun, -1, EntityEquipmentSlot.LEGS, Tags.MODID + ":textures/armor/starmetal_2.png", "taurun_legs").cloneStats((ArmorFSB) taurun_helmet).setMaxStackSize(1);
 
@@ -576,7 +582,8 @@ public class ModItems {
     public static final Item envsuit_helmet = new ArmorEnvsuit(MaterialRegistry.aMatEnvsuit, 7, EntityEquipmentSlot.HEAD, Tags.MODID + ":textures/armor/starmetal_1.png", 100000, 1000, 250, 0, "envsuit_helmet")
             .addEffect(new PotionEffect(MobEffects.JUMP_BOOST, 30, 0))
             .addEffect(new PotionEffect(MobEffects.SPEED, 30, 1))
-            .setHides(IArmorDisableModel.EnumPlayerPart.HAT);
+            .setHides(IArmorDisableModel.EnumPlayerPart.HAT)
+            .setHazardClass(ArmorUtil.FULL_PACKAGE).setRadResist(1.0D /*90%*/);
     public static final Item envsuit_plate = new ArmorEnvsuit(MaterialRegistry.aMatEnvsuit, 7, EntityEquipmentSlot.CHEST, Tags.MODID + ":textures/armor/starmetal_1.png", 100000, 1000, 250, 0, "envsuit_plate").cloneStats((ArmorFSB) envsuit_helmet);
     public static final Item envsuit_legs = new ArmorEnvsuit(MaterialRegistry.aMatEnvsuit, 7, EntityEquipmentSlot.LEGS, Tags.MODID + ":textures/armor/starmetal_2.png", 100000, 1000, 250, 0, "envsuit_legs").cloneStats((ArmorFSB) envsuit_helmet);
     public static final Item envsuit_boots = new ArmorEnvsuit(MaterialRegistry.aMatEnvsuit, 7, EntityEquipmentSlot.FEET, Tags.MODID + ":textures/armor/starmetal_1.png", 100000, 1000, 250, 0, "envsuit_boots").cloneStats((ArmorFSB) envsuit_helmet);
@@ -594,6 +601,7 @@ public class ModItems {
             .addEffect(new PotionEffect(MobEffects.JUMP_BOOST, 30, 0))
             .addEffect(new PotionEffect(MobEffects.STRENGTH, 30, 0))
             .setHides(IArmorDisableModel.EnumPlayerPart.HAT)
+            .setHazardClass(ArmorUtil.FULL_PACKAGE).setRadResist(1.3D /*95%*/)
             .setStep(HBMSoundHandler.metalStep)
             .setJump(HBMSoundHandler.ironJump)
             .setFall(HBMSoundHandler.ironLand);
@@ -607,6 +615,7 @@ public class ModItems {
             .addEffect(new PotionEffect(MobEffects.JUMP_BOOST, 30, 0))
             .addEffect(new PotionEffect(MobEffects.STRENGTH, 30, 0))
             .setHides(IArmorDisableModel.EnumPlayerPart.HAT)
+            .setHazardClass(ArmorUtil.FULL_PACKAGE).setRadResist(1.3D /*95%*/)
             .setStep(HBMSoundHandler.metalStep)
             .setJump(HBMSoundHandler.ironJump)
             .setFall(HBMSoundHandler.ironLand);
@@ -617,6 +626,7 @@ public class ModItems {
             .addEffect(new PotionEffect(MobEffects.JUMP_BOOST, 30, 0))
             .addEffect(new PotionEffect(MobEffects.SPEED, 30, 1))
             .setHides(IArmorDisableModel.EnumPlayerPart.HAT)
+            .setHazardClass(ArmorUtil.FULL_PACKAGE).setRadResist(2.3D /*99.5%*/)
             .setHasGeigerSound(true)
             .setHasCustomGeiger(true);
     public static final Item hev_plate = new ArmorHEV(MaterialRegistry.aMatHEV, 7, EntityEquipmentSlot.CHEST, Tags.MODID + ":textures/armor/starmetal_1.png", 1000000, 10000, 2500, 0, "hev_plate").cloneStats((ArmorFSB) hev_helmet);
@@ -633,7 +643,8 @@ public class ModItems {
             .addEffect(new PotionEffect(HbmPotion.radx, 30, 0))
             .setStep(HBMSoundHandler.metalStep)
             .setJump(HBMSoundHandler.ironJump)
-            .setFall(HBMSoundHandler.ironLand);
+            .setFall(HBMSoundHandler.ironLand)
+            .setRadResist(1D /*90%*/);
     public static final Item bj_plate = new ArmorBJ(MaterialRegistry.aMatBJ, 7, EntityEquipmentSlot.CHEST, Tags.MODID + ":textures/armor/starmetal_1.png", 10000000, 10000, 1000, 100, "bj_plate").cloneStats((ArmorFSB) bj_helmet);
     public static final Item bj_plate_jetpack = new ArmorBJJetpack(MaterialRegistry.aMatBJ, -1, EntityEquipmentSlot.CHEST, Tags.MODID + ":textures/armor/starmetal_1.png", 10000000, 10000, 1000, 100, "bj_plate_jetpack").cloneStats((ArmorFSB) bj_helmet);
     public static final Item bj_legs = new ArmorBJ(MaterialRegistry.aMatBJ, 7, EntityEquipmentSlot.LEGS, Tags.MODID + ":textures/armor/starmetal_2.png", 10000000, 10000, 1000, 100, "bj_legs").cloneStats((ArmorFSB) bj_helmet);
@@ -643,6 +654,7 @@ public class ModItems {
             .setHasGeigerSound(true)
             .setHasHardLanding(true)
             .setHides(IArmorDisableModel.EnumPlayerPart.HAT)
+            .setHazardClass(ArmorUtil.FULL_PACKAGE).setRadResist(2D /*99%*/)
             .setStep(HBMSoundHandler.poweredStep)
             .setJump(HBMSoundHandler.poweredStep)
             .setFall(HBMSoundHandler.poweredStep)
@@ -651,14 +663,15 @@ public class ModItems {
     public static final Item rpa_legs = new ArmorRPA(MaterialRegistry.aMatRPA, -1, EntityEquipmentSlot.LEGS, Tags.MODID + ":textures/armor/starmetal_2.png", 2500000, 10000, 10000, 25, "RPA_legs").cloneStats((ArmorFSB) rpa_helmet);
     public static final Item rpa_boots = new ArmorRPA(MaterialRegistry.aMatRPA, -1, EntityEquipmentSlot.FEET, Tags.MODID + ":textures/armor/starmetal_1.png", 2500000, 10000, 10000, 25, "RPA_boots").cloneStats((ArmorFSB) rpa_helmet);
     public static final Item ncrpa_helmet = new ArmorNCRPA(MaterialRegistry.aMatAJR, -1, EntityEquipmentSlot.HEAD, Tags.MODID + ":textures/armor/starmetal_1.png", 2500000, 10000, 2000, 25, "ncrpa_helmet")
-				.enableVATS(true)
-				.setHasGeigerSound(true)
-				.setHasHardLanding(true)
-				.addEffect(new PotionEffect(MobEffects.STRENGTH, 20, 3))
+            .enableVATS(true)
+            .setHasGeigerSound(true)
+            .setHasHardLanding(true)
+            .addEffect(new PotionEffect(MobEffects.STRENGTH, 20, 3))
             .setStep(HBMSoundHandler.poweredStep)
-				.setJump(HBMSoundHandler.poweredStep)
-				.setFall(HBMSoundHandler.poweredStep)
-				.setHides(IArmorDisableModel.EnumPlayerPart.HAT);
+            .setJump(HBMSoundHandler.poweredStep)
+            .setFall(HBMSoundHandler.poweredStep)
+            .setHides(IArmorDisableModel.EnumPlayerPart.HAT)
+            .setHazardClass(ArmorUtil.FULL_PACKAGE).setRadResist(1.7D /*97%*/);
     public static final Item ncrpa_plate = new ArmorNCRPA(MaterialRegistry.aMatAJR, -1, EntityEquipmentSlot.CHEST, Tags.MODID + ":textures/armor/starmetal_1.png", 2500000, 10000, 2000, 25, "ncrpa_plate").cloneStats((ArmorFSB) rpa_helmet);
     public static final Item ncrpa_legs = new ArmorNCRPA(MaterialRegistry.aMatAJR, -1, EntityEquipmentSlot.LEGS, Tags.MODID + ":textures/armor/starmetal_2.png", 2500000, 10000, 2000, 25, "ncrpa_legs").cloneStats((ArmorFSB) rpa_helmet);
     public static final Item ncrpa_boots = new ArmorNCRPA(MaterialRegistry.aMatAJR, -1, EntityEquipmentSlot.FEET, Tags.MODID + ":textures/armor/starmetal_1.png", 2500000, 10000, 2000, 25, "ncrpa_boots").cloneStats((ArmorFSB) rpa_helmet);
@@ -668,6 +681,7 @@ public class ModItems {
             .enableThermalSight(true)
             .setHasHardLanding(true)
             .setHides(IArmorDisableModel.EnumPlayerPart.HAT)
+            .setHazardClass(ArmorUtil.FULL_PACKAGE).setRadResist(4D /*99.99%*/)
             .setStep(HBMSoundHandler.metalStep)
             .setJump(HBMSoundHandler.ironJump)
             .setFall(HBMSoundHandler.ironLand);
@@ -683,6 +697,7 @@ public class ModItems {
             .enableThermalSight(true)
             .setHasHardLanding(true)
             .setHides(IArmorDisableModel.EnumPlayerPart.HAT)
+            .setHazardClass(ArmorUtil.FULL_PACKAGE).setRadResist(5D /*99.999%*/)
             .setStep(HBMSoundHandler.metalStep)
             .setJump(HBMSoundHandler.ironJump)
             .setFall(HBMSoundHandler.ironLand);
