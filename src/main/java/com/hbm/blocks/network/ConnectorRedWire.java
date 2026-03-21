@@ -4,10 +4,11 @@ package com.hbm.blocks.network;
 import com.google.common.collect.ImmutableMap;
 import com.hbm.Tags;
 import com.hbm.blocks.ICustomBlockItem;
+import com.hbm.interfaces.IBlockSpecialPlacementAABB;
 import com.hbm.blocks.network.energy.PylonBase;
 import com.hbm.items.IDynamicModels;
+import com.hbm.items.block.ItemBlockSpecialAABB;
 import com.hbm.tileentity.network.TileEntityConnector;
-import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.properties.PropertyDirection;
 import net.minecraft.block.state.BlockStateContainer;
@@ -41,7 +42,7 @@ import java.util.List;
 import static com.hbm.items.ItemEnumMulti.ROOT_PATH;
 
 //TODO: throw in dummy baked model into it to override the particles
-public class ConnectorRedWire extends PylonBase implements ICustomBlockItem {
+public class ConnectorRedWire extends PylonBase implements ICustomBlockItem, IBlockSpecialPlacementAABB {
 
     public static final PropertyDirection FACING = PropertyDirection.create("facing");
     private static final double f = 1d / 16d;
@@ -104,6 +105,11 @@ public class ConnectorRedWire extends PylonBase implements ICustomBlockItem {
     }
 
     @Override
+    public AxisAlignedBB getCollisionBoundingBoxForPlacement(World worldIn, BlockPos pos, IBlockState stateForPlacement, ItemStack stack) {
+        return this.getBoundingBox(stateForPlacement, worldIn, pos);
+    }
+
+    @Override
     public boolean isOpaqueCube(IBlockState state) {
         return false;
     }
@@ -124,16 +130,17 @@ public class ConnectorRedWire extends PylonBase implements ICustomBlockItem {
         return new BlockStateContainer(this, FACING);
     }
 
+    @Override
     public void registerItem() {
         ItemBlock itemBlock = new DynModelBlockItem(this, "red_connector");
         itemBlock.setRegistryName(this.getRegistryName());
         ForgeRegistries.ITEMS.register(itemBlock);
     }
 
-    private static class DynModelBlockItem extends ItemBlock implements IDynamicModels {
+    private static class DynModelBlockItem extends ItemBlockSpecialAABB<ConnectorRedWire> implements IDynamicModels {
         String texturePath;
 
-        public DynModelBlockItem(Block block, String texturePath) {
+        public DynModelBlockItem(ConnectorRedWire block, String texturePath) {
             super(block);
             this.texturePath = texturePath;
             IDynamicModels.INSTANCES.add(this);

@@ -149,7 +149,7 @@ public class RenderPlushie extends TileEntitySpecialRenderer<TileEntityPlushie> 
                 GlStateManager.rotate(180.0, 0, 1, 0);
                 GlStateManager.translate(0, 0.25, 0);
                 GlStateManager.enableCull();
-                PlushieType type = EnumUtil.grabEnumSafely(PlushieType.values(), item.getItemDamage());
+                PlushieType type = EnumUtil.grabEnumSafely(PlushieType.VALUES, item.getItemDamage());
 
                 switch (type) {
                     case NONE:

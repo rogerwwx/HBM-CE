@@ -3,16 +3,16 @@ package com.hbm.inventory.control_panel;
 import com.hbm.inventory.control_panel.DataValue.DataType;
 import com.hbm.inventory.control_panel.nodes.Node;
 import com.hbm.render.NTMRenderHelper;
+import com.hbm.render.util.NTMBufferBuilder;
+import com.hbm.render.util.NTMImmediate;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
+import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import org.lwjgl.input.Keyboard;
-import org.lwjgl.opengl.GL11; import net.minecraft.client.renderer.GlStateManager;
+import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
 
@@ -138,14 +138,14 @@ public class NodeConnection extends NodeElement implements ITypableNode {
 	public void render(float mX, float mY){
 		float[] color = type.getColor();
 		Minecraft.getMinecraft().getTextureManager().bindTexture(NodeSystem.node_tex);
-		Tessellator.getInstance().getBuffer().begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX_COLOR);
+		NTMImmediate.INSTANCE.beginPositionTexColorQuads(2);
 		float x = offsetX+38 + (isInput ? -40 : 0);
 		float y = offsetY+8;
 		NTMRenderHelper.drawGuiRectBatchedColor(x, y, 0.625F, 0, 4, 4, 0.6875F, 0.0625F, color[0], color[1], color[2], 1);
 		color = NTMRenderHelper.intersects2DBox(mX, mY, this.getValueBox()) && !isTyping ? new float[]{1, 1, 1} : new float[]{0.6F, 0.6F, 0.6F};
 		if(isInput){
 			if(enumSelector != null){
-				Tessellator.getInstance().draw();
+				NTMImmediate.INSTANCE.draw();
 				enumSelector.render(mX, mY);
 				return;
 			}
@@ -153,7 +153,7 @@ public class NodeConnection extends NodeElement implements ITypableNode {
 				NTMRenderHelper.drawGuiRectBatchedColor(x, y-1, 0, 0.203125F, 40, 6, 0.625F, 0.296875F, color[0], color[1], color[2], 1);
 			}
 		}
-		Tessellator.getInstance().draw();
+		NTMImmediate.INSTANCE.draw();
 		
 		FontRenderer font = Minecraft.getMinecraft().fontRenderer;
 		GlStateManager.pushMatrix();
@@ -180,13 +180,13 @@ public class NodeConnection extends NodeElement implements ITypableNode {
 	@SideOnly(Side.CLIENT)
 	public void drawLine(float mouseX, float mouseY){
 		if(drawsLine){
-			BufferBuilder buf = Tessellator.getInstance().getBuffer();
-			buf.pos(offsetX + (isInput ? 0 : 40), offsetY+10, 0).endVertex();
+			NTMBufferBuilder buf = (NTMBufferBuilder) net.minecraft.client.renderer.Tessellator.getInstance().getBuffer();
+			buf.appendPosition(offsetX + (isInput ? 0 : 40), offsetY+10, 0);
 			if(connectionIndex == -1 || !isInput){
-				buf.pos(mouseX, mouseY, 0).endVertex();
+				buf.appendPosition(mouseX, mouseY, 0);
 			} else {
 				NodeConnection pair = (isInput ? connection.outputs : connection.inputs).get(connectionIndex);
-				buf.pos(pair.offsetX + (pair.isInput ? 0 : 40), pair.offsetY+10, 0).endVertex();
+				buf.appendPosition(pair.offsetX + (pair.isInput ? 0 : 40), pair.offsetY+10, 0);
 			}
 		}
 	}

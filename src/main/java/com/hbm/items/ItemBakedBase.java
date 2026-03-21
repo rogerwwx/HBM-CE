@@ -1,11 +1,17 @@
 package com.hbm.items;
 
+import com.google.common.collect.ImmutableMap;
 import com.hbm.Tags;
+import net.minecraft.client.renderer.block.model.IBakedModel;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
+import net.minecraft.client.renderer.block.model.ModelRotation;
 import net.minecraft.client.renderer.texture.TextureMap;
+import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.client.event.ModelBakeEvent;
+import net.minecraftforge.client.model.IModel;
 import net.minecraftforge.client.model.ModelLoader;
+import net.minecraftforge.client.model.ModelLoaderRegistry;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
@@ -50,5 +56,16 @@ public class ItemBakedBase extends ItemBase implements IDynamicModels, IClaimedM
                 location,
                 new ResourceLocation(Tags.MODID, ROOT_PATH + texturePath)
         );
+    }
+
+    @Override
+    @SideOnly(Side.CLIENT)
+    public IModel loadModel(ModelResourceLocation location) {
+        try {
+            IModel generated = ModelLoaderRegistry.getModel(new ResourceLocation("item/generated"));
+            return generated.retexture(ImmutableMap.of("layer0", new ResourceLocation(Tags.MODID, ROOT_PATH + texturePath).toString()));
+        } catch (Exception e) {
+            return IClaimedModelLocation.super.loadModel(location);
+        }
     }
 }

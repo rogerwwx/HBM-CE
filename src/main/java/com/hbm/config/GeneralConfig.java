@@ -23,6 +23,7 @@ public class GeneralConfig {
 	public static boolean enableDebugMode = false;
 	public static boolean enableDebugWorldGen = false;
 	public static boolean enableSkyboxes = true;
+	public static boolean enableImpactWorldProvider = true;
 	public static boolean enableKeybindOverlap = true;
 	public static boolean enableFluidContainerCompat = true;
 	public static Set<String> leadSafeForgeContainerWhitelist = new ObjectOpenHashSet<>();
@@ -135,7 +136,7 @@ public class GeneralConfig {
 		enableDebugMode = config.get(CommonConfig.CATEGORY_GENERAL, "1.00_enableDebugMode", false, "Enable debugging mode").getBoolean(false);
 		enableDebugWorldGen = config.get(CommonConfig.CATEGORY_GENERAL, "1.00_enableDebugWorldGen", false, "Enable debugging mode for phased structure generation. Separate from the previous option!").getBoolean(false);
 		enableSkyboxes = config.get(CommonConfig.CATEGORY_GENERAL, "1.00_enableSkybox", true, "If enabled, will try to use NTM's custom skyboxes.").getBoolean(true);
-		enableMycelium = config.get(CommonConfig.CATEGORY_GENERAL, "1.01_enableMyceliumSpread", false, "Allows glowing mycelium to spread").getBoolean(false);
+        enableMycelium = config.get(CommonConfig.CATEGORY_GENERAL, "1.01_enableMyceliumSpread", false, "Allows glowing mycelium to spread").getBoolean(false);
 		enablePlutoniumOre = config.get(CommonConfig.CATEGORY_GENERAL, "1.02_enablePlutoniumNetherOre", false, "Enables plutonium ore generation in the nether").getBoolean(false);
 		enableDungeons = config.get(CommonConfig.CATEGORY_GENERAL, "1.03_enableDungeonSpawn", true, "Allows structures and dungeons to spawn.").getBoolean(true);
 		enableMDOres = config.get(CommonConfig.CATEGORY_GENERAL, "1.04_enableOresInModdedDimensions", true, "Allows NTM ores to generate in modded dimensions").getBoolean(true);
@@ -190,8 +191,8 @@ public class GeneralConfig {
 		Property adv_rads = config.get(CommonConfig.CATEGORY_GENERAL, "1.31_enableAdvancedRadiation", true);
 		adv_rads.setComment("Enables a 3 dimensional version of the radiation system that also allows some blocks (like concrete bricks) to stop it from spreading");
 		advancedRadiation = adv_rads.getBoolean(true);
-		
-		bloodFX = CommonConfig.createConfigBool(config, CommonConfig.CATEGORY_GENERAL, "1.32_enable_blood_effects", "Enables the over-the-top blood visual effects for some weapons", true);
+        enableImpactWorldProvider = config.get(CommonConfig.CATEGORY_GENERAL, "1.32_enableImpactWorldProvider", true, "If enabled, registers a custom overworld provider which modifies lighting and sky colors for post-impact effects.").getBoolean(true);
+        bloodFX = CommonConfig.createConfigBool(config, CommonConfig.CATEGORY_GENERAL, "1.32_enable_blood_effects", "Enables the over-the-top blood visual effects for some weapons", true);
 	
 		if((instancedParticles || depthEffects || flowingDecalAmountMax > 0 || bloodFX || bloom || heatDistortion) && (!GLCompat.error.isEmpty() || !useShaders2)){
 			MainRegistry.logger.error("Warning - Open GL 3.3 not supported! Disabling 3.3 effects...");

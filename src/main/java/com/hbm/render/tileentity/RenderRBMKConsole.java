@@ -61,8 +61,6 @@ public class RenderRBMKConsole extends TileEntitySpecialRenderer<TileEntityRBMKC
         ResourceManager.rbmk_console.renderAll();
         GlStateManager.shadeModel(GL11.GL_FLAT);
 
-        /// New part
-
         Tessellator tess = Tessellator.getInstance();
         BufferBuilder buf = tess.getBuffer();
         buf.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
@@ -75,8 +73,8 @@ public class RenderRBMKConsole extends TileEntitySpecialRenderer<TileEntityRBMKC
 
             if (col == null) continue;
 
-            double kx = -0.37D;
-            double ky = -((double) i / 15) * 0.125 + 3.625;
+            double kx = -0.3725D;
+            double ky = -Math.floor(i / 15f) * 0.125 + 3.625;
             double kz = -(i % 15) * 0.125 + 0.125D * 7;
 
             float r = 1.0F;
@@ -161,7 +159,6 @@ public class RenderRBMKConsole extends TileEntitySpecialRenderer<TileEntityRBMKC
 
         GlStateManager.depthMask(true);
         GL11.glDisable(GL12.GL_RESCALE_NORMAL);
-        ///
 
         GlStateManager.popMatrix();
     }

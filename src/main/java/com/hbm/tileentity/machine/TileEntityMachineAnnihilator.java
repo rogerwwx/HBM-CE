@@ -2,6 +2,9 @@ package com.hbm.tileentity.machine;
 
 import com.hbm.api.energymk2.IEnergyReceiverMK2;
 import com.hbm.api.fluidmk2.IFluidStandardReceiverMK2;
+import com.hbm.handler.radiation.ChunkRadiationManager;
+import com.hbm.hazard.HazardRegistry;
+import com.hbm.hazard.HazardSystem;
 import com.hbm.interfaces.AutoRegister;
 import com.hbm.interfaces.IControlReceiver;
 import com.hbm.inventory.RecipesCommon.ComparableStack;
@@ -77,6 +80,7 @@ public class TileEntityMachineAnnihilator extends TileEntityMachineBase implemen
 
                 ItemStack stack0 = inventory.getStackInSlot(0);
                 if(!stack0.isEmpty()) {
+                    onDestroy(stack0);
                     tryAddPayout(data.pushToPool(pool, stack0, false));
                     this.inventory.setStackInSlot(0, ItemStack.EMPTY);
                     this.markChanged();
@@ -128,6 +132,14 @@ public class TileEntityMachineAnnihilator extends TileEntityMachineBase implemen
             }
 
             this.networkPackNT(25);
+        }
+    }
+
+    public void onDestroy(ItemStack stack) {
+        double radiation = HazardSystem.getHazardLevelFromStack(stack, HazardRegistry.RADIATION);
+        if(radiation > 0) {
+            ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - 10);
+            ChunkRadiationManager.proxy.incrementRad(world, pos.add(-dir.offsetX * 3, 9, -dir.offsetZ * 3), Math.min(radiation * 5F, 1_000F));
         }
     }
 

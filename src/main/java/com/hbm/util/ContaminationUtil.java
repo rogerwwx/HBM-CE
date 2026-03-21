@@ -1,6 +1,5 @@
 package com.hbm.util;
 
-import com.hbm.capability.HbmLivingCapability;
 import com.hbm.capability.HbmLivingCapability.EntityHbmProps;
 import com.hbm.capability.HbmLivingProps;
 import com.hbm.config.CompatibilityConfig;
@@ -91,52 +90,7 @@ public class ContaminationUtil {
         return Math.pow(koeff, -(getConfigEntityRadResistance(entity) + HazmatRegistry.getResistance(entity))) * mult;
     }
 
-    private static void applyRadData(Entity e, double f) {
-
-		if(e instanceof IRadiationImmune)
-			return;
-		
-		if(!(e instanceof EntityLivingBase entity))
-			return;
-
-		if(entity instanceof EntityPlayer player && (player.capabilities.isCreativeMode || player.isSpectator()))
-			return;
-		
-		if(e instanceof EntityPlayer && e.ticksExisted < 200)
-			return;
-
-        f *= calculateRadiationMod(entity);
-
-		if(entity.hasCapability(HbmLivingCapability.EntityHbmPropsProvider.ENT_HBM_PROPS_CAP, null)) {
-            HbmLivingCapability.IEntityHbmProps ent = entity.getCapability(HbmLivingCapability.EntityHbmPropsProvider.ENT_HBM_PROPS_CAP, null);
-            ent.increaseRads(f);
-        }
-    }
-
-    private static void applyRadDirect(Entity entity, double f) {
-
-		if(entity instanceof IRadiationImmune)
-			return;
-
-        if (entity.getEntityData().hasKey(RAD_MULT_KEY, 99))
-            f *= entity.getEntityData().getFloat(RAD_MULT_KEY);
-
-		if(entity instanceof EntityPlayer player && (player.capabilities.isCreativeMode || player.isSpectator()))
-			return;
-		
-		if(!(entity instanceof EntityLivingBase))
-			return;
-
-		if(((EntityLivingBase) entity).isPotionActive(HbmPotion.mutation))
-			return;
-
-		if(entity.hasCapability(HbmLivingCapability.EntityHbmPropsProvider.ENT_HBM_PROPS_CAP, null)) {
-            HbmLivingCapability.IEntityHbmProps ent = entity.getCapability(HbmLivingCapability.EntityHbmPropsProvider.ENT_HBM_PROPS_CAP, null);
-            ent.increaseRads(f);
-        }
-    }
-
-    public static void printGeigerData(EntityPlayer player) {
+	public static void printGeigerData(EntityPlayer player) {
         double rawRadMod = ContaminationUtil.calculateRadiationMod(player);
         double eRad = HbmLivingProps.getRadiation(player);
         double rads = ChunkRadiationManager.proxy.getRadiation(player.world, player.getPosition());
@@ -475,10 +429,6 @@ public class ContaminationUtil {
 		}
 	}
 
-	public static void applyCoal(Entity e, int i, int dmg) {
-		applyCoal(e, i, dmg, 1);
-	}
-
 	/// COAL ///
 	public static void applyCoal(Entity e, int i, int dmg, int chance) {
 
@@ -530,22 +480,8 @@ public class ContaminationUtil {
 		if(!(entity instanceof EntityPlayer && ArmorUtil.checkForDigamma((EntityPlayer) entity)))
 			HbmLivingProps.incrementDigamma(entity, f);
 	}
-		
-	public static void applyDigammaDirect(Entity e, double f) {
 
-		if(!(e instanceof EntityLivingBase entity))
-			return;
-
-		if(e instanceof IRadiationImmune)
-			return;
-
-		if(entity instanceof EntityPlayer player && (player.capabilities.isCreativeMode || player.isSpectator()))
-			return;
-
-        HbmLivingProps.incrementDigamma(entity, f);
-	}
-
-    public static double getDigamma(Entity e) {
+	public static double getDigamma(Entity e) {
         if (!(e instanceof EntityLivingBase entity))
             return 0.0D;
         return HbmLivingProps.getDigamma(entity);
@@ -657,7 +593,7 @@ public class ContaminationUtil {
         return e instanceof EntityPlayer && (((EntityPlayer) e).isCreative() || ((EntityPlayer) e).isSpectator());
     }
 
-	
+	// TODO clean it up
 	public enum HazardType {
 		MONOXIDE,
 		RADIATION,
@@ -666,9 +602,6 @@ public class ContaminationUtil {
 	}
 	
 	public enum ContaminationType {
-		GAS,				//filterable by gas mask
-		GAS_NON_REACTIVE,	//not filterable by gas mask
-		GOGGLES,			//preventable by goggles
 		FARADAY,			//preventable by metal armor
 		HAZMAT,				//preventable by hazmat
 		HAZMAT2,			//preventable by heavy hazmat
@@ -693,7 +626,6 @@ public class ContaminationUtil {
 		if(entity instanceof EntityPlayer player) {
 			if (player.isSpectator()) return false;
             switch(cont) {
-			case GOGGLES:			if(ArmorUtil.checkForGoggles(player))	return false; break;
 			case FARADAY:			if(ArmorUtil.checkForFaraday(player))	return false; break;
 			case HAZMAT:			if(ArmorUtil.checkForHazmat(player))	return false; break;
 			case HAZMAT2:			if(ArmorUtil.checkForHaz2(player))		return false; break;

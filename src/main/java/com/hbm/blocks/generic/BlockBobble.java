@@ -133,9 +133,13 @@ public class BlockBobble extends BlockContainer implements INBTBlockTransformabl
     }
 
     @Override
+    public IBlockState getStateForPlacement(World world, BlockPos pos, EnumFacing facing, float hitX, float hitY, float hitZ, int meta, EntityLivingBase placer) {
+        int rotation = MathHelper.floor((double) ((placer.rotationYaw + 180.0F) * 16.0F / 360.0F) + 0.5D) & 15;
+        return this.getDefaultState().withProperty(META, rotation);
+    }
+
+    @Override
     public void onBlockPlacedBy(World world, BlockPos pos, IBlockState state, EntityLivingBase placer, ItemStack stack) {
-        int meta = MathHelper.floor((double) ((placer.rotationYaw + 180.0F) * 16.0F / 360.0F) + 0.5D) & 15;
-        world.setBlockState(pos, this.getDefaultState().withProperty(META, meta), 2);
         TileEntity te = world.getTileEntity(pos);
         if (te instanceof TileEntityBobble bobble) {
             bobble.type = BobbleType.VALUES[Math.abs(stack.getItemDamage()) % BobbleType.VALUES.length];

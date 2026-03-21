@@ -111,12 +111,6 @@ public class BlockWandJigsaw extends BlockContainerBakeable implements IBlockSid
     }
 
     @Override
-    public void onBlockPlacedBy(World world, BlockPos pos, IBlockState state, EntityLivingBase player, ItemStack stack) {
-        EnumFacing facing = EnumFacing.getDirectionFromEntityLiving(pos, player);
-        world.setBlockState(pos, state.withProperty(FACING, facing), 2);
-    }
-
-    @Override
     public int getRotationFromSide(IBlockAccess world, BlockPos pos, EnumFacing efside) {
         int side = efside.getIndex();
         IBlockState state = world.getBlockState(pos);

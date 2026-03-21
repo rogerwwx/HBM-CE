@@ -1,19 +1,11 @@
 package com.hbm.inventory.control_panel;
 
 import com.hbm.Tags;
-import com.hbm.inventory.control_panel.nodes.Node;
-import com.hbm.inventory.control_panel.nodes.NodeCancelEvent;
-import com.hbm.inventory.control_panel.nodes.NodeEventBroadcast;
-import com.hbm.inventory.control_panel.nodes.NodeFunction;
-import com.hbm.inventory.control_panel.nodes.NodeGetVar;
-import com.hbm.inventory.control_panel.nodes.NodeInput;
-import com.hbm.inventory.control_panel.nodes.NodeOutput;
-import com.hbm.inventory.control_panel.nodes.NodeSetVar;
+import com.hbm.inventory.control_panel.nodes.*;
 import com.hbm.render.NTMRenderHelper;
+import com.hbm.render.util.NTMImmediate;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ResourceLocation;
@@ -173,7 +165,7 @@ public class NodeSystem {
 		GlStateManager.color(1, 1, 1, 1);
 		GlStateManager.glLineWidth(3);
 		GL11.glEnable(GL11.GL_LINE_SMOOTH);
-		Tessellator.getInstance().getBuffer().begin(GL11.GL_LINES, DefaultVertexFormats.POSITION);
+		NTMImmediate.INSTANCE.beginPosition(GL11.GL_LINES, 0);
 		float nodeMx = mX;
 		float nodeMy = mY;
 		if(connectionInProgress != null){
@@ -195,7 +187,7 @@ public class NodeSystem {
 		for(Node node : nodes){
 			node.drawConnections(nodeMx, nodeMy);
 		}
-		Tessellator.getInstance().draw();
+		NTMImmediate.INSTANCE.draw();
 		GL11.glDisable(GL11.GL_LINE_SMOOTH);
 		GlStateManager.glLineWidth(2);
 		GlStateManager.enableTexture2D();

@@ -5,19 +5,17 @@ import com.hbm.inventory.control_panel.controls.configs.SubElementBaseConfig;
 import com.hbm.inventory.control_panel.controls.configs.SubElementDisplayText;
 import com.hbm.main.ResourceManager;
 import com.hbm.render.loader.IModelCustom;
+import com.hbm.render.util.NTMBufferBuilder;
+import com.hbm.render.util.NTMImmediate;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.OpenGlHelper;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.item.EnumDyeColor;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
-import org.lwjgl.opengl.GL11;
 
 import java.util.List;
 import java.util.Map;
@@ -122,23 +120,27 @@ public class DisplayText extends Control {
         GlStateManager.translate(0, 0, -.01F);
 
         GlStateManager.disableTexture2D();
-        Tessellator tes = Tessellator.getInstance();
-        BufferBuilder buf = tes.getBuffer();
-        buf.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX_COLOR);
+        NTMBufferBuilder buf = NTMImmediate.INSTANCE.beginPositionTexColorQuads(2);
         float[] box = getBox();
         float[] rgb = new float[]{0, 0, 0};
         float d = 0;
-        buf.pos(box[0]-d, box[1]-d, -.01).tex(0, 0).color(rgb[0], rgb[1], rgb[2], 1).endVertex();
-        buf.pos(box[0]-d, box[3], -.01).tex(0, 1).color(rgb[0], rgb[1], rgb[2], 1).endVertex();
-        buf.pos(box[2]+d, box[3], -.01).tex(1, 1).color(rgb[0], rgb[1], rgb[2], 1).endVertex();
-        buf.pos(box[2]+d, box[1]-d, -.01).tex(1, 0).color(rgb[0], rgb[1], rgb[2], 1).endVertex();
+        int packedColor = NTMBufferBuilder.packColor(rgb[0], rgb[1], rgb[2], 1);
+        buf.appendPositionTexColorQuadUnchecked(
+                box[0]-d, box[1]-d, -.01, 0, 0, packedColor,
+                box[0]-d, box[3], -.01, 0, 1, packedColor,
+                box[2]+d, box[3], -.01, 1, 1, packedColor,
+                box[2]+d, box[1]-d, -.01, 1, 0, packedColor
+        );
         rgb = new float[]{.3F, .3F, .3F};
         d = .05F;
-        buf.pos(box[0]-d, box[1]-d, 0).tex(0, 0).color(rgb[0], rgb[1], rgb[2], 1).endVertex();
-        buf.pos(box[0]-d, box[3]+d, 0).tex(0, 1).color(rgb[0], rgb[1], rgb[2], 1).endVertex();
-        buf.pos(box[2]+d, box[3]+d, 0).tex(1, 1).color(rgb[0], rgb[1], rgb[2], 1).endVertex();
-        buf.pos(box[2]+d, box[1]-d, 0).tex(1, 0).color(rgb[0], rgb[1], rgb[2], 1).endVertex();
-        tes.draw();
+        packedColor = NTMBufferBuilder.packColor(rgb[0], rgb[1], rgb[2], 1);
+        buf.appendPositionTexColorQuadUnchecked(
+                box[0]-d, box[1]-d, 0, 0, 0, packedColor,
+                box[0]-d, box[3]+d, 0, 0, 1, packedColor,
+                box[2]+d, box[3]+d, 0, 1, 1, packedColor,
+                box[2]+d, box[1]-d, 0, 1, 0, packedColor
+        );
+        NTMImmediate.INSTANCE.draw();
         GlStateManager.enableTexture2D();
         GlStateManager.popMatrix();
 

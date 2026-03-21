@@ -33,6 +33,7 @@ import net.minecraftforge.fml.common.network.ByteBufUtils;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraftforge.items.ItemStackHandler;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
@@ -54,7 +55,13 @@ public class TileEntitySawmill extends TileEntityMachineBase implements ITickabl
     private int syncHeat = 0;
 
     public TileEntitySawmill() {
-        super(3);
+        super(3, false, true);
+        inventory = new ItemStackHandler(3){
+            @Override
+            public int getSlotLimit(int slot) {
+                return slot == 0 ? 1 : super.getSlotLimit(slot);
+            }
+        };
     }
 
     @Override
@@ -229,7 +236,7 @@ public class TileEntitySawmill extends TileEntityMachineBase implements ITickabl
 
     @Override
     public boolean isItemValidForSlot(int i, ItemStack stack) {
-        return stack != null && i == 0 && inventory.getStackInSlot(0).isEmpty() && inventory.getStackInSlot(1).isEmpty() && inventory.getStackInSlot(2).isEmpty() && stack.getCount() == 1 && getOutput(stack) != null;
+        return stack != null && i == 0 && inventory.getStackInSlot(0).isEmpty() && inventory.getStackInSlot(1).isEmpty() && inventory.getStackInSlot(2).isEmpty() && getOutput(stack) != null;
     }
 
     @Override
@@ -261,7 +268,7 @@ public class TileEntitySawmill extends TileEntityMachineBase implements ITickabl
                     ItemStack out = recipe.getCraftingResult(craftingInventory);
                     if(!out.isEmpty()) {
                         out = out.copy(); //for good measure
-                        out.setCount((int) (out.getCount() * 6 / 4)); //4 planks become 6
+                        out.setCount(out.getCount() * 6 / 4); //4 planks become 6
                         return out;
                     }
                 }

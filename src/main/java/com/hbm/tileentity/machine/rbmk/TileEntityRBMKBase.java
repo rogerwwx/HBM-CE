@@ -75,6 +75,8 @@ public abstract class TileEntityRBMKBase extends TileEntityLoadedBase implements
 	public int reasimSteam;
 	public static final int maxSteam = 16000;
 
+	public static boolean explodeOnBroken = true;
+
     @SideOnly(Side.CLIENT)
     private static long lastDODDUpdate;
     @SideOnly(Side.CLIENT)

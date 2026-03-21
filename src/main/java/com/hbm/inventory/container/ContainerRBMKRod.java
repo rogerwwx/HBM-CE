@@ -33,7 +33,7 @@ public class ContainerRBMKRod extends Container {
 	@Override
 	public @NotNull ItemStack slotClick(int slotId, int dragType, @NotNull ClickType clickTypeIn, @NotNull EntityPlayer player) {
 
-		if(slotId == 0) {
+		if(slotId == 0 && !player.capabilities.isCreativeMode) {
 
 			if(rbmk.coldEnoughForManual()) {
 				return super.slotClick(slotId, dragType, clickTypeIn, player);
@@ -64,7 +64,7 @@ public class ContainerRBMKRod extends Container {
 			var3 = var5.copy();
 
 			if(par2 <= rbmk.inventory.getSlots() - 1) {
-				if(!rbmk.coldEnoughForManual()) return ItemStack.EMPTY;
+				if(!rbmk.coldEnoughForManual() && !player.capabilities.isCreativeMode) return ItemStack.EMPTY;
 				if(!this.mergeItemStack(var5, rbmk.inventory.getSlots(), this.inventorySlots.size(), true)) {
 					return ItemStack.EMPTY;
 				}

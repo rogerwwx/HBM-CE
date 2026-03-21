@@ -56,6 +56,7 @@ import com.hbm.render.misc.SoyuzPronter;
 import com.hbm.render.modelrenderer.EgonBackpackRenderer;
 import com.hbm.render.util.RenderOverhead;
 import com.hbm.render.world.RenderNTMSkyboxChainloader;
+import com.hbm.render.world.RenderNTMSkyboxImpact;
 import com.hbm.sound.*;
 import com.hbm.sound.MovingSoundPlayerLoop.EnumHbmSound;
 import com.hbm.tileentity.bomb.TileEntityNukeCustom;
@@ -104,6 +105,7 @@ import net.minecraft.util.math.*;
 import net.minecraft.util.math.RayTraceResult.Type;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
+import net.minecraft.world.WorldProviderSurface;
 import net.minecraftforge.client.GuiIngameForge;
 import net.minecraftforge.client.IRenderHandler;
 import net.minecraftforge.client.event.*;
@@ -276,18 +278,14 @@ public class ModEventHandlerClient {
             World world = mc.world;
             if (world == null) return;
             IRenderHandler sky = world.provider.getSkyRenderer();
-            //TODO: implement
-//            if(world.provider instanceof WorldProviderSurface) {
-//
-//                if(ImpactWorldHandler.getDustForClient(world) > 0 || ImpactWorldHandler.getFireForClient(world) > 0) {
-//
-//                    //using a chainloader isn't necessary since none of the sky effects should render anyway
-//                    if(!(sky instanceof RenderNTMSkyboxImpact)) {
-//                        world.provider.setSkyRenderer(new RenderNTMSkyboxImpact());
-//                        return;
-//                    }
-//                }
-//            }
+
+            if (world.provider instanceof WorldProviderSurface &&
+                    (ImpactWorldHandler.getDustForClient(world) > 0 || ImpactWorldHandler.getFireForClient(world) > 0)) {
+                if (!(sky instanceof RenderNTMSkyboxImpact)) {
+                    world.provider.setSkyRenderer(new RenderNTMSkyboxImpact());
+                }
+                return;
+            }
 
             if (world.provider.getDimension() == 0) {
                 if (!(sky instanceof RenderNTMSkyboxChainloader)) {

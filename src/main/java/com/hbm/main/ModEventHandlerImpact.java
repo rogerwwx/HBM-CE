@@ -1,8 +1,10 @@
 package com.hbm.main;
 
 import com.hbm.blocks.ModBlocks;
+import com.hbm.config.GeneralConfig;
 import com.hbm.handler.ImpactWorldHandler;
 import com.hbm.saveddata.TomSaveData;
+import com.hbm.world.WorldProviderNTM;
 import net.minecraft.block.*;
 import net.minecraft.block.material.Material;
 import net.minecraft.entity.EntityLivingBase;
@@ -12,8 +14,11 @@ import net.minecraft.init.Blocks;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.EnumSkyBlock;
+import net.minecraft.world.World;
+import net.minecraft.world.WorldProvider;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.storage.ExtendedBlockStorage;
+import net.minecraftforge.common.DimensionManager;
 import net.minecraftforge.event.entity.living.LivingSpawnEvent.CheckSpawn;
 import net.minecraftforge.event.terraingen.BiomeEvent;
 import net.minecraftforge.event.terraingen.DecorateBiomeEvent;
@@ -133,6 +138,27 @@ public class ModEventHandlerImpact {
 	@SubscribeEvent(priority = EventPriority.LOWEST)
 	public void onLoad(WorldEvent.Load event) {
 		TomSaveData.resetLastCached();
+
+		if (GeneralConfig.enableImpactWorldProvider && event.getWorld().provider.getDimension() == 0) {
+			bindImpactWorldProvider(event.getWorld());
+		}
+	}
+
+	private static void bindImpactWorldProvider(World world) {
+		if (DimensionManager.getProviderType(0) != WorldProviderNTM.IMPACT_TYPE) {
+			DimensionManager.unregisterDimension(0);
+			DimensionManager.registerDimension(0, WorldProviderNTM.IMPACT_TYPE);
+		}
+
+		if (world.provider instanceof WorldProviderNTM) {
+			return;
+		}
+
+		WorldProvider provider = new WorldProviderNTM();
+		provider.setDimension(world.provider.getDimension());
+		provider.setWorld(world);
+		world.provider = provider;
+		world.calculateInitialSkylight();
 	}
 
 	@SubscribeEvent

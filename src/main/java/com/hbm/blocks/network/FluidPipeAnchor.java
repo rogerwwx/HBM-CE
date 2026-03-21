@@ -1,12 +1,15 @@
 package com.hbm.blocks.network;
 
 import com.google.common.collect.ImmutableMap;
+import com.hbm.blocks.ICustomBlockItem;
 import com.hbm.blocks.ILookOverlay;
 import com.hbm.blocks.ITooltipProvider;
 import com.hbm.blocks.ModBlocks;
 import com.hbm.blocks.ModSoundTypes;
+import com.hbm.interfaces.IBlockSpecialPlacementAABB;
 import com.hbm.items.ClaimedModelLocationRegistry;
 import com.hbm.items.IDynamicModels;
+import com.hbm.items.block.ItemBlockSpecialAABB;
 import com.hbm.main.MainRegistry;
 import com.hbm.main.client.NTMClientRegistry;
 import com.hbm.tileentity.network.TileEntityPipeAnchor;
@@ -25,6 +28,7 @@ import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
@@ -40,6 +44,7 @@ import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.client.model.IModel;
 import net.minecraftforge.client.model.ModelLoader;
 import net.minecraftforge.client.model.ModelLoaderRegistry;
+import net.minecraftforge.fml.common.registry.ForgeRegistries;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import org.jetbrains.annotations.NotNull;
@@ -48,7 +53,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class FluidPipeAnchor extends FluidDuctBase implements ITooltipProvider, ILookOverlay, IDynamicModels {
+public class FluidPipeAnchor extends FluidDuctBase implements ITooltipProvider, ILookOverlay, IDynamicModels, ICustomBlockItem, IBlockSpecialPlacementAABB {
 
     public static final PropertyDirection FACING = PropertyDirection.create("facing");
 
@@ -97,6 +102,11 @@ public class FluidPipeAnchor extends FluidDuctBase implements ITooltipProvider, 
     }
 
     @Override
+    public AxisAlignedBB getCollisionBoundingBoxForPlacement(World worldIn, BlockPos pos, IBlockState stateForPlacement, ItemStack stack) {
+        return this.getBoundingBox(stateForPlacement, worldIn, pos);
+    }
+
+    @Override
     public @NotNull IBlockState getStateForPlacement(@NotNull World worldIn, @NotNull BlockPos pos, @NotNull EnumFacing facing, float hitX, float hitY, float hitZ, int meta, @NotNull EntityLivingBase placer, @NotNull EnumHand hand) {
         return getDefaultState().withProperty(FACING, facing);
     }
@@ -137,6 +147,13 @@ public class FluidPipeAnchor extends FluidDuctBase implements ITooltipProvider, 
     public void addInformation(@NotNull ItemStack stack, World player, List<String> tooltip, @NotNull ITooltipFlag advanced) {
         tooltip.add(TextFormatting.GOLD + "Connection Type: " + TextFormatting.YELLOW + "Single");
         tooltip.add(TextFormatting.GOLD + "Connection Range: " + TextFormatting.YELLOW + "10m");
+    }
+
+    @Override
+    public void registerItem() {
+        ItemBlock itemBlock = new ItemBlockSpecialAABB<>(this);
+        itemBlock.setRegistryName(this.getRegistryName());
+        ForgeRegistries.ITEMS.register(itemBlock);
     }
 
     /* @Override GO FUCK YOURSELF

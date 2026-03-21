@@ -734,6 +734,11 @@ public class AssemblyMachineRecipes extends GenericRecipes<GenericRecipe> {
         this.register(new GenericRecipe("ass.mikedeut").setup(600, 100).outputItems(new ItemStack(ModItems.mike_deut, 1))
                 .inputItems(new OreDictStack(IRON.plate(), 12), new OreDictStack(STEEL.plate(), 16))
                 .inputFluids(new FluidStack(Fluids.DEUTERIUM, 10_000)));
+        // Tsar Core recipe, proudly added by movblock
+        this.register(new GenericRecipe("ass.tsarcore").setup(1_200, 100).outputItems(new ItemStack(ModItems.tsar_core, 1))
+                .inputItems(new ComparableStack(ModItems.mike_deut, 1), new OreDictStack(LI.ingot(), 9), new ComparableStack(ModItems.cell, 1, Fluids.TRITIUM.getID()), new OreDictStack(PU239.nugget(), 1), new OreDictStack(BE.nugget(), 1), new OreDictStack(PB.plate(), 12), new OreDictStack(TI.shell(), 2)));
+        this.register(new GenericRecipe("ass.tsarcore1").setup(1_200, 100).outputItems(new ItemStack(ModItems.tsar_core, 1))
+                .inputItems(new ComparableStack(ModItems.tank_steel, 1), new ComparableStack(ModItems.fluid_pack_full, 42, Fluids.DEUTERIUM.getID()), new ComparableStack(ModItems.fluid_pack_full, 40, Fluids.TRITIUM.getID()), new OreDictStack(PU239.nugget(), 1), new OreDictStack(BE.nugget(), 1), new OreDictStack(PB.plate(), 12), new OreDictStack(TI.shell(), 2)));
         this.register(new GenericRecipe("ass.mikecooler").setup(300, 100).outputItems(new ItemStack(ModItems.mike_cooling_unit, 1))
                 .inputItems(new OreDictStack(IRON.plate(), 8), new ComparableStack(ModItems.coil_copper, 5), new ComparableStack(ModItems.coil_tungsten, 5), new ComparableStack(ModItems.motor, 2)));
         this.register(new GenericRecipe("ass.fleijaigniter").setup(200, 100).outputItems(new ItemStack(ModItems.fleija_igniter, 1))

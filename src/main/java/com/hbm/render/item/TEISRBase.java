@@ -41,6 +41,13 @@ public class TEISRBase extends TileEntityItemStackRenderer {
 		return false;
 	}
 
+    /**
+     * Use fancy missing model perspective
+     */
+	public boolean useFMMPerspective(Item item) {
+		return false;
+	}
+
 	public boolean doNullTransform(){
 		return false;
 	}

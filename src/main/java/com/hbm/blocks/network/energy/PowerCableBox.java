@@ -153,12 +153,6 @@ public class PowerCableBox extends Block implements ITileEntityProvider, ICustom
         return new ItemStack(Item.getItemFromBlock(this), 1, this.getMetaFromState(state));
     }
 
-    @Override
-    public void onBlockPlacedBy(World worldIn, @NotNull BlockPos pos, @NotNull IBlockState state, @NotNull EntityLivingBase placer, ItemStack stack) {
-        int meta = stack.getMetadata() % 5;
-        worldIn.setBlockState(pos, this.getStateFromMeta(meta), 3);
-    }
-
     protected boolean canConnectTo(IBlockAccess world, int x, int y, int z, EnumFacing dir) {
         BlockPos pos = new BlockPos(x, y, z);
         BlockPos offset = pos.offset(dir);
@@ -349,7 +343,7 @@ public class PowerCableBox extends Block implements ITileEntityProvider, ICustom
     }
 
     @Override
-    public AxisAlignedBB getCollisionBoundingBoxForPlacement(World source, BlockPos pos, ItemStack stack) {
+    public AxisAlignedBB getCollisionBoundingBoxForPlacement(World source, BlockPos pos, IBlockState stateForPlacement, ItemStack stack) {
         boolean nX = canConnectTo(source, pos.getX(), pos.getY(), pos.getZ(), EnumFacing.WEST);
         boolean pX = canConnectTo(source, pos.getX(), pos.getY(), pos.getZ(), EnumFacing.EAST);
         boolean nY = canConnectTo(source, pos.getX(), pos.getY(), pos.getZ(), EnumFacing.DOWN);
@@ -359,7 +353,7 @@ public class PowerCableBox extends Block implements ITileEntityProvider, ICustom
 
         int mask = (pX ? 32 : 0) + (nX ? 16 : 0) + (pY ? 8 : 0) + (nY ? 4 : 0) + (pZ ? 2 : 0) + (nZ ? 1 : 0);
 
-        int meta = stack.getMetadata();
+        int meta = stateForPlacement.getValue(META);
         float lower = 0.125F;
         float upper = 0.875F;
         for (int i = 0; i < 5; i++) {

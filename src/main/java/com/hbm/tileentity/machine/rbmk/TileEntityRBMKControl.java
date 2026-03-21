@@ -25,7 +25,6 @@ import java.util.Map;
 @Optional.InterfaceList({@Optional.Interface(iface = "li.cil.oc.api.network.SimpleComponent", modid = "opencomputers")})
 public abstract class TileEntityRBMKControl extends TileEntityRBMKSlottedBase implements SimpleComponent, CompatHandler.OCComponent, IEnergyReceiverMK2 {
 
-	@SideOnly(Side.CLIENT)
 	public double lastLevel;
 	public double level;
 	public static final double speed = 0.00277D; // it takes around 18 seconds for the thing to fully extend

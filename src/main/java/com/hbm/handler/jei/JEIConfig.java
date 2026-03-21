@@ -4,8 +4,14 @@ import com.hbm.blocks.ModBlocks;
 import com.hbm.config.ClientConfig;
 import com.hbm.config.GeneralConfig;
 import com.hbm.handler.jei.transfer.ExposureChamberTransferInfo;
+import com.hbm.inventory.container.ContainerDiFurnace;
+import com.hbm.inventory.container.ContainerDiFurnaceRTG;
 import com.hbm.inventory.FluidContainerRegistry;
 import com.hbm.inventory.container.ContainerFurnaceCombo;
+import com.hbm.inventory.container.ContainerMachineEPress;
+import com.hbm.inventory.container.ContainerMachinePress;
+import com.hbm.inventory.container.ContainerMachineRTG;
+import com.hbm.inventory.container.ContainerRtgFurnace;
 import com.hbm.inventory.fluid.FluidType;
 import com.hbm.inventory.fluid.Fluids;
 import com.hbm.inventory.gui.*;
@@ -316,6 +322,7 @@ public class JEIConfig implements IModPlugin {
 
         registry.addRecipeClickArea(GUIMachineCoker.class, 60, 22, 32, 18, COKER);
         registry.addRecipeClickArea(GUIMachineArcFurnaceLarge.class, 17, 36, 7, 70, ARC_FURNACE_SOLID);
+        registry.addRecipeClickArea(GUIMachineArcFurnaceLarge.class, 152, 36, 16, 70, ARC_FURNACE_FLUID);
         registry.addRecipeClickArea(GUIMachineCatalyticReformer.class, 67, 82, 24, 24, REFORMING);
         registry.addRecipeClickArea(GUIMachineHydrotreater.class, 85, 82, 24, 24, HYDROTREATING);
         registry.addRecipeClickArea(GUIMachinePUREX.class, 62, 25, 47, 9, PUREX);
@@ -329,7 +336,8 @@ public class JEIConfig implements IModPlugin {
         registry.addRecipeClickArea(GUIFurnaceSteel.class, 54, 36, 68, 5, VanillaRecipeCategoryUid.SMELTING);
         registry.addRecipeClickArea(GUIFurnaceSteel.class, 54, 54, 68, 5, VanillaRecipeCategoryUid.SMELTING);
         registry.addRecipeClickArea(GUIMicrowave.class, 104, 35, 22, 15, VanillaRecipeCategoryUid.SMELTING);
-        registry.addRecipeClickArea(GUIRtgFurnace.class, 102, 36, 22, 15, RTG);
+        registry.addRecipeClickArea(GUIRtgFurnace.class, 102, 36, 22, 15, VanillaRecipeCategoryUid.SMELTING);
+        registry.addRecipeClickArea(GUIRtgFurnace.class, 55, 35, 18, 16, RTG);
         registry.addRecipeClickArea(GUISolidifier.class, 42, 18, 38, 16, SOLIDIFICATION);
         registry.addRecipeClickArea(GUISolidifier.class, 75, 34, 8, 9, SOLIDIFICATION);
         registry.addRecipeClickArea(GUICompressor.class, 42, 27, 54, 16, COMPRESSING);
@@ -343,6 +351,7 @@ public class JEIConfig implements IModPlugin {
 		registry.addRecipeClickArea(GUIMachineEPress.class, 80, 35, 15, 15, PRESS);
 		registry.addRecipeClickArea(GUIDiFurnace.class, 102, 36, 21, 14, ALLOY);
 		registry.addRecipeClickArea(GUIDiFurnaceRTG.class, 102, 36, 21, 14, ALLOY);
+        registry.addRecipeClickArea(GUIDiFurnaceRTG.class, 58, 36, 18, 16, RTG);
 		registry.addRecipeClickArea(GUIMachineCentrifuge.class, 35, 9, 106, 40, CENTRIFUGE);
 		registry.addRecipeClickArea(GUIMachineGasCent.class, 70, 36, 36, 12, GAS_CENT);
         registry.addRecipeClickArea(GUIMachineSolderingStation.class, 72, 29, 32, 13, SOLDERING_STATION);
@@ -356,6 +365,7 @@ public class JEIConfig implements IModPlugin {
 		registry.addRecipeClickArea(GUIAnvil.class, 34, 26, 52-34, 44-26, ANVIL_SMITH);
 		registry.addRecipeClickArea(GUIAnvil.class, 12, 50, 48-12, 66-50, ANVIL_CON);
 		registry.addRecipeClickArea(GUIRBMKOutgasser.class, 64, 53, 48, 16, RBMKOUTGASSER);
+        registry.addRecipeClickArea(GUIMachineRTG.class, 134, 22, 16, 52, RTG);
         registry.addRecipeClickArea(GUIMachineArcWelder.class, 72, 38, 32, 13, ARC_WELDER);
         registry.addRecipeClickArea(GUIMachineRotaryFurnace.class, 63, 31, 32, 9, ROTARY_FURNACE);
         registry.addRecipeClickArea(GUIElectrolyserFluid.class, 62, 26, 12, 40, ELECTROLYSIS_FLUID);
@@ -372,6 +382,14 @@ public class JEIConfig implements IModPlugin {
         IRecipeTransferRegistry transferRegistry = registry.getRecipeTransferRegistry();
         transferRegistry.addRecipeTransferHandler(new ExposureChamberTransferInfo());
         transferRegistry.addRecipeTransferHandler(ContainerFurnaceCombo.class, COMBINATION, 0, 1, 4, 36);
+        transferRegistry.addRecipeTransferHandler(ContainerDiFurnace.class, ALLOY, 0, 2, 4, 36);
+        transferRegistry.addRecipeTransferHandler(ContainerDiFurnaceRTG.class, ALLOY, 0, 2, 9, 36);
+        transferRegistry.addRecipeTransferHandler(ContainerRtgFurnace.class, VanillaRecipeCategoryUid.SMELTING, 0, 1, 5, 36);
+        transferRegistry.addRecipeTransferHandler(ContainerRtgFurnace.class, RTG, 1, 3, 5, 36);
+        transferRegistry.addRecipeTransferHandler(ContainerMachineRTG.class, RTG, 0, 15, 15, 36);
+        transferRegistry.addRecipeTransferHandler(ContainerDiFurnaceRTG.class, RTG, 3, 6, 9, 36);
+        transferRegistry.addRecipeTransferHandler(ContainerMachinePress.class, PRESS, 1, 2, 4, 36);
+        transferRegistry.addRecipeTransferHandler(ContainerMachineEPress.class, PRESS, 1, 2, 5, 36);
 
         IIngredientBlacklist blacklist = registry.getJeiHelpers().getIngredientBlacklist();
         if(ClientConfig.JEI_HIDE_SECRETS.get()) {

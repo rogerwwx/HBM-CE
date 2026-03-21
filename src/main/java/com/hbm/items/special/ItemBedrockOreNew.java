@@ -39,6 +39,7 @@ import net.minecraftforge.client.model.ModelLoaderRegistry;
 import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
@@ -66,13 +67,13 @@ public class ItemBedrockOreNew extends Item implements IModelRegister, IClaimedM
     }
 
     @Override
-    public void getSubItems(CreativeTabs tab, NonNullList<ItemStack> items) {
+    public void getSubItems(@NotNull CreativeTabs tab, @NotNull NonNullList<ItemStack> items) {
         if (this.isInCreativeTab(tab)) {
             for (int j = 0; j < BedrockOreType.VALUES.length; j++) {
                 BedrockOreType type = BedrockOreType.VALUES[j];
                 for (int i = 0; i < BedrockOreGrade.VALUES.length; i++) {
                     BedrockOreGrade grade = BedrockOreGrade.VALUES[i];
-                    items.add(this.make(grade, type));
+                    items.add(make(grade, type));
                 }
             }
         }
@@ -160,7 +161,7 @@ public class ItemBedrockOreNew extends Item implements IModelRegister, IClaimedM
     @SideOnly(Side.CLIENT)
     private static class BedrockOreColorHandler implements IItemColor {
         @Override
-        public int colorMultiplier(ItemStack stack, int tintIndex) {
+        public int colorMultiplier(@NotNull ItemStack stack, int tintIndex) {
             if (tintIndex != 0) return 0xFFFFFF;
 
             ItemBedrockOreNew item = (ItemBedrockOreNew) stack.getItem();
@@ -171,7 +172,7 @@ public class ItemBedrockOreNew extends Item implements IModelRegister, IClaimedM
 
     @Override
     @SideOnly(Side.CLIENT)
-    public String getItemStackDisplayName(ItemStack stack) {
+    public @NotNull String getItemStackDisplayName(ItemStack stack) {
         int meta = stack.getItemDamage();
         String type = I18n.format(this.getUnlocalizedNameInefficiently(stack) + ".type." + this.getType(meta).suffix + ".name");
         return I18n.format(this.getUnlocalizedNameInefficiently(stack) + ".grade." + this.getGrade(meta).name().toLowerCase(Locale.US) + ".name", type);
@@ -179,7 +180,7 @@ public class ItemBedrockOreNew extends Item implements IModelRegister, IClaimedM
 
     @Override
     @SideOnly(Side.CLIENT)
-    public void addInformation(ItemStack stack, World worldIn, List<String> list, ITooltipFlag flagIn) {
+    public void addInformation(ItemStack stack, World worldIn, @NotNull List<String> list, @NotNull ITooltipFlag flagIn) {
         for(ProcessingTrait trait : this.getGrade(stack.getItemDamage()).traits) {
             list.add(I18nUtil.resolveKey(this.getUnlocalizedNameInefficiently(stack) + ".trait." + trait.name().toLowerCase(Locale.US)));
         }
@@ -236,7 +237,7 @@ public class ItemBedrockOreNew extends Item implements IModelRegister, IClaimedM
         return new ItemLayerModel(textures.build());
     }
 
-    public static enum BedrockOreType {
+    public enum BedrockOreType {
         //												primary									sulfuric															solvent																		radsolvent
         LIGHT_METAL(	0xFFFFFF, 0x353535, "light",	o(MAT_IRON, 9),		o(MAT_COPPER, 9),	o(MAT_TITANIUM, 6),	o(MAT_BAUXITE, 9),	o(MAT_CRYOLITE, 3),	o(MAT_CHLOROCALCITE, 5),	o(MAT_LITHIUM, 5),		o(MAT_SODIUM, 3),		o(MAT_CHLOROCALCITE, 6),	o(MAT_LITHIUM, 6),		o(MAT_SODIUM, 6)),
         HEAVY_METAL(	0x868686, 0x000000, "heavy",	o(MAT_TUNGSTEN, 9),	o(MAT_LEAD, 9),		o(MAT_GOLD, 2),		o(MAT_GOLD, 2),			o(MAT_BERYLLIUM, 3),	o(MAT_TUNGSTEN, 9),			o(MAT_LEAD, 9),			o(MAT_GOLD, 5),			o(MAT_BISMUTH, 1),			o(MAT_BISMUTH, 1),		o(MAT_GOLD, 6)),
@@ -248,15 +249,22 @@ public class ItemBedrockOreNew extends Item implements IModelRegister, IClaimedM
 
         public static final BedrockOreType[] VALUES = values();
 
-        public int light;
-        public int dark;
-        public String suffix;
-        public BedrockOreOutput primary1, primary2;
-        public BedrockOreOutput byproductAcid1, byproductAcid2, byproductAcid3;
-        public BedrockOreOutput byproductSolvent1, byproductSolvent2, byproductSolvent3;
-        public BedrockOreOutput byproductRad1, byproductRad2, byproductRad3;
+        public final int light;
+        public final int dark;
+        public final String suffix;
+        public final BedrockOreOutput primary1;
+        public final BedrockOreOutput primary2;
+        public final BedrockOreOutput byproductAcid1;
+        public final BedrockOreOutput byproductAcid2;
+        public final BedrockOreOutput byproductAcid3;
+        public final BedrockOreOutput byproductSolvent1;
+        public final BedrockOreOutput byproductSolvent2;
+        public final BedrockOreOutput byproductSolvent3;
+        public final BedrockOreOutput byproductRad1;
+        public final BedrockOreOutput byproductRad2;
+        public final BedrockOreOutput byproductRad3;
 
-        private BedrockOreType(int light, int dark, String suffix, BedrockOreOutput p1, BedrockOreOutput p2, BedrockOreOutput bA1, BedrockOreOutput bA2, BedrockOreOutput bA3, BedrockOreOutput bS1, BedrockOreOutput bS2, BedrockOreOutput bS3, BedrockOreOutput bR1, BedrockOreOutput bR2, BedrockOreOutput bR3) {
+        BedrockOreType(int light, int dark, String suffix, BedrockOreOutput p1, BedrockOreOutput p2, BedrockOreOutput bA1, BedrockOreOutput bA2, BedrockOreOutput bA3, BedrockOreOutput bS1, BedrockOreOutput bS2, BedrockOreOutput bS3, BedrockOreOutput bR1, BedrockOreOutput bR2, BedrockOreOutput bR3) {
             this.light = light;
             this.dark = dark;
             this.suffix = suffix;
@@ -283,7 +291,7 @@ public class ItemBedrockOreNew extends Item implements IModelRegister, IClaimedM
     public static final int arc = 0xC3A2A2;
     public static final int washed = 0xDBE2CB;
 
-    public static enum ProcessingTrait {
+    public enum ProcessingTrait {
         ROASTED,
         ARC,
         WASHED,
@@ -295,7 +303,7 @@ public class ItemBedrockOreNew extends Item implements IModelRegister, IClaimedM
         public static final ProcessingTrait[] VALUES = values();
     }
 
-    public static enum BedrockOreGrade {
+    public enum BedrockOreGrade {
         BASE(none, "base"),												//from the slopper
         BASE_ROASTED(roasted, "base", ROASTED),							//optional combination oven step, yields vitriol
         BASE_WASHED(washed, "base", WASHED),							//primitive-ass acidizer with water
@@ -328,11 +336,11 @@ public class ItemBedrockOreNew extends Item implements IModelRegister, IClaimedM
 
         public static final BedrockOreGrade[] VALUES = values();
 
-        public int tint;
-        public String prefix;
-        public ProcessingTrait[] traits;
+        public final int tint;
+        public final String prefix;
+        public final ProcessingTrait[] traits;
 
-        private BedrockOreGrade(int tint, String prefix, ProcessingTrait... traits) {
+        BedrockOreGrade(int tint, String prefix, ProcessingTrait... traits) {
             this.tint = tint;
             this.prefix = prefix;
             this.traits = traits;

@@ -14,12 +14,14 @@
 
 A definitive port of HBM's Nuclear Tech Mod from 1.7.10 to 1.12.2, the most completed one among others. Came from necessity as other developers have failed to update and maintain other forks.
 
-> **IMPORTANT: FOLLOW THE ISSUE TEMPLATE WHILE REPORTING ISSUES**  
-> Due to the amount of issues we get daily, we enforce strict issue report guidelines stated in the templates. 
+> [!IMPORTANT]
+> **FOLLOW THE ISSUE TEMPLATE WHILE REPORTING ISSUES**  
+> Due to the amount of issues we get daily, we enforce strict issue report guidelines stated in the templates.  
 Failure to follow the templates will result in closing and locking of the issue without a warning. Rule does not apply
-retroacitvely. Please respect our time and make sure issue reports are of quality.
+retroactively. Please respect our time and make sure issue reports are of quality.
 
-> **IMPORTANT: If you have Universal Tweaks installed, set `B:"Disable Fancy Missing Model"` to `false` to fix model rotation**  
+> [!NOTE]
+> If you have Universal Tweaks installed, set `B:"Disable Fancy Missing Model"` to `false` to fix model rotation  
 > This can be found at `config/Universal Tweaks - Tweaks.cfg`
 
 <br>
@@ -122,11 +124,11 @@ dependencies {
     // Java 8, unobfuscated
     implementation "com.hbm:ntm-ce:2.1.1.0-SNAPSHOT:dev"
     // Java 25, unobfuscated
-    implementation "com.hbm:ntm-ce:2.1.1.0-SNAPSHOT:dev-java25"
+    implementation "com.hbm:ntm-ce-java25:2.1.1.0-SNAPSHOT:dev"
     // Java 8, obfuscated
     implementation "com.hbm:ntm-ce:2.1.1.0-SNAPSHOT"
     // Java 25, obfuscated
-    implementation "com.hbm:ntm-ce:2.1.1.0-SNAPSHOT:java25"
+    implementation "com.hbm:ntm-ce-java25:2.1.1.0-SNAPSHOT"
 }
 ```
 
@@ -152,5 +154,5 @@ dependencies {
 }
 ```
 
-Normally you should use unobfuscated jars (`:dev` / `:dev-java25`) for development.  
+Normally you should use unobfuscated jars for development.  
 If you are on Cleanroom and is using JDK 25 then both Java 8 and Java 25 variants are fine; otherwise the Java 8 ones are recommended.

@@ -1,9 +1,12 @@
 package com.hbm.blocks.network.energy;
 
 import com.hbm.Tags;
+import com.hbm.blocks.ICustomBlockItem;
+import com.hbm.interfaces.IBlockSpecialPlacementAABB;
 import com.hbm.blocks.ModBlocks;
 import com.hbm.render.loader.HFRWavefrontObject;
 import com.hbm.items.IDynamicModels;
+import com.hbm.items.block.ItemBlockSpecialAABB;
 import com.hbm.lib.ForgeDirection;
 import com.hbm.lib.Library;
 import com.hbm.render.model.BlockCableBakedModel;
@@ -22,6 +25,8 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.renderer.texture.TextureMap;
 import net.minecraft.entity.Entity;
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemBlock;
+import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumBlockRenderType;
 import net.minecraft.util.EnumFacing;
@@ -34,13 +39,14 @@ import net.minecraftforge.client.event.ModelBakeEvent;
 import net.minecraftforge.client.model.ModelLoader;
 import net.minecraftforge.energy.CapabilityEnergy;
 import net.minecraftforge.energy.IEnergyStorage;
+import net.minecraftforge.fml.common.registry.ForgeRegistries;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
 import javax.annotation.Nullable;
 import java.util.List;
 
-public class BlockCable extends BlockContainer implements IDynamicModels {
+public class BlockCable extends BlockContainer implements IDynamicModels, ICustomBlockItem, IBlockSpecialPlacementAABB {
 	// Th3_Sl1ze: believe me, this shit will inevitably cause stackoverflowexception if you're going to load a shitton of cables in a single place
 	// though, it still works and it doesn't crash
 	public static final PropertyBool POS_X = PropertyBool.create("posx");
@@ -183,6 +189,11 @@ public class BlockCable extends BlockContainer implements IDynamicModels {
 	}
 
 	@Override
+	public AxisAlignedBB getCollisionBoundingBoxForPlacement(World worldIn, BlockPos pos, IBlockState stateForPlacement, ItemStack stack) {
+		return getBoundingBox(stateForPlacement, worldIn, pos);
+	}
+
+	@Override
 	public boolean isOpaqueCube(IBlockState state) {
 		return false;
 	}
@@ -260,5 +271,12 @@ public class BlockCable extends BlockContainer implements IDynamicModels {
 		Item item = Item.getItemFromBlock(this);
 		ModelResourceLocation inv = new ModelResourceLocation(this.getRegistryName(), "inventory");
 		ModelLoader.setCustomModelResourceLocation(item, 0, inv);
+	}
+
+	@Override
+	public void registerItem() {
+		ItemBlock itemBlock = new ItemBlockSpecialAABB<>(this);
+		itemBlock.setRegistryName(this.getRegistryName());
+		ForgeRegistries.ITEMS.register(itemBlock);
 	}
 }

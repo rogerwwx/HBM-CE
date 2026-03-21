@@ -117,13 +117,6 @@ public class BlockSellafieldSlaked extends BlockBase implements IDynamicModels {
 
 
     @Override
-    public void onBlockPlacedBy(World world, BlockPos pos, IBlockState state, EntityLivingBase placer, ItemStack stack) {
-        int meta = stack.getMetadata();
-        world.setBlockState(pos, state.withProperty(SHADE, meta), 3);
-    }
-
-
-    @Override
     protected BlockStateContainer createBlockState() {
         return new ExtendedBlockState(
                 this,

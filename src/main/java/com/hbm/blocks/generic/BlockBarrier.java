@@ -126,14 +126,6 @@ public class BlockBarrier extends BlockBakeBase implements IDynamicModels {
   }
 
   @Override
-  public void onBlockPlacedBy(
-          World worldIn, @NotNull BlockPos pos, IBlockState state, EntityLivingBase placer, @NotNull ItemStack stack) {
-
-    EnumFacing facing = placer.getHorizontalFacing().getOpposite();
-    worldIn.setBlockState(pos, state.withProperty(FACING, facing), 2);
-  }
-
-  @Override
   public @NotNull IBlockState getStateForPlacement(
           @NotNull World world,
           @NotNull BlockPos pos,

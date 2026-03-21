@@ -9,6 +9,8 @@ public final class HbmCoreTransformer implements IClassTransformer {
 
         // a class is transformed at most once
         return switch (transformedName) {
+            case BufferBuilderTransformer.TARGET ->
+                    BufferBuilderTransformer.transform(name, transformedName, basicClass);
             case GlStateManagerTransformer.TARGET ->
                     GlStateManagerTransformer.transform(name, transformedName, basicClass);
             case ContainerTransformer.TARGET ->

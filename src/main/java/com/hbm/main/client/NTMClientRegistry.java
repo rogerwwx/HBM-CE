@@ -29,11 +29,7 @@ import com.hbm.main.MainRegistry;
 import com.hbm.main.ResourceManager;
 import com.hbm.render.GuiCTMWarning;
 import com.hbm.render.icon.RegistrationUtils;
-import com.hbm.render.item.FancyMissingModelPerspective;
-import com.hbm.render.item.BakedModelNoFPV;
-import com.hbm.render.item.TEISRBase;
-import com.hbm.render.item.TemplateBakedModel;
-import com.hbm.render.item.WrappedTEISRModel;
+import com.hbm.render.item.*;
 import com.hbm.render.item.weapon.B92BakedModel;
 import com.hbm.render.item.weapon.ItemRedstoneSwordRender;
 import com.hbm.render.item.weapon.ItemRenderGunAnim;
@@ -59,9 +55,10 @@ import net.minecraft.util.registry.IRegistry;
 import net.minecraftforge.client.event.*;
 import net.minecraftforge.client.model.IModel;
 import net.minecraftforge.client.model.ModelLoader;
+import net.minecraftforge.fml.common.eventhandler.EventPriority;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
-import java.util.*;
+import java.util.Objects;
 
 
 /**
@@ -239,6 +236,8 @@ public class NTMClientRegistry {
         ItemAutogen.registerSprites(map);
 
         IDynamicModels.registerSprites(map);
+        StaticTesrBakedModels.registerSprites(map);
+        StaticDecoBakedModels.registerSprites(map);
 
         //Debug stuff
         debugPower = map.registerSprite(new ResourceLocation(Tags.MODID, "particle/debug_power"));
@@ -260,40 +259,6 @@ public class NTMClientRegistry {
 
     @SubscribeEvent
     public void textureStitchPost(TextureStitchEvent.Post evt) {
-
-
-        RenderStructureMarker.fusion[0][0] = evt.getMap().getAtlasSprite(Tags.MODID + ":blocks/block_steel");
-        RenderStructureMarker.fusion[0][1] = evt.getMap().getAtlasSprite(Tags.MODID + ":blocks/fusion_conductor_side_alt3");
-        RenderStructureMarker.fusion[1][0] = evt.getMap().getAtlasSprite(Tags.MODID + ":blocks/fusion_heater_top");
-        RenderStructureMarker.fusion[1][1] = evt.getMap().getAtlasSprite(Tags.MODID + ":blocks/fusion_heater_side");
-        RenderStructureMarker.fusion[2][0] = evt.getMap().getAtlasSprite(Tags.MODID + ":blocks/block_tungsten");
-        RenderStructureMarker.fusion[2][1] = evt.getMap().getAtlasSprite(Tags.MODID + ":blocks/fusion_hatch");
-        RenderStructureMarker.fusion[3][0] = evt.getMap().getAtlasSprite(Tags.MODID + ":blocks/fusion_motor_top_alt");
-        RenderStructureMarker.fusion[3][1] = evt.getMap().getAtlasSprite(Tags.MODID + ":blocks/fusion_motor_side_alt");
-        RenderStructureMarker.fusion[4][0] = evt.getMap().getAtlasSprite(Tags.MODID + ":blocks/fusion_center_top_alt");
-        RenderStructureMarker.fusion[4][1] = evt.getMap().getAtlasSprite(Tags.MODID + ":blocks/fusion_center_side_alt");
-        RenderStructureMarker.fusion[5][0] = evt.getMap().getAtlasSprite(Tags.MODID + ":blocks/fusion_center_top_alt");
-        RenderStructureMarker.fusion[5][1] = evt.getMap().getAtlasSprite(Tags.MODID + ":blocks/fusion_core_side_alt");
-        RenderStructureMarker.fusion[6][0] = evt.getMap().getAtlasSprite(Tags.MODID + ":blocks/block_tungsten");
-        RenderStructureMarker.fusion[6][1] = evt.getMap().getAtlasSprite(Tags.MODID + ":blocks/block_tungsten");
-
-        RenderStructureMarker.watz[0][0] = evt.getMap().getAtlasSprite(Tags.MODID + ":blocks/reinforced_brick");
-        RenderStructureMarker.watz[0][1] = evt.getMap().getAtlasSprite(Tags.MODID + ":blocks/reinforced_brick");
-        RenderStructureMarker.watz[1][0] = evt.getMap().getAtlasSprite(Tags.MODID + ":blocks/reinforced_brick");
-        RenderStructureMarker.watz[1][1] = evt.getMap().getAtlasSprite(Tags.MODID + ":blocks/watz_hatch");
-        RenderStructureMarker.watz[2][0] = evt.getMap().getAtlasSprite(Tags.MODID + ":blocks/watz_control_top");
-        RenderStructureMarker.watz[2][1] = evt.getMap().getAtlasSprite(Tags.MODID + ":blocks/watz_control_side");
-        RenderStructureMarker.watz[3][0] = evt.getMap().getAtlasSprite(Tags.MODID + ":blocks/watz_end");
-        RenderStructureMarker.watz[3][1] = evt.getMap().getAtlasSprite(Tags.MODID + ":blocks/watz_end");
-        RenderStructureMarker.watz[4][0] = evt.getMap().getAtlasSprite(Tags.MODID + ":blocks/watz_conductor_top");
-        RenderStructureMarker.watz[4][1] = evt.getMap().getAtlasSprite(Tags.MODID + ":blocks/watz_conductor_side");
-        RenderStructureMarker.watz[5][0] = evt.getMap().getAtlasSprite(Tags.MODID + ":blocks/watz_computer");
-        RenderStructureMarker.watz[5][1] = evt.getMap().getAtlasSprite(Tags.MODID + ":blocks/watz_computer");
-        RenderStructureMarker.watz[6][0] = evt.getMap().getAtlasSprite(Tags.MODID + ":blocks/watz_cooler");
-        RenderStructureMarker.watz[6][1] = evt.getMap().getAtlasSprite(Tags.MODID + ":blocks/watz_cooler");
-        RenderStructureMarker.watz[7][0] = evt.getMap().getAtlasSprite(Tags.MODID + ":blocks/watz_element_top");
-        RenderStructureMarker.watz[7][1] = evt.getMap().getAtlasSprite(Tags.MODID + ":blocks/watz_element_side");
-
         RenderMultiblock.structLauncher = evt.getMap().getAtlasSprite(Tags.MODID + ":blocks/struct_launcher");
         RenderMultiblock.structScaffold = evt.getMap().getAtlasSprite(Tags.MODID + ":blocks/struct_scaffold");
 
@@ -341,12 +306,12 @@ public class NTMClientRegistry {
         }
 
         teisr.itemModel = model;
-        if (owned.useIdentityTransform) {
-            reg.putObject(targetLocation, new BakedModelNoFPV(teisr, model));
+        if (teisr.useFMMPerspective(owned.item)) {
+            reg.putObject(targetLocation, new FancyMissingModelPerspective(teisr, model));
             return;
         }
-        if (owned.item instanceof net.minecraft.item.ItemArmor) {
-            reg.putObject(targetLocation, new FancyMissingModelPerspective(teisr, model));
+        if (owned.useIdentityTransform) {
+            reg.putObject(targetLocation, new BakedModelNoFPV(teisr, model));
             return;
         }
         reg.putObject(targetLocation, new WrappedTEISRModel(teisr, model, null, binding, false));
@@ -533,10 +498,10 @@ public class NTMClientRegistry {
         IDynamicModels.bakeModels(evt);
 
 
+        IRegistry<ModelResourceLocation, IBakedModel> registry = evt.getModelRegistry();
         for (SpecialContainerFillLists.EnumCanister e : SpecialContainerFillLists.EnumCanister.VALUES) {
-            Object o = evt.getModelRegistry().getObject(e.getResourceLocation());
-            if (o instanceof IBakedModel)
-                e.putRenderModel((IBakedModel) o);
+            IBakedModel o = registry.getObject(e.getResourceLocation());
+            e.putRenderModel(o);
         }
         for (SpecialContainerFillLists.EnumCell cellType : SpecialContainerFillLists.EnumCell.VALUES) {
             FluidType fluid = cellType.getFluid();
@@ -548,28 +513,23 @@ public class NTMClientRegistry {
             );
         }
         for (SpecialContainerFillLists.EnumGasCanister e : SpecialContainerFillLists.EnumGasCanister.VALUES) {
-            Object o = evt.getModelRegistry().getObject(e.getResourceLocation());
-            if (o instanceof IBakedModel)
-                e.putRenderModel((IBakedModel) o);
+            IBakedModel o = registry.getObject(e.getResourceLocation());
+            e.putRenderModel(o);
         }
 
         ResourceManager.init();
-        Object object1 = evt.getModelRegistry().getObject(RedstoneSword.rsModel);
-        if (object1 instanceof IBakedModel) {
-            IBakedModel model = (IBakedModel) object1;
-            ItemRedstoneSwordRender.INSTANCE.itemModel = model;
-            evt.getModelRegistry().putObject(RedstoneSword.rsModel, new ItemRenderRedstoneSword());
-        }
+        ItemRedstoneSwordRender.INSTANCE.itemModel = registry.getObject(RedstoneSword.rsModel);
+        registry.putObject(RedstoneSword.rsModel, new ItemRenderRedstoneSword());
         wrapModel(evt, ItemCrucibleTemplate.location);
-        Object object3 = evt.getModelRegistry().getObject(GunB92.b92Model);
-        if (object3 instanceof IBakedModel) {
-            IBakedModel model = (IBakedModel) object3;
-            ItemRenderGunAnim.INSTANCE.b92ItemModel = model;
-            evt.getModelRegistry().putObject(GunB92.b92Model, new B92BakedModel());
-        }
+        ItemRenderGunAnim.INSTANCE.b92ItemModel = registry.getObject(GunB92.b92Model);
+        registry.putObject(GunB92.b92Model, new B92BakedModel());
+        wrapAllTeisrModels(registry);
+    }
 
-        IRegistry<ModelResourceLocation, IBakedModel> reg = evt.getModelRegistry();
-        wrapAllTeisrModels(reg);
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public void onModelBakeLast(ModelBakeEvent evt) {
+        StaticTesrBakedModels.bakeModels(evt.getModelRegistry());
+        StaticDecoBakedModels.bakeModels(evt.getModelRegistry());
     }
 
     private void wrapModel(ModelBakeEvent event, ModelResourceLocation location) {

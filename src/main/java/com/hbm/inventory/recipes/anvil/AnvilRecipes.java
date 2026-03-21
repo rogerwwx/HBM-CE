@@ -404,17 +404,6 @@ public class AnvilRecipes extends SerializableRecipe {
 						new ComparableStack(ModItems.circuit, 2, EnumCircuitType.VACUUM_TUBE.ordinal()),
 						new ComparableStack(ModItems.sawblade)
 				}, new AnvilOutput(new ItemStack(ModBlocks.machine_autosaw))).setTier(2));
-		// TODO
-		/*constructionRecipes.add(new AnvilConstructionRecipe(
-				new AStack[] {
-						new OreDictStack(STEEL.ingot(), 6),
-						new OreDictStack(IRON.plate528(), 8),
-						new OreDictStack(ANY_PLASTIC.ingot(), 4),
-						new ComparableStack(ModItems.generator_steel, 2),
-						new ComparableStack(ModItems.turbine_titanium, 1),
-						new ComparableStack(ModItems.thermo_element, 3),
-						new ComparableStack(ModItems.crt_display, 1)
-				}, new AnvilOutput(new ItemStack(ModBlocks.machine_industrial_generator))).setTier(2));*/
 
 		constructionRecipes.add(new AnvilConstructionRecipe(
 				new AStack[] {

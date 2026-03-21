@@ -1,5 +1,6 @@
 package com.hbm.items.food;
 
+import com.google.common.collect.ImmutableMap;
 import com.hbm.Tags;
 import com.hbm.items.ClaimedModelLocationRegistry;
 import com.hbm.items.IClaimedModelLocation;
@@ -14,7 +15,9 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.World;
 import net.minecraftforge.client.event.ModelBakeEvent;
+import net.minecraftforge.client.model.IModel;
 import net.minecraftforge.client.model.ModelLoader;
+import net.minecraftforge.client.model.ModelLoaderRegistry;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
@@ -83,5 +86,16 @@ public class ItemTemFlakes extends ItemFood implements IDynamicModels, IClaimedM
 	@SideOnly(Side.CLIENT)
 	public boolean ownsModelLocation(ModelResourceLocation location) {
 		return IClaimedModelLocation.isInventoryLocation(location, new ResourceLocation(Tags.MODID, ROOT_PATH + textureName));
+	}
+
+	@Override
+	@SideOnly(Side.CLIENT)
+	public IModel loadModel(ModelResourceLocation location) {
+		try {
+			IModel generated = ModelLoaderRegistry.getModel(new ResourceLocation("item/generated"));
+			return generated.retexture(ImmutableMap.of("layer0", new ResourceLocation(Tags.MODID, ROOT_PATH + textureName).toString()));
+		} catch (Exception e) {
+			return IClaimedModelLocation.super.loadModel(location);
+		}
 	}
 }

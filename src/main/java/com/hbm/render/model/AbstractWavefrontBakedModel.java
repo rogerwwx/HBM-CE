@@ -5,16 +5,14 @@ import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.block.model.ItemCameraTransforms;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.renderer.vertex.VertexFormat;
-import net.minecraft.client.renderer.vertex.VertexFormatElement;
 import net.minecraft.util.EnumFacing;
-import net.minecraftforge.client.model.pipeline.UnpackedBakedQuad;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
-import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.NotNull;
 
 import javax.vecmath.Vector3f;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Base implementation for baked models that render exported Wavefront meshes.
@@ -37,44 +35,6 @@ public abstract class AbstractWavefrontBakedModel extends AbstractBakedModel {
         this.tx = tx;
         this.ty = ty;
         this.tz = tz;
-    }
-
-    private static int computeShade(float nx, float ny, float nz) {
-        float brightness = (ny + 0.7F) * 0.9F - Math.abs(nx) * 0.1F + Math.abs(nz) * 0.1F;
-        if (brightness < 0.45F) brightness = 0.45F;
-        if (brightness > 1.0F) brightness = 1.0F;
-        return clampColor((int) (brightness * 255.0F));
-    }
-
-    protected static int clampColor(int value) {
-        return Math.min(Math.max(value, 0), 255);
-    }
-
-    @Contract("_, _, _, _ -> new")
-    protected static double @NotNull [] rotateX(double x, double y, double z, float angle) {
-        double cos = Math.cos(angle);
-        double sin = Math.sin(angle);
-        double ny = y * cos + z * sin;
-        double nz = z * cos - y * sin;
-        return new double[]{x, ny, nz};
-    }
-
-    @Contract("_, _, _, _ -> new")
-    protected static double @NotNull [] rotateY(double x, double y, double z, float angle) {
-        double cos = Math.cos(angle);
-        double sin = Math.sin(angle);
-        double nx = x * cos + z * sin;
-        double nz = -x * sin + z * cos;
-        return new double[]{nx, y, nz};
-    }
-
-    @Contract("_, _, _, _ -> new")
-    protected static double @NotNull [] rotateZ(double x, double y, double z, float angle) {
-        double cos = Math.cos(angle);
-        double sin = Math.sin(angle);
-        double nx = x * cos + y * sin;
-        double ny = y * cos - x * sin;
-        return new double[]{nx, ny, z};
     }
 
     protected List<BakedQuad> bakeSimpleQuads(Set<String> partNames, float roll, float pitch, float yaw, boolean applyShading, boolean centerToBlock, TextureAtlasSprite sprite) {
@@ -101,15 +61,15 @@ public abstract class AbstractWavefrontBakedModel extends AbstractBakedModel {
             for (Face face : group.faces) {
                 Vertex normal = face.faceNormal;
 
-                double[] n1 = rotateX(normal.x, normal.y, normal.z, roll);
-                double[] n2 = rotateZ(n1[0], n1[1], n1[2], pitch);
-                double[] n3 = rotateY(n2[0], n2[1], n2[2], yaw);
+                double[] n1 = GeometryBakeUtil.rotateX(normal.x, normal.y, normal.z, roll);
+                double[] n2 = GeometryBakeUtil.rotateZ(n1[0], n1[1], n1[2], pitch);
+                double[] n3 = GeometryBakeUtil.rotateY(n2[0], n2[1], n2[2], yaw);
 
                 float fnx = (float) n3[0];
                 float fny = (float) n3[1];
                 float fnz = (float) n3[2];
 
-                int color = applyShading ? computeShade(fnx, fny, fnz) : 255;
+                int color = applyShading ? GeometryBakeUtil.computeShade(fnx, fny, fnz) : 255;
 
                 int vertexCount = face.vertices.length;
                 if (vertexCount < 3) {
@@ -123,14 +83,15 @@ public abstract class AbstractWavefrontBakedModel extends AbstractBakedModel {
                 float[] pz = new float[4];
                 float[] uu = new float[4];
                 float[] vv = new float[4];
+                Vector3f[] vertexNormals = new Vector3f[4];
 
                 for (int v = 0; v < 4; v++) {
                     int idx = indices[v];
                     Vertex vertex = face.vertices[idx];
 
-                    double[] p1 = rotateX(vertex.x, vertex.y, vertex.z, roll);
-                    double[] p2 = rotateZ(p1[0], p1[1], p1[2], pitch);
-                    double[] p3 = rotateY(p2[0], p2[1], p2[2], yaw);
+                    double[] p1 = GeometryBakeUtil.rotateX(vertex.x, vertex.y, vertex.z, roll);
+                    double[] p2 = GeometryBakeUtil.rotateZ(p1[0], p1[1], p1[2], pitch);
+                    double[] p3 = GeometryBakeUtil.rotateY(p2[0], p2[1], p2[2], yaw);
 
                     float x = (float) p3[0];
                     float y = (float) p3[1];
@@ -150,6 +111,22 @@ public abstract class AbstractWavefrontBakedModel extends AbstractBakedModel {
                     uu[v] = (float) (tex.u * 16.0D);
                     vv[v] = (float) (tex.v * 16.0D);
 
+                    Vertex vertexNormal = face.vertexNormals != null && idx < face.vertexNormals.length ? face.vertexNormals[idx] : null;
+                    if (vertexNormal != null) {
+                        double[] vn1 = GeometryBakeUtil.rotateX(vertexNormal.x, vertexNormal.y, vertexNormal.z, roll);
+                        double[] vn2 = GeometryBakeUtil.rotateZ(vn1[0], vn1[1], vn1[2], pitch);
+                        double[] vn3 = GeometryBakeUtil.rotateY(vn2[0], vn2[1], vn2[2], yaw);
+                        Vector3f vectorNormal = new Vector3f((float) vn3[0], (float) vn3[1], (float) vn3[2]);
+                        if (vectorNormal.lengthSquared() > 0.0F) {
+                            vectorNormal.normalize();
+                        } else {
+                            vectorNormal.set(fnx, fny, fnz);
+                        }
+                        vertexNormals[v] = vectorNormal;
+                    } else {
+                        vertexNormals[v] = new Vector3f(fnx, fny, fnz);
+                    }
+
                     px[v] = x;
                     py[v] = y;
                     pz[v] = z;
@@ -159,29 +136,11 @@ public abstract class AbstractWavefrontBakedModel extends AbstractBakedModel {
                 Vector3f vectorNormal = new Vector3f(fnx, fny, fnz);
                 vectorNormal.normalize();
 
-                geometries.add(new FaceGeometry(facing, px, py, pz, uu, vv, vectorNormal, color));
+                geometries.add(new FaceGeometry(facing, px, py, pz, uu, vv, vertexNormals, color));
             }
         }
 
         return geometries;
-    }
-
-    protected void putVertex(UnpackedBakedQuad.Builder builder, float x, float y, float z, float u16, float v16, int cr, int cg, int cb, Vector3f normal, TextureAtlasSprite sprite) {
-        for (int elementIndex = 0; elementIndex < format.getElementCount(); elementIndex++) {
-            VertexFormatElement element = format.getElement(elementIndex);
-            switch (element.getUsage()) {
-                case POSITION -> builder.put(elementIndex, x, y, z);
-                case COLOR -> builder.put(elementIndex, cr / 255.0F, cg / 255.0F, cb / 255.0F, 1.0F);
-                case UV -> {
-                    if (element.getIndex() == 0)
-                        builder.put(elementIndex, sprite.getInterpolatedU(u16), sprite.getInterpolatedV(v16));
-                    else builder.put(elementIndex, 0.0F, 0.0F);
-                }
-                case NORMAL -> builder.put(elementIndex, normal.x, normal.y, normal.z);
-                case PADDING -> builder.put(elementIndex, 0.0F);
-                default -> builder.put(elementIndex);
-            }
-        }
     }
 
     protected final class FaceGeometry {
@@ -191,29 +150,50 @@ public abstract class AbstractWavefrontBakedModel extends AbstractBakedModel {
         private final float[] pz;
         private final float[] uu;
         private final float[] vv;
-        private final Vector3f normal;
+        private final Vector3f[] vertexNormals;
         private final int color;
 
-        private FaceGeometry(EnumFacing facing, float[] px, float[] py, float[] pz, float[] uu, float[] vv, Vector3f normal, int color) {
+        private FaceGeometry(EnumFacing facing, float[] px, float[] py, float[] pz, float[] uu, float[] vv, Vector3f[] vertexNormals, int color) {
             this.facing = facing;
             this.px = px;
             this.py = py;
             this.pz = pz;
             this.uu = uu;
             this.vv = vv;
-            this.normal = normal;
+            this.vertexNormals = vertexNormals;
             this.color = color;
         }
 
         public BakedQuad buildQuad(TextureAtlasSprite sprite, int tintIndex) {
-            UnpackedBakedQuad.Builder builder = new UnpackedBakedQuad.Builder(format);
-            builder.setQuadOrientation(facing);
-            builder.setTexture(sprite);
-            builder.setApplyDiffuseLighting(true);
-            if (tintIndex >= 0) builder.setQuadTint(tintIndex);
+            return buildQuad(sprite, tintIndex, 1.0F, 1.0F);
+        }
+
+        public BakedQuad buildQuad(TextureAtlasSprite sprite, int tintIndex, float uScale, float vScale) {
+            int[] vertexData = new int[format.getIntegerSize() * 4];
+            float[] scratch = new float[4];
             for (int i = 0; i < 4; i++)
-                putVertex(builder, px[i], py[i], pz[i], uu[i], vv[i], color, color, color, normal, sprite);
-            return builder.build();
+                GeometryBakeUtil.putVertex(format, vertexData, i, px[i], py[i], pz[i], uu[i] * uScale, vv[i] * vScale,
+                        color, color, color, vertexNormals[i], sprite, scratch);
+            return new BakedQuad(vertexData, tintIndex, facing, sprite, true, format);
+        }
+
+        public BakedQuad buildBackQuad(TextureAtlasSprite sprite, int tintIndex) {
+            return buildBackQuad(sprite, tintIndex, 1.0F, 1.0F);
+        }
+
+        public BakedQuad buildBackQuad(TextureAtlasSprite sprite, int tintIndex, float uScale, float vScale) {
+            int[] vertexData = new int[format.getIntegerSize() * 4];
+            float[] scratch = new float[4];
+            int[] order = new int[]{0, 3, 2, 1};
+            int outIndex = 0;
+            for (int index : order) {
+                Vector3f normal = vertexNormals[index];
+                Vector3f reversedNormal = new Vector3f(-normal.x, -normal.y, -normal.z);
+                int vertexIndex = outIndex++;
+                GeometryBakeUtil.putVertex(format, vertexData, vertexIndex, px[index], py[index], pz[index],
+                        uu[index] * uScale, vv[index] * vScale, color, color, color, reversedNormal, sprite, scratch);
+            }
+            return new BakedQuad(vertexData, tintIndex, facing.getOpposite(), sprite, true, format);
         }
     }
 }

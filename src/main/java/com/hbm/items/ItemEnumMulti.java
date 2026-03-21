@@ -1,5 +1,6 @@
 package com.hbm.items;
 
+import com.google.common.collect.ImmutableMap;
 import com.hbm.Tags;
 import com.hbm.util.EnumUtil;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
@@ -13,7 +14,9 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.client.event.ModelBakeEvent;
+import net.minecraftforge.client.model.IModel;
 import net.minecraftforge.client.model.ModelLoader;
+import net.minecraftforge.client.model.ModelLoaderRegistry;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
@@ -152,6 +155,18 @@ public class ItemEnumMulti<E extends Enum<E>> extends ItemBase implements IDynam
     @SideOnly(Side.CLIENT)
     protected boolean hasSyntheticTeisrBinding() {
         return ClaimedModelLocationRegistry.hasSyntheticTeisrBinding(this);
+    }
+
+    @Override
+    @SideOnly(Side.CLIENT)
+    public IModel loadModel(ModelResourceLocation location) {
+        try {
+            ResourceLocation textureLocation = new ResourceLocation(location.getNamespace(), location.getPath());
+            IModel generated = ModelLoaderRegistry.getModel(new ResourceLocation("item/generated"));
+            return generated.retexture(ImmutableMap.of("layer0", textureLocation.toString()));
+        } catch (Exception e) {
+            return IClaimedModelLocation.super.loadModel(location);
+        }
     }
 
     // srsly guys, do you think I'd create separate classes just for the sake of description?

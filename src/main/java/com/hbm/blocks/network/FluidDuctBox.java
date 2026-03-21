@@ -168,12 +168,6 @@ public class FluidDuctBox extends FluidDuctBase implements IDynamicModels, ILook
         return new ItemStack(Item.getItemFromBlock(this), 1, this.getMetaFromState(state));
     }
 
-    @Override
-    public void onBlockPlacedBy(World worldIn, BlockPos pos, IBlockState state, EntityLivingBase placer, ItemStack stack) {
-        int meta = stack.getMetadata();
-        worldIn.setBlockState(pos, this.getStateFromMeta(meta), 3);
-    }
-
     protected boolean canConnectTo(IBlockAccess world, int x, int y, int z, EnumFacing dir, TileEntity tile) {
         if (tile instanceof TileEntityPipeBaseNT pipeBaseNT) {
             FluidType type = pipeBaseNT.getType();
@@ -384,7 +378,7 @@ public class FluidDuctBox extends FluidDuctBase implements IDynamicModels, ILook
     }
 
     @Override
-    public AxisAlignedBB getCollisionBoundingBoxForPlacement(World source, BlockPos pos, ItemStack stack) {
+    public AxisAlignedBB getCollisionBoundingBoxForPlacement(World source, BlockPos pos, IBlockState stateForPlacement, ItemStack stack) {
         FluidType te = Fluids.NONE;
         boolean nX = canConnectTo(source, pos.getX(), pos.getY(), pos.getZ(), EnumFacing.WEST, te);
         boolean pX = canConnectTo(source, pos.getX(), pos.getY(), pos.getZ(), EnumFacing.EAST, te);
@@ -396,7 +390,7 @@ public class FluidDuctBox extends FluidDuctBase implements IDynamicModels, ILook
         int mask = (pX ? 32 : 0) + (nX ? 16 : 0) + (pY ? 8 : 0) + (nY ? 4 : 0) + (pZ ? 2 : 0) + (nZ ? 1 : 0);
         int count = (pX ? 1 : 0) + (nX ? 1 : 0) + (pY ? 1 : 0) + (nY ? 1 : 0) + (pZ ? 1 : 0) + (nZ ? 1 : 0);
 
-        int meta = stack.getMetadata();
+        int meta = stateForPlacement.getValue(META);
         float lower = 0.125F;
         float upper = 0.875F;
         float jLower = 0.0625F;

@@ -50,6 +50,7 @@ public class ItemRBMKLid extends Item {
 			} else {
 				world.playSound(null, bpos.getX() + 0.5, bpos.getY() + 0.5, bpos.getZ() + 0.5, SoundEvents.BLOCK_STONE_PLACE, SoundCategory.BLOCKS, 1, 0.8F);
 			}
+			tile.explodeOnBroken = false;
 			NBTTagCompound nbt = tile.writeToNBT(new NBTTagCompound());
 
 			IBlockState newState = b.getStateFromMeta(metaOffset + RBMKBase.offset);
@@ -61,6 +62,7 @@ public class ItemRBMKLid extends Item {
 				newTe.markDirty();
 				world.notifyBlockUpdate(new BlockPos(pos[0], pos[1], pos[2]), newState, newState, 3);
 			}
+			tile.explodeOnBroken = true;
 
 			player.getHeldItem(hand).shrink(1);
 

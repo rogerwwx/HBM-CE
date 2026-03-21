@@ -197,17 +197,13 @@ public class TileEntityMachineEPress extends TileEntityMachineBase implements IT
 			default -> false;
 		};
 	}
-
+	@Override
 	public int[] getAccessibleSlotsFromSide(@NotNull EnumFacing side) {
-		if (side == EnumFacing.DOWN) return new int[]{3};
-		if (side == EnumFacing.UP) return new int[]{2};
-		return new int[]{0, 1, 2};
+		return new int[]{ 1, 2, 3 };
 	}
 
 	@Override
-	public boolean canExtractItem(int slot, ItemStack itemStack, int amount) {
-		return slot == 3;
-	}
+	public boolean canExtractItem(int slot, ItemStack itemStack, int amount) { return slot == 3; }
 	@NotNull
 	@Override
 	public NBTTagCompound writeToNBT(NBTTagCompound nbt) {

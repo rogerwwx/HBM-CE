@@ -6,8 +6,8 @@ import com.hbm.main.ResourceManager;
 import com.hbm.tileentity.machine.rbmk.TileEntityRBMKControl;
 import com.hbm.tileentity.machine.rbmk.TileEntityRBMKControlAuto;
 import com.hbm.tileentity.machine.rbmk.TileEntityRBMKControlManual;
+import com.hbm.tileentity.machine.rbmk.RBMKDials;
 
-import net.minecraft.block.Block;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
@@ -33,18 +33,8 @@ public class RenderRBMKControlRod extends TileEntitySpecialRenderer<TileEntityRB
 
 		GlStateManager.pushMatrix();
 
-		int offset = 1;
+		int offset = RBMKDials.getColumnHeight(te.getWorld());
 		BlockPos pos = te.getPos();
-		Block blockType = te.getBlockType();
-
-		for(int o = 1; o < 16; o++) {
-			BlockPos checkPos = pos.up(o);
-			if(te.getWorld().getBlockState(checkPos).getBlock() == blockType) {
-				offset = o;
-			} else {
-				break;
-			}
-		}
 
 		GlStateManager.translate(x + 0.5, y + offset, z + 0.5);
 

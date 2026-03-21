@@ -67,9 +67,6 @@ public class ResourceManager {
     //Mixer
     public static final IModelCustom mixer = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/mixer.obj")).asVBO();
 
-    //F6 TANKS
-    public static final IModelCustom tank = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/tank.obj")).asVBO();
-
     //Small Reactor
     public static final IModelCustom reactor_small_base = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/reactors/reactor_small_base.obj")).asVBO();
     public static final IModelCustom reactor_small_rods = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/reactors/reactor_small_rods.obj")).asVBO();
@@ -81,18 +78,7 @@ public class ResourceManager {
     public static final IModelCustom iter = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/reactors/iter.obj")).asVBO();
     public static final IModelCustom fusion_torus = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/fusion/torus.obj")).asVBO();
     public static final IModelCustom fusion_klystron = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/fusion/klystron.obj")).asVBO();
-    public static final IModelCustom fusion_breeder = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/fusion/breeder.obj")).asVBO();
-    public static final IModelCustom fusion_collector = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/fusion/collector.obj")).asVBO();
-    public static final IModelCustom fusion_boiler = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/fusion/boiler.obj")).asVBO();
     public static final IModelCustom fusion_mhdt = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/fusion/mhdt.obj")).asVBO();
-    public static final IModelCustom fusion_coupler = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/fusion/coupler.obj")).asVBO();
-
-    //ICF
-    public static final IModelCustom icf = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/reactors/icf.obj")).asVBO();
-
-    //Watz
-    public static final IModelCustom watz = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/reactors/watz.obj")).asVBO();
-    public static final IModelCustom watz_pump = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/watz_pump.obj")).asVBO();
 
     //FENSU
     public static final IModelCustom battery_socket = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/battery.obj")).asVBO();
@@ -113,13 +99,6 @@ public class ResourceManager {
     public static final IModelCustom turret_howard_damaged = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/turrets/turret_howard_damaged.obj")).asVBO();
 
     //Satellites
-    public static final IModelCustom sat_base = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/sat_base.obj")).asVBO();
-    public static final IModelCustom sat_radar = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/sat_radar.obj")).asVBO();
-    public static final IModelCustom sat_resonator = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/sat_resonator.obj")).asVBO();
-    public static final IModelCustom sat_scanner = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/sat_scanner.obj")).asVBO();
-    public static final IModelCustom sat_mapper = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/sat_mapper.obj")).asVBO();
-    public static final IModelCustom sat_laser = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/sat_laser.obj")).asVBO();
-    public static final IModelCustom sat_foeq = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/sat_foeq.obj")).asVBO();
     public static final IModelCustom sat_foeq_burning = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/sat_foeq_burning.obj")).asVBO();
     public static final IModelCustom sat_foeq_fire = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/sat_foeq_fire.obj")).asVBO();
 
@@ -238,7 +217,6 @@ public class ResourceManager {
     public static final IModelCustom armor_mod_tesla = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/armor/mod_tesla.obj")).asVBO();
     public static final IModelCustom armor_wings = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/armor/murk.obj")).asVBO();
     //Centrifuge
-    public static final IModelCustom centrifuge = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/centrifuge.obj")).asVBO();
     public static final IModelCustom centrifuge_gas = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/centrifuge_gas.obj")).asVBO();
     public static final IModelCustom silex = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/silex.obj")).asVBO();
     public static final IModelCustom fel = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/fel.obj")).asVBO();
@@ -256,16 +234,15 @@ public class ResourceManager {
     public static final HFRWavefrontObject cable_neo_obj = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/blocks/cable_neo.obj"));
     //Big Cables
     public static final IModelCustom connector = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/network/connector.obj")).asVBO();
+    public static final IModelCustom connector_super = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/network/connector_super.obj")).asVBO();
     public static final IModelCustom pylon_large = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/network/pylon_large.obj")).asVBO();
     public static final IModelCustom pylon_medium = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/network/pylon_medium.obj")).asVBO();
     public static final IModelCustom substation = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/network/substation.obj")).asVBO();
     public static final IModelCustom pipe_anchor = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/network/pipe_anchor.obj")).asVBO();
-    public static final IModelCustom fluid_pump = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/network/fluid_diode.obj")).asVBO();
     public static final IModelCustom conservecrate = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/blocks/conservecrate.obj")).asVBO();
     //Pipe
     public static final IModelCustom pipe_neo = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/blocks/pipe_neo.obj")).asVBO();
     //Conveyor blocks/cranes //FIXME: Doesnt work with VBO
-    public static final IModelCustom crane_splitter = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/blocks/crane_splitter.obj"));
     public static final IModelCustom crane_buffer = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/blocks/crane_buffer.obj"));
     //B.O.P
     public static final IModelCustom ore_slopper = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/ore_slopper.obj")).asVBO();
@@ -278,21 +255,11 @@ public class ResourceManager {
     //Cyclotron
     public static final IModelCustom cyclotron = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/cyclotron.obj")).asVBO();
     //Albion Particle Accelerator
-    public static final IModelCustom pa_source = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/particleaccelerator/source.obj")).asVBO();
-    public static final IModelCustom pa_beamline = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/particleaccelerator/beamline.obj")).asVBO();
-    public static final IModelCustom pa_rfc = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/particleaccelerator/rfc.obj")).asVBO();
-    public static final IModelCustom pa_quadrupole = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/particleaccelerator/quadrupole.obj")).asVBO();
-    public static final IModelCustom pa_dipole = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/particleaccelerator/dipole.obj")).asVBO();
-    public static final IModelCustom pa_detector = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/particleaccelerator/detector.obj")).asVBO();
     //Exposure Chamber
     public static final IModelCustom exposure_chamber = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/exposure_chamber.obj")).asVBO();
     //RTG
     public static final IModelCustom rtg = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/rtg.obj")).asVBO();
     public static final IModelCustom rtg_connector = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/rtg_connector.obj")).asVBO();
-    //Waste Drum
-    public static final IModelCustom waste_drum = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/drum.obj")).asVBO();
-    //Deuterium Tower
-    public static final IModelCustom deuterium_tower = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/machine_deuterium_tower.obj")).asVBO();
     //Vault Door
     //Blast Door
     public static final IModelCustom blast_door_base = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/blast_door_base.obj")).asVBO();
@@ -311,17 +278,10 @@ public class ResourceManager {
     public static final IModelCustom drone = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/mobs/quadcopter.obj")).asVBO();
     //Lights
     public static final IModelCustom lantern = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/trinkets/lantern.obj")).asVBO();
-    //ZIRNOX
-    public static final IModelCustom zirnox = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/zirnox.obj")).asVBO();
-    public static final IModelCustom zirnox_destroyed = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/zirnox_destroyed.obj")).asVBO();
     //Belt
     public static final IModelCustom arrow = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/blocks/arrow.obj")).asVBO();
-    //Radiolysis
-    public static final IModelCustom radiolysis = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/radiolysis.obj"));
     //RotaryFurnace
     public static final IModelCustom rotary_furnace = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/rotary_furnace.obj")).asVBO();
-    //Electrolyser
-    public static final IModelCustom electrolyser = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/electrolyser.obj")).asVBO();
     //Charging Station
     public static final IModelCustom charger = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/blocks/charger.obj")).asVBO();
     public static final IModelCustom refueler = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/blocks/refueler.obj")).asVBO();
@@ -329,30 +289,13 @@ public class ResourceManager {
     public static final IModelCustom file_cabinet = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/file_cabinet.obj")).asVBO();
     //Radgen
     public static final IModelCustom radgen_body = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/radgen.obj")).asVBO();
-    public static final IModelCustom geiger = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/blocks/geiger_counter.obj")).asVBO();
     //Pumpjack
     public static final IModelCustom pumpjack = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/pumpjack.obj")).asVBO();
-    // Fracking Tower
-    public static final IModelCustom fracking_tower = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/fracking_tower.obj")).asVBO();
-    //TELEX
-    public static final IModelCustom telex = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/telex.obj"));
-    //Refinery
-    public static final IModelCustom refinery = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/refinery.obj")).asVBO();
-    public static final IModelCustom vacuum_distill = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/vacuum_distill.obj")).asVBO();
-    public static final IModelCustom fraction_tower = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/fraction_tower.obj")).asVBO();
-    public static final IModelCustom fraction_spacer = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/fraction_spacer.obj")).asVBO();
-    public static final IModelCustom cracking_tower = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/cracking_tower.obj")).asVBO();
     public static final IModelCustom catalytic_reformer = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/catalytic_reformer.obj")).asVBO();
-    public static final IModelCustom hydrotreater = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/hydrotreater.obj")).asVBO();
     public static final IModelCustom liquefactor = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/liquefactor.obj")).asVBO();
     public static final IModelCustom solidifier = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/solidifier.obj")).asVBO();
-    public static final IModelCustom coker = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/coker.obj")).asVBO();
     public static final IModelCustom compressor = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/compressor.obj")).asVBO();
     public static final IModelCustom pyrooven = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/pyrooven.obj")).asVBO();
-    //Flare Stack
-    public static final IModelCustom oilflare = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/flare_stack.obj")).asVBO();
-    public static final IModelCustom chimney_brick = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/chimney_brick.obj")).asVBO();
-    public static final IModelCustom chimney_industrial = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/chimney_industrial.obj")).asVBO();
     //Tank
     public static final IModelCustom fluidtank = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/fluidtank.obj")).asVBO();
     public static final IModelCustom fluidtank_exploded = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/fluidtank_exploded.obj")).asVBO();
@@ -368,17 +311,11 @@ public class ResourceManager {
     public static final IModelCustom industrial_turbine = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/industrial_turbine.obj")).asVBO();
     public static final IModelCustom chungus = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/chungus.obj")).asVBO();
     //Cooling Tower
-    public static final IModelCustom tower_small = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/tower_small.obj")).asVBO();
-    public static final IModelCustom tower_large = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/tower_large.obj")).asVBO();
     public static final IModelCustom condenser = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/condenser.obj")).asVBO();
     //Air stuff
     public static final IModelCustom intake = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/intake.obj")).asVBO();
-    //Deuterium Tower
-    public static final ResourceLocation deuterium_tower_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/machine_deuterium_tower.png");
     //Strand Caster
     public static final IModelCustom strand_caster = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/strand_caster.obj")).asVBO();
-    //Industrial Boiler
-    public static final IModelCustom boiler_industrial = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/industrial_boiler.obj")).asVBO();
     public static final IModelCustom hephaestus = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/hephaestus.obj")).asVBO();
     //Combustion Engine
     public static final IModelCustom dieselgen = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/dieselgen.obj")).asVBO();
@@ -388,8 +325,6 @@ public class ResourceManager {
     public static final IModelCustom heater_firebox = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/firebox.obj")).asVBO();
     public static final IModelCustom heater_oven = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/heating_oven.obj")).asVBO();
     public static final IModelCustom heater_oilburner = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/oilburner.obj")).asVBO();
-    public static final IModelCustom heater_electric = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/electric_heater.obj")).asVBO();
-    public static final IModelCustom heater_heatex = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/heatex.obj")).asVBO();
     //Furnaces
     public static final IModelCustom furnace_iron = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/furnace_iron.obj")).asVBO();
     public static final IModelCustom furnace_steel = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/furnace_steel.obj")).asVBO();
@@ -400,30 +335,16 @@ public class ResourceManager {
     //Heat-Based Machines
     public static final IModelCustom stirling = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/stirling.obj")).asVBO();
     //Wood Burner gen
-    public static final IModelCustom wood_burner = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/wood_burner.obj")).asVBO();
     //Not wood burner gen
-    public static final IModelCustom turbine_gas = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/turbinegas.obj")).asVBO();
     //Bombs
-    public static final IModelCustom bomb_solinium = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/bombs/ufp.obj")).asVBO();
-    public static final IModelCustom n2 = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/bombs/n2.obj")).asVBO();
     public static final IModelCustom n45_chain = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/bombs/n45_chain.obj")).asVBO();
     public static final IModelCustom fstbmb = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/bombs/fstbmb.obj")).asVBO();
-    public static final IModelCustom bomb_gadget = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/bombs/gadget.obj")).asVBO();
-    public static final IModelCustom bomb_boy = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/bombs/LilBoy.obj")).asVBO();
-    public static final IModelCustom bomb_man = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/bombs/FatMan.obj")).asVBO();
-    public static final IModelCustom bomb_mike = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/bombs/IvyMike.obj")).asVBO();
-    public static final IModelCustom bomb_tsar = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/bombs/tsar.obj")).asVBO();
-    public static final IModelCustom bomb_prototype = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/bombs/Prototype.obj")).asVBO();
-    public static final IModelCustom bomb_fleija = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/bombs/Fleija.obj")).asVBO();
-    public static final IModelCustom bomb_multi = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/bombs/BombGeneric.obj")).asVBO();
     //Landmines
     public static final IModelCustom mine_ap = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/bombs/ap_mine.obj")).asVBO();
     public static final IModelCustom mine_he = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/mine_he.obj")).asVBO();
     public static final IModelCustom mine_marelet = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/bombs/marelet.obj")).asVBO();
     public static final IModelCustom mine_fat = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/mine_fat.obj")).asVBO();
     public static final IModelCustom mine_naval = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/bombs/naval_mine.obj")).asVBO();
-    //Derrick
-    public static final IModelCustom derrick = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/derrick.obj")).asVBO();
     //Missile Parts
     public static final IModelCustom missile_pad = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/weapons/launch_pad_silo.obj")).asVBO();
     public static final IModelCustom missile_erector = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/weapons/launch_pad_erector.obj")).asVBO();
@@ -516,16 +437,8 @@ public class ResourceManager {
     public static final IModelCustom deb_zirnox_element = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/zirnox/deb_element.obj")).asVBO();
     public static final IModelCustom deb_zirnox_exchanger = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/zirnox/deb_exchanger.obj")).asVBO();
     public static final IModelCustom deb_zirnox_shrapnel = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/zirnox/deb_shrapnel.obj")).asVBO();
-    //SatDock
-    public static final IModelCustom satDock = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/sat_dock.obj")).asVBO();
     //Solar Tower
-    public static final IModelCustom solar_boiler = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/solar_boiler.obj")).asVBO();
     public static final IModelCustom solar_mirror = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/solar_mirror.obj")).asVBO();
-    //Drain
-    public static final IModelCustom drain = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/drain.obj")).asVBO();
-    //Watz
-    public static final ResourceLocation watz_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/watz.png");
-    public static final ResourceLocation watz_pump_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/watz_pump.png");
     //Radar
     public static final IModelCustom radar_body = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/radar_base.obj")).asVBO();
     public static final IModelCustom radar = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/machines/radar.obj")).asVBO();
@@ -549,18 +462,10 @@ public class ResourceManager {
     public static final ResourceLocation fusion_plasma_glow_tex = new ResourceLocation(Tags.MODID, "textures/models/fusion/plasma_glow.png");
     public static final ResourceLocation fusion_plasma_sparkle_tex = new ResourceLocation(Tags.MODID, "textures/models/fusion/plasma_sparkle.png");
     public static final ResourceLocation fusion_klystron_tex = new ResourceLocation(Tags.MODID, "textures/models/fusion/klystron.png");
-    public static final ResourceLocation fusion_breeder_tex = new ResourceLocation(Tags.MODID, "textures/models/fusion/breeder.png");
-    public static final ResourceLocation fusion_collector_tex = new ResourceLocation(Tags.MODID, "textures/models/fusion/collector.png");
-    public static final ResourceLocation fusion_boiler_tex = new ResourceLocation(Tags.MODID, "textures/models/fusion/boiler.png");
     public static final ResourceLocation fusion_mhdt_tex = new ResourceLocation(Tags.MODID, "textures/models/fusion/mhdt.png");
-    public static final ResourceLocation fusion_coupler_tex = new ResourceLocation(Tags.MODID, "textures/models/fusion/coupler.png");
 
-    //ICF
-    public static final ResourceLocation icf_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/icf.png");
     //Strand Caster
     public static final ResourceLocation strand_caster_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/strand_caster.png");
-    //Industrial Boiler
-    public static final ResourceLocation boiler_industrial_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/industrial_boiler.png");
     public static final ResourceLocation hephaestus_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/hephaestus.png");
     //FENSU
     public static final ResourceLocation battery_socket_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/battery_socket.png");
@@ -594,6 +499,7 @@ public class ResourceManager {
     public static final IModelCustom stopsign = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/weapons/stopsign.obj")).asVBO();
     public static final IModelCustom gavel = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/weapons/gavel.obj")).asVBO();
     public static final IModelCustom crucible = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/weapons/crucible.obj")).asVBO();
+    public static final IModelCustom chainsaw = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/weapons/chainsaw.obj")).asVBO(); // .noSmooth()
     public static final IModelCustom boltgun = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/weapons/boltgun.obj")).asVBO();
     public static final IModelCustom n_i_4_n_i = new HFRWavefrontObject(new ResourceLocation(Tags.MODID, "models/weapons/n_i_4_n_i.obj")).asVBO();
     public static final HashMap<String, BusAnimationSedna> python_anim = AnimationLoader.load(new ResourceLocation(Tags.MODID, "models/weapons/animations/python.json"));
@@ -646,7 +552,6 @@ public class ResourceManager {
     public static final ResourceLocation ctrl_dial_square_gui_tex = new ResourceLocation(Tags.MODID, "textures/models/control_panel/dial_square_gui.png");
     public static final ResourceLocation ctrl_dial_large_gui_tex = new ResourceLocation(Tags.MODID, "textures/models/control_panel/dial_large_gui.png");
     // Textures for conveyors/cranes custom models
-    public static final ResourceLocation splitter_tex = new ResourceLocation(Tags.MODID, "textures/models/network/splitter.png");
     public static final ResourceLocation universal = new ResourceLocation(Tags.MODID, "textures/models/misc/universaldark.png");
     // Turrets
     public static final ResourceLocation turret_arty_tex = new ResourceLocation(Tags.MODID, "textures/models/turrets/arty.png");
@@ -683,32 +588,15 @@ public class ResourceManager {
     public static final ResourceLocation mine_shrap_tex = new ResourceLocation(Tags.MODID, "textures/models/bombs/mine_shrapnel.png");
     public static final ResourceLocation mine_fat_tex = new ResourceLocation(Tags.MODID, "textures/models/explosion/mine_fat.png");
     public static final ResourceLocation mine_naval_tex = new ResourceLocation(Tags.MODID, "textures/models/bombs/nmine.png");
-    //Derrick
-    public static final ResourceLocation derrick_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/derrick.png");
     //Pumpjack
     public static final ResourceLocation pumpjack_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/pumpjack.png");
-    public static final ResourceLocation fracking_tower_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/fracking_tower.png");
-    //TELEX
-    public static final ResourceLocation telex_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/telex.png");
-    //Refinery
-    public static final ResourceLocation refinery_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/refinery.png");
-    public static final ResourceLocation vacuum_distill_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/vacuum_distill.png");
-    public static final ResourceLocation fraction_tower_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/fraction_tower.png");
-    public static final ResourceLocation fraction_spacer_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/fraction_spacer.png");
-    public static final ResourceLocation cracking_tower_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/cracking_tower.png");
     public static final ResourceLocation catalytic_reformer_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/catalytic_reformer.png");
-    public static final ResourceLocation hydrotreater_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/hydrotreater.png");
     public static final ResourceLocation liquefactor_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/liquefactor.png");
     public static final ResourceLocation solidifier_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/solidifier.png");
-    public static final ResourceLocation coker_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/coker.png");
     public static final ResourceLocation compressor_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/compressor.png");
 
     //Landmines
     public static final ResourceLocation pyrooven_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/pyrooven.png");
-    //Flare Stack
-    public static final ResourceLocation oilflare_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/flare_stack.png");
-    public static final ResourceLocation chimney_brick_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/chimney_brick.png");
-    public static final ResourceLocation chimney_industrial_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/chimney_industrial.png");
     //Tank
     public static final ResourceLocation tank_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/tank.png");
     public static final ResourceLocation tank_inner_tex = new ResourceLocation(Tags.MODID, "textures/models/tank/tank_inner.png");
@@ -717,12 +605,8 @@ public class ResourceManager {
     //ZIRNOX
     public static final ResourceLocation zirnox_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/zirnox.png");
     public static final ResourceLocation zirnox_destroyed_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/zirnox_destroyed.png");
-    //Radiolysis
-    public static final ResourceLocation radiolysis_tex = new ResourceLocation(Tags.MODID, "textures/models/radiolysis.png");
     //Rotary Furnace
     public static final ResourceLocation rotary_furnace_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/rotary_furnace.png");
-    //Electrolyser
-    public static final ResourceLocation electrolyser_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/electrolyser.png");
     //Charger
     public static final ResourceLocation charger_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/charger.png");
     public static final ResourceLocation refueler_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/refueler.png");
@@ -736,11 +620,11 @@ public class ResourceManager {
     public static final ResourceLocation wire_greyscale_tex = new ResourceLocation(Tags.MODID, "textures/models/network/wire_greyscale.png");
     //Pipes
     public static final ResourceLocation pipe_anchor_tex = new ResourceLocation(Tags.MODID, "textures/models/network/pipe_anchor.png");
-    public static final ResourceLocation fluid_pump_tex = new ResourceLocation(Tags.MODID, "textures/models/network/fluid_diode.png");
 
     public static final ResourceLocation pylon_medium_tex = new ResourceLocation(Tags.MODID, "textures/models/network/pylon_medium.png");
     public static final ResourceLocation pylon_medium_steel_tex = new ResourceLocation(Tags.MODID, "textures/models/network/pylon_medium_steel.png");
     public static final ResourceLocation connector_tex = new ResourceLocation(Tags.MODID, "textures/models/network/connector.png");
+    public static final ResourceLocation connector_super_tex = new ResourceLocation(Tags.MODID, "textures/models/network/connector_super.png");
     //Turbofan
     public static final ResourceLocation turbofan_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/turbofan.png");
     public static final ResourceLocation turbofan_back_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/turbofan_back.png");
@@ -755,8 +639,6 @@ public class ResourceManager {
     public static final ResourceLocation industrial_turbine_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/industrial_turbine.png");
     public static final ResourceLocation chungus_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/chungus.png");
     //Cooling Tower
-    public static final ResourceLocation tower_small_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/tower_small.png");
-    public static final ResourceLocation tower_large_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/tower_large.png");
     public static final ResourceLocation condenser_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/condenser.png");
     public static final ResourceLocation intake_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/intake.png");
     public static final ResourceLocation compressor_compact_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/compressor_compact.png");
@@ -771,8 +653,6 @@ public class ResourceManager {
     public static final ResourceLocation ashpit_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/ashpit.png");
     public static final ResourceLocation heater_oilburner_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/oilburner.png");
     public static final ResourceLocation boiler_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/boiler.png");
-    public static final ResourceLocation heater_electric_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/electric_heater.png");
-    public static final ResourceLocation heater_heatex_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/heater_heatex.png");
     //Furnaces
     public static final ResourceLocation furnace_iron_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/furnace_iron.png");
     public static final ResourceLocation furnace_steel_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/furnace_steel.png");
@@ -811,11 +691,7 @@ public class ResourceManager {
     public static final ResourceLocation arc_furnace_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/arc_furnace.png");
     //Mixer
     public static final ResourceLocation mixer_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/mixer.png");
-    //F6 TANKS
-    public static final ResourceLocation uf6_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/UF6Tank.png");
-    public static final ResourceLocation puf6_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/PUF6Tank.png");
     //Centrifuge
-    public static final ResourceLocation centrifuge_new_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/centrifuge_new.png");
     public static final ResourceLocation centrifuge_gas_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/centrifuge_gas.png");
     public static final ResourceLocation silex_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/silex.png");
     public static final ResourceLocation fel_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/fel.png");
@@ -830,9 +706,7 @@ public class ResourceManager {
     //B.O.P
     public static final ResourceLocation ore_slopper_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/ore_slopper.png");
     //Wood burner gen
-    public static final ResourceLocation wood_burner_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/wood_burner.png");
     //Not wood burner gen
-    public static final ResourceLocation turbine_gas_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/turbinegas.png");
     //Laser Miner
     public static final ResourceLocation mining_laser_base_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/mining_laser_base.png");
     public static final ResourceLocation mining_laser_pivot_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/mining_laser_pivot.png");
@@ -852,16 +726,8 @@ public class ResourceManager {
     public static final ResourceLocation cyclotron_coin = new ResourceLocation(Tags.MODID, "textures/models/machines/cyclotron_coin.png");
     public static final ResourceLocation cyclotron_coin_filled = new ResourceLocation(Tags.MODID, "textures/models/machines/cyclotron_coin_filled.png");
     //Albion Particle Accelerator
-    public static final ResourceLocation pa_source_tex = new ResourceLocation(Tags.MODID, "textures/models/particleaccelerator/source.png");
-    public static final ResourceLocation pa_beamline_tex = new ResourceLocation(Tags.MODID, "textures/models/particleaccelerator/beamline.png");
-    public static final ResourceLocation pa_rfc_tex = new ResourceLocation(Tags.MODID, "textures/models/particleaccelerator/rfc.png");
-    public static final ResourceLocation pa_quadrupole_tex = new ResourceLocation(Tags.MODID, "textures/models/particleaccelerator/quadrupole.png");
-    public static final ResourceLocation pa_dipole_tex = new ResourceLocation(Tags.MODID, "textures/models/particleaccelerator/dipole.png");
-    public static final ResourceLocation pa_detector_tex = new ResourceLocation(Tags.MODID, "textures/models/particleaccelerator/detector.png");
     //Exposure Chamber
     public static final ResourceLocation exposure_chamber_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/exposure_chamber.png");
-    //Waste Drum
-    public static final ResourceLocation waste_drum_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/drum_gray.png");
     //RTG
     public static final ResourceLocation rtg_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/rtg.png");
     public static final ResourceLocation rtg_cell_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/rtg_cell.png");
@@ -875,7 +741,6 @@ public class ResourceManager {
     public static final ResourceLocation fan_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/fan.png");
     //Radgen
     public static final ResourceLocation radgen_body_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/rad_gen_body.png");
-    public static final ResourceLocation geiger_tex = new ResourceLocation(Tags.MODID, "textures/blocks/geiger.png");
     //Small Reactor
     public static final ResourceLocation reactor_small_base_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/reactor_small_base.png");
     public static final ResourceLocation reactor_small_rods_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/reactor_small_rods.png");
@@ -890,34 +755,12 @@ public class ResourceManager {
     public static final ResourceLocation forcefield_base_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/forcefield_base.png");
     public static final ResourceLocation forcefield_top_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/forcefield_top.png");
     //Bombs
-    public static final ResourceLocation bomb_solinium_tex = new ResourceLocation(Tags.MODID, "textures/models/bombs/ufp.png");
-    public static final ResourceLocation n2_tex = new ResourceLocation(Tags.MODID, "textures/models/bombs/n2.png");
     public static final ResourceLocation fstbmb_tex = new ResourceLocation(Tags.MODID, "textures/models/bombs/fstbmb.png");
-    public static final ResourceLocation bomb_gadget_tex = new ResourceLocation(Tags.MODID, "textures/models/bombs/gadget.png");
-    public static final ResourceLocation bomb_boy_tex = new ResourceLocation(Tags.MODID, "textures/models/bombs/lilboy.png");
-    public static final ResourceLocation bomb_man_tex = new ResourceLocation(Tags.MODID, "textures/models/bombs/FatMan.png");
-    public static final ResourceLocation bomb_mike_tex = new ResourceLocation(Tags.MODID, "textures/models/bombs/IvyMike.png");
-    public static final ResourceLocation bomb_tsar_tex = new ResourceLocation(Tags.MODID, "textures/models/bombs/Tsar.png");
-    public static final ResourceLocation bomb_prototype_tex = new ResourceLocation(Tags.MODID, "textures/models/bombs/Prototype.png");
-    public static final ResourceLocation bomb_fleija_tex = new ResourceLocation(Tags.MODID, "textures/models/bombs/Fleija.png");
-    public static final ResourceLocation bomb_custom_tex = new ResourceLocation(Tags.MODID, "textures/models/bombs/CustomNuke.png");
-    public static final ResourceLocation bomb_multi_tex = new ResourceLocation(Tags.MODID, "textures/models/bombs/BombGeneric.png");
     //Satellites
-    public static final ResourceLocation sat_base_tex = new ResourceLocation(Tags.MODID, "textures/models/sat/sat_base.png");
-    public static final ResourceLocation sat_radar_tex = new ResourceLocation(Tags.MODID, "textures/models/sat/sat_radar.png");
-    public static final ResourceLocation sat_resonator_tex = new ResourceLocation(Tags.MODID, "textures/models/sat/sat_resonator.png");
-    public static final ResourceLocation sat_scanner_tex = new ResourceLocation(Tags.MODID, "textures/models/sat/sat_scanner.png");
-    public static final ResourceLocation sat_mapper_tex = new ResourceLocation(Tags.MODID, "textures/models/sat/sat_mapper.png");
-    public static final ResourceLocation sat_laser_tex = new ResourceLocation(Tags.MODID, "textures/models/sat/sat_laser.png");
     public static final ResourceLocation sat_foeq_tex = new ResourceLocation(Tags.MODID, "textures/models/sat/sat_foeq.png");
     public static final ResourceLocation sat_foeq_burning_tex = new ResourceLocation(Tags.MODID, "textures/sat/models/sat_foeq_burning.png");
-    //SatDock
-    public static final ResourceLocation satdock_tex = new ResourceLocation(Tags.MODID, "textures/models/missile_parts/sat_dock.png");
     //Solar Tower
-    public static final ResourceLocation solar_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/solar_boiler.png");
     public static final ResourceLocation solar_mirror_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/solar_mirror.png");
-    //Drain
-    public static final ResourceLocation drain_tex = new ResourceLocation(Tags.MODID, "textures/models/machines/drain.png");
     //Blast Door
     public static final ResourceLocation blast_door_base_tex = new ResourceLocation(Tags.MODID, "textures/models/doors/blast/blast_door_base.png");
     public static final ResourceLocation blast_door_tooth_tex = new ResourceLocation(Tags.MODID, "textures/models/doors/blast/blast_door_tooth.png");
@@ -996,6 +839,7 @@ public class ResourceManager {
     public static final ResourceLocation crucible_guard = new ResourceLocation(Tags.MODID, "textures/models/weapons/crucible_guard.png");
     public static final ResourceLocation crucible_blade = new ResourceLocation(Tags.MODID, "textures/models/weapons/crucible_blade.png");
     public static final ResourceLocation crucible_blade_bloom = new ResourceLocation(Tags.MODID, "textures/models/weapons/crucible_blade_bloom.png");
+    public static final ResourceLocation chainsaw_tex = new ResourceLocation(Tags.MODID, "textures/models/weapons/chainsaw.png");
     public static final ResourceLocation boltgun_tex = new ResourceLocation(Tags.MODID, "textures/models/weapons/boltgun.png");
     public static final ResourceLocation hs_sword_tex = new ResourceLocation(Tags.MODID, "textures/models/weapons/hs_sword.png");
     public static final ResourceLocation hf_sword_tex = new ResourceLocation(Tags.MODID, "textures/models/weapons/hf_sword.png");

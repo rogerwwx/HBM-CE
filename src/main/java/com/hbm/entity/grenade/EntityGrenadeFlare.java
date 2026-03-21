@@ -8,6 +8,9 @@ import net.minecraft.util.EnumHand;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.world.World;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
+
 @AutoRegister(name = "entity_grenade_flare")
 public class EntityGrenadeFlare extends EntityThrowable
 {
@@ -16,6 +19,7 @@ public class EntityGrenadeFlare extends EntityThrowable
     public EntityGrenadeFlare(World p_i1773_1_)
     {
         super(p_i1773_1_);
+        this.ignoreFrustumCheck = true;
     }
 
     public EntityGrenadeFlare(World p_i1774_1_, EntityLivingBase p_i1774_2_, EnumHand hand)
@@ -23,6 +27,7 @@ public class EntityGrenadeFlare extends EntityThrowable
     	super(p_i1774_1_);
         this.thrower = p_i1774_2_;
         this.setSize(0.25F, 0.25F);
+        this.ignoreFrustumCheck = true;
         this.setLocationAndAngles(p_i1774_2_.posX, p_i1774_2_.posY + (double)p_i1774_2_.getEyeHeight(), p_i1774_2_.posZ, p_i1774_2_.rotationYaw, p_i1774_2_.rotationPitch);
         if(hand == EnumHand.MAIN_HAND){
         	this.posX -= (double)(MathHelper.cos(this.rotationYaw / 180.0F * (float)Math.PI) * 0.16F);
@@ -45,6 +50,13 @@ public class EntityGrenadeFlare extends EntityThrowable
     public EntityGrenadeFlare(World p_i1775_1_, double p_i1775_2_, double p_i1775_4_, double p_i1775_6_)
     {
         super(p_i1775_1_, p_i1775_2_, p_i1775_4_, p_i1775_6_);
+        this.ignoreFrustumCheck = true;
+    }
+    @SideOnly(Side.CLIENT)
+    @Override
+    public boolean isInRangeToRenderDist(double distance) {
+        double maxDist = 250.0D;
+        return distance < maxDist * maxDist;
     }
     
     @Override

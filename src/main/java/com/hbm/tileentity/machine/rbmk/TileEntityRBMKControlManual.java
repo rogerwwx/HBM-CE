@@ -137,18 +137,15 @@ public class TileEntityRBMKControlManual extends TileEntityRBMKControl implement
     public void serialize(ByteBuf buf) {
         super.serialize(buf);
         buf.writeDouble(this.startingLevel);
-        if (this.color != null)
-            buf.writeInt(this.color.ordinal());
+        buf.writeByte(this.color != null ? this.color.ordinal() : -1);
     }
 
     @Override
     public void deserialize(ByteBuf buf) {
         super.deserialize(buf);
         this.startingLevel = buf.readDouble();
-        if (buf.isReadable(1)) {
-            int color = buf.readInt();
-            this.color = RBMKColor.VALUES[MathHelper.clamp(color, 0, RBMKColor.VALUES.length)];
-        }
+        int color = buf.readByte();
+        this.color = color >= 0 ? RBMKColor.VALUES[MathHelper.clamp(color, 0, RBMKColor.VALUES.length - 1)] : null;
     }
 
     @Override
@@ -221,7 +218,7 @@ public class TileEntityRBMKControlManual extends TileEntityRBMKControl implement
 
     @Override
     public void pasteSettings(NBTTagCompound nbt, int index, World world, EntityPlayer player, int x, int y, int z) {
-        if (nbt.hasKey("color")) color = EnumUtil.grabEnumSafely(RBMKColor.values(), nbt.getInteger("color"));
+        if (nbt.hasKey("color")) color = EnumUtil.grabEnumSafely(RBMKColor.VALUES, nbt.getInteger("color"));
     }
 
     public enum RBMKColor {
@@ -246,7 +243,7 @@ public class TileEntityRBMKControlManual extends TileEntityRBMKControl implement
     public Object[] setColor(Context context, Arguments args) {
         int colorI = args.checkInteger(0);
         colorI = MathHelper.clamp(colorI, 0, 4);
-        this.color = RBMKColor.values()[colorI];
+        this.color = RBMKColor.VALUES[colorI];
         return new Object[] {true};
     }
 }

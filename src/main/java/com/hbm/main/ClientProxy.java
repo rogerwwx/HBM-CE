@@ -71,11 +71,7 @@ import com.hbm.sound.SoundLoopCrucible;
 import com.hbm.util.*;
 import com.hbm.wiaj.cannery.Jars;
 import it.unimi.dsi.fastutil.ints.Int2LongOpenHashMap;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockDirt;
-import net.minecraft.block.BlockHorizontal;
-import net.minecraft.block.BlockStainedHardenedClay;
-import net.minecraft.block.BlockStone;
+import net.minecraft.block.*;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
@@ -85,8 +81,8 @@ import net.minecraft.client.particle.ParticleFirework.Spark;
 import net.minecraft.client.renderer.GLAllocation;
 import net.minecraft.client.renderer.block.model.IBakedModel;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
-import net.minecraft.client.renderer.block.statemap.StateMapperBase;
 import net.minecraft.client.renderer.block.statemap.StateMap;
+import net.minecraft.client.renderer.block.statemap.StateMapperBase;
 import net.minecraft.client.renderer.entity.RenderManager;
 import net.minecraft.client.renderer.entity.RenderSnowball;
 import net.minecraft.client.renderer.texture.TextureManager;
@@ -1995,13 +1991,6 @@ public class ClientProxy extends ServerProxy {
         ModelLoaderRegistry.registerLoader(DynamicPlaceholderModelLoader.INSTANCE);
 
         AutoRegistry.preInitClient();
-        NTMClientRegistry.unbindTeisrs(
-                ModItems.ingot_steel_dusted,
-                ModItems.ingot_chainsteel,
-                ModItems.ingot_meteorite,
-                ModItems.ingot_meteorite_forged,
-                ModItems.blade_meteorite
-        );
         AutoRegistry.registerRenderInfo();
         NTMClientRegistry.bindTeisrs(ItemRendererProviderRegistry.getTileEntityProviders());
         NTMClientRegistry.bindTeisrs(ItemRendererProviderRegistry.getItemProviders());

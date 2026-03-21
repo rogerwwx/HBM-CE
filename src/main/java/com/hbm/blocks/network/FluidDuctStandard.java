@@ -176,7 +176,7 @@ public class FluidDuctStandard extends FluidDuctBase implements IDynamicModels, 
     }
 
     @Override
-    public AxisAlignedBB getCollisionBoundingBoxForPlacement(World worldIn, BlockPos pos, ItemStack stack) {
+    public AxisAlignedBB getCollisionBoundingBoxForPlacement(World worldIn, BlockPos pos, IBlockState stateForPlacement, ItemStack stack) {
         return getCollisionAABB(worldIn, pos, Fluids.NONE);
     }
 
@@ -324,12 +324,6 @@ public class FluidDuctStandard extends FluidDuctBase implements IDynamicModels, 
 			return new ItemStack(ModItems.fluid_duct, 1, retadata);
 		}
 		return super.getPickBlock(state, target, world, pos, player);
-	}
-
-	@Override
-	public void onBlockPlacedBy(World worldIn, BlockPos pos, IBlockState state, EntityLivingBase placer, ItemStack stack) {
-		int meta = stack.getMetadata() % 3;
-		worldIn.setBlockState(pos, this.getDefaultState().withProperty(META, meta), 2);
 	}
 
 	@Override

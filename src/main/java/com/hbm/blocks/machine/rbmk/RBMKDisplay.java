@@ -98,11 +98,6 @@ public class RBMKDisplay extends BlockContainer implements IToolable, IDynamicMo
     }
 
     @Override
-    public void onBlockPlacedBy(World worldIn, @NotNull BlockPos pos, IBlockState state, EntityLivingBase placer, @NotNull ItemStack stack) {
-        worldIn.setBlockState(pos, state.withProperty(FACING, placer.getHorizontalFacing().getOpposite()), 2);
-    }
-
-    @Override
     public @NotNull AxisAlignedBB getBoundingBox(IBlockState state, @NotNull IBlockAccess source, @NotNull BlockPos pos) {
         EnumFacing facing = state.getValue(FACING);
         return switch (facing) {

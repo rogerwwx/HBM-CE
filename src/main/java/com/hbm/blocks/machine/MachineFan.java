@@ -65,9 +65,8 @@ public class MachineFan extends BlockContainerBakeable implements IToolable, ITo
     }
 
     @Override
-    public void onBlockPlacedBy(World world, BlockPos pos, IBlockState state, EntityLivingBase player, ItemStack stack) {
-        EnumFacing facing = EnumFacing.getDirectionFromEntityLiving(pos, player);
-        world.setBlockState(pos, state.withProperty(FACING, facing), 2);
+    public IBlockState getStateForPlacement(World world, BlockPos pos, EnumFacing facing, float hitX, float hitY, float hitZ, int meta, EntityLivingBase player) {
+        return this.getDefaultState().withProperty(FACING, EnumFacing.getDirectionFromEntityLiving(pos, player));
     }
 
     @Override

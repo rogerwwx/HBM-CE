@@ -2,14 +2,11 @@ package com.hbm.render.block;
 
 import com.google.common.collect.ImmutableMap;
 import com.hbm.Tags;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.minecraft.client.renderer.texture.TextureMap;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.LinkedHashSet;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Describes how a baked block model should be textured.
@@ -23,8 +20,8 @@ public class BlockBakeFrame {
 
     public static final String ROOT_PATH = "blocks/";
 
-    private final BlockForm blockForm;
-    private final String[] textures;
+    protected final BlockForm blockForm;
+    protected final String[] textures;
 
     /**
      * Prefer {@link #cubeAll(String)}.
@@ -185,11 +182,7 @@ public class BlockBakeFrame {
     }
 
     public void registerBlockTextures(TextureMap map) {
-        Set<String> uniqueTextures = new LinkedHashSet<>();
-        for (String texture : this.textures) {
-            uniqueTextures.add(texture);
-        }
-        for (String texture : uniqueTextures) {
+        for (String texture : new ObjectOpenHashSet<>(textures)) {
             map.registerSprite(new ResourceLocation(Tags.MODID, ROOT_PATH + texture));
         }
     }
@@ -228,9 +221,9 @@ public class BlockBakeFrame {
 
     public void putTextures(ImmutableMap.Builder<String, String> textureMap) {
         String[] textureKeys = this.blockForm.textureKeys;
-        AtomicInteger counter = new AtomicInteger(0);
+        int counter = 0;
         for (String textureKey : textureKeys) {
-            textureMap.put(textureKey, getTextureLocation(counter.getAndIncrement()).toString());
+            textureMap.put(textureKey, getTextureLocation(counter++).toString());
         }
         textureMap.put("particle", getTextureLocation(0).toString());
     }
@@ -251,9 +244,9 @@ public class BlockBakeFrame {
         CROP("minecraft:block/crop", 1, "crop"),
         LAYER("hbm:block/block_layering", 1, "texture");
 
-        private final String baseModel;
-        private final int textureCount;
-        private final String[] textureKeys;
+        final String baseModel;
+        final int textureCount;
+        final String[] textureKeys;
 
         BlockForm(String baseModel, int textureCount, String... textureKeys) {
             this.baseModel = baseModel;

@@ -1,7 +1,7 @@
 package com.hbm.render.loader;
 
+import com.hbm.render.util.NTMImmediate;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.client.resources.IResource;
@@ -195,20 +195,17 @@ public class HFRWavefrontObject implements IModelCustomNamed
     {
         if(allowMixedMode) throw new UnsupportedOperationException("Rendering of mixed-mode model " + this.fileName + " is not supported!");
 
-        Tessellator tessellator = Tessellator.getInstance();
-        BufferBuilder buf = tessellator.getBuffer();
-
         if (currentGroupObject != null)
         {
-            buf.begin(currentGroupObject.glDrawingMode, DefaultVertexFormats.POSITION_TEX_NORMAL);
+            NTMImmediate.INSTANCE.begin(currentGroupObject.glDrawingMode, DefaultVertexFormats.POSITION_TEX_NORMAL);
         }
         else
         {
-            buf.begin(GL11.GL_TRIANGLES, DefaultVertexFormats.POSITION_TEX_NORMAL);
+            NTMImmediate.INSTANCE.begin(GL11.GL_TRIANGLES, DefaultVertexFormats.POSITION_TEX_NORMAL);
         }
-        tessellateAll(tessellator);
+        tessellateAll(Tessellator.getInstance());
 
-        tessellator.draw();
+        NTMImmediate.INSTANCE.draw();
     }
 
     @SideOnly(Side.CLIENT)

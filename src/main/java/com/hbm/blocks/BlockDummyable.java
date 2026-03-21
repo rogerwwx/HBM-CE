@@ -10,6 +10,7 @@ import com.hbm.lib.InventoryHelper;
 import com.hbm.lib.Library;
 import com.hbm.main.MainRegistry;
 import com.hbm.main.client.NTMClientRegistry;
+import com.hbm.main.client.StaticTesrBakedModels;
 import com.hbm.tileentity.IPersistentNBT;
 import com.hbm.world.gen.nbt.INBTBlockTransformable;
 import net.minecraft.block.Block;
@@ -32,9 +33,7 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumHand;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.*;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
@@ -597,6 +596,33 @@ public abstract class BlockDummyable extends BlockContainer implements ICustomBl
 	@Override
 	@SideOnly(Side.CLIENT)
 	public void registerSprite(TextureMap map) {
+	}
+
+	@Override
+	@SideOnly(Side.CLIENT)
+	public EnumBlockRenderType getRenderType(IBlockState state) {
+		if (StaticTesrBakedModels.isManagedBlock(this)) {
+			return EnumBlockRenderType.MODEL;
+		}
+		return super.getRenderType(state);
+	}
+
+	@Override
+	@SideOnly(Side.CLIENT)
+	public BlockRenderLayer getRenderLayer() {
+		if (StaticTesrBakedModels.isManagedBlock(this)) {
+			return BlockRenderLayer.CUTOUT;
+		}
+		return super.getRenderLayer();
+	}
+
+	@Override
+	@SideOnly(Side.CLIENT)
+	public boolean canRenderInLayer(IBlockState state, BlockRenderLayer layer) {
+		if (StaticTesrBakedModels.isManagedBlock(this)) {
+			return layer == BlockRenderLayer.CUTOUT;
+		}
+		return super.canRenderInLayer(state, layer);
 	}
 
 	@Override

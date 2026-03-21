@@ -1,6 +1,7 @@
 package com.hbm.items;
 
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
@@ -15,12 +16,15 @@ public final class ClaimedModelLocationRegistry {
     private static final Set<IModelLocationOwner> OWNERS = new ReferenceOpenHashSet<>(256);
     private static final Reference2ObjectOpenHashMap<Item, ITeisrBinding> TEISR_BINDINGS_BY_ITEM = new Reference2ObjectOpenHashMap<>(128);
     private static final Object2ObjectOpenHashMap<ModelResourceLocation, ITeisrBinding> TEISR_BINDINGS_BY_LOCATION = new Object2ObjectOpenHashMap<>(128);
+    private static final Object2ObjectOpenHashMap<ModelResourceLocation, IModelLocationOwner> OWNERS_BY_LOCATION = new Object2ObjectOpenHashMap<>(256);
+    private static final ObjectOpenHashSet<ModelResourceLocation> UNKNOWN_LOCATIONS = new ObjectOpenHashSet<>(256);
 
     private ClaimedModelLocationRegistry() {
     }
 
     public static void register(IClaimedModelLocation claimant) {
         OWNERS.add(claimant);
+        clearLocationCache();
     }
 
     public static void registerTeisrBinding(ITeisrBinding binding) {
@@ -36,6 +40,7 @@ public final class ClaimedModelLocationRegistry {
         TEISR_BINDINGS_BY_LOCATION.put(modelLocation, binding);
         TEISR_BINDINGS_BY_ITEM.put(item, binding);
         OWNERS.add(binding);
+        clearLocationCache();
     }
 
     public static void unregisterTeisrBinding(Item item) {
@@ -43,6 +48,7 @@ public final class ClaimedModelLocationRegistry {
         if (binding != null) {
             TEISR_BINDINGS_BY_LOCATION.remove(binding.getModelLocation());
             OWNERS.remove(binding);
+            clearLocationCache();
         }
     }
 
@@ -56,11 +62,20 @@ public final class ClaimedModelLocationRegistry {
         if (teisrBinding != null) {
             return teisrBinding;
         }
+        IModelLocationOwner cachedOwner = OWNERS_BY_LOCATION.get(location);
+        if (cachedOwner != null) {
+            return cachedOwner;
+        }
+        if (UNKNOWN_LOCATIONS.contains(location)) {
+            return null;
+        }
         for (IModelLocationOwner owner : OWNERS) {
             if (owner.ownsModelLocation(location)) {
+                OWNERS_BY_LOCATION.put(location, owner);
                 return owner;
             }
         }
+        UNKNOWN_LOCATIONS.add(location);
         return null;
     }
 
@@ -84,6 +99,11 @@ public final class ClaimedModelLocationRegistry {
 
     public static boolean hasSyntheticTeisrBinding(Item item) {
         return getSyntheticTeisrModelLocation(item) != null;
+    }
+
+    private static void clearLocationCache() {
+        OWNERS_BY_LOCATION.clear();
+        UNKNOWN_LOCATIONS.clear();
     }
 
     public interface ITeisrBinding extends IModelLocationOwner {

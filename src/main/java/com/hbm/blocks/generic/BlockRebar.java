@@ -20,6 +20,7 @@ import com.hbm.main.MainRegistry;
 import com.hbm.render.model.AbstractBakedModel;
 import com.hbm.render.model.BakedModelTransforms;
 import com.hbm.render.model.BlockRebarBakedModel;
+import com.hbm.render.util.NTMImmediate;
 import com.hbm.tileentity.IBufPacketReceiver;
 import com.hbm.tileentity.TileEntityLoadedBase;
 import com.hbm.tileentity.network.TileEntityPipeBaseNT;
@@ -36,7 +37,10 @@ import net.minecraft.block.material.Material;
 import net.minecraft.block.state.BlockFaceShape;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.*;
+import net.minecraft.client.renderer.BlockModelRenderer;
+import net.minecraft.client.renderer.BufferBuilder;
+import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.client.renderer.RenderGlobal;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.block.model.IBakedModel;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
@@ -121,9 +125,7 @@ public class BlockRebar extends BlockContainer implements IDynamicModels {
         mc.entityRenderer.enableLightmap();
         mc.getTextureManager().bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
 
-        Tessellator tessellator = Tessellator.getInstance();
-        BufferBuilder buffer = tessellator.getBuffer();
-        buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.BLOCK);
+        BufferBuilder buffer = NTMImmediate.INSTANCE.begin(GL11.GL_QUADS, DefaultVertexFormats.BLOCK);
         buffer.setTranslation(-dx, -dy, -dz);
 
         IBlockState state = ModBlocks.rebar.getDefaultState();
@@ -140,7 +142,7 @@ public class BlockRebar extends BlockContainer implements IDynamicModels {
             if (drawn >= limit) break;
         }
 
-        tessellator.draw();
+        NTMImmediate.INSTANCE.draw();
         buffer.setTranslation(0, 0, 0);
         mc.entityRenderer.disableLightmap();
         GlStateManager.shadeModel(GL11.GL_FLAT);
