@@ -1,4 +1,4 @@
-name: Nightly Gradle Build
+name: Nightly Gradle Build (Java25 only)
 
 on:
   schedule:
@@ -29,9 +29,6 @@ jobs:
         id: ver
         run: |
           set -euo pipefail
-          if [[ ! -f gradle.properties ]]; then
-            echo "::error::gradle.properties not found in repo root"; exit 1
-          fi
           MOD_VERSION=$(grep -E '^\s*modVersion\s*=' gradle.properties | sed -E 's/^\s*modVersion\s*=\s*//; s/\r$//' | xargs || true)
           if [[ -z "${MOD_VERSION}" ]]; then
             echo "::error::modVersion is empty in gradle.properties"; exit 1
@@ -56,8 +53,8 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
-      - name: Build with Gradle
-        run: ./gradlew build --no-daemon
+      - name: Build Java25 reobf jar
+        run: ./gradlew reobfJarJava25 --no-daemon
 
       - name: Create nightly tag
         id: tag
@@ -70,27 +67,25 @@ jobs:
           git tag -f $TAG
           git push --force origin $TAG
 
-      - name: Collect release jars
+      - name: Collect release jars (Java25 only)
         run: |
           mkdir -p release
-          find build/libs -name '*.jar' \
+          find build/publication-libs -name '*.jar' \
             ! -name '*dev*.jar' \
-            ! -name '*downgraded*.jar' \
             -exec cp {} release/ \;
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.TAG }}
-          name: "Nightly Build v${{ env.MOD_VERSION }}"
+          name: "Nightly Build v${{ env.MOD_VERSION }} (Java25)"
           prerelease: true
           body: |
-            Auto Build
+            Auto Build (Java25 only)
             Commit: `${{ github.sha }}`
           files: release/*.jar
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
 
       - name: Delete old nightly releases
         uses: dev-drprasad/delete-older-releases@v0.3.3
