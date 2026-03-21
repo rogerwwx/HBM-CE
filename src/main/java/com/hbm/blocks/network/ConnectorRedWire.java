@@ -11,6 +11,7 @@ import com.hbm.items.block.ItemBlockSpecialAABB;
 import com.hbm.tileentity.network.TileEntityConnector;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.properties.PropertyDirection;
+import net.minecraft.block.state.BlockFaceShape;
 import net.minecraft.block.state.BlockStateContainer;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.renderer.block.model.IBakedModel;
@@ -35,6 +36,7 @@ import net.minecraftforge.client.model.IModel;
 import net.minecraftforge.client.model.ModelLoader;
 import net.minecraftforge.client.model.ModelLoaderRegistry;
 import net.minecraftforge.fml.common.registry.ForgeRegistries;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -63,22 +65,28 @@ public class ConnectorRedWire extends PylonBase implements ICustomBlockItem, IBl
     }
 
     @Override
-    public TileEntity createNewTileEntity(World world, int meta) {
+    public TileEntity createNewTileEntity(@NotNull World world, int meta) {
         return new TileEntityConnector();
     }
 
     @Override
-    public IBlockState getStateForPlacement(World world, BlockPos pos, EnumFacing facing,
-                                            float hitX, float hitY, float hitZ,
-                                            int meta, EntityLivingBase placer) {
+    public @NotNull IBlockState getStateForPlacement(@NotNull World world, @NotNull BlockPos pos, @NotNull EnumFacing facing,
+                                                     float hitX, float hitY, float hitZ,
+                                                     int meta, @NotNull EntityLivingBase placer) {
         return this.getDefaultState().withProperty(FACING, facing);
     }
 
     @Override
-    public IBlockState getStateFromMeta(int meta) {
+    public @NotNull IBlockState getStateFromMeta(int meta) {
         EnumFacing facing = EnumFacing.byIndex(meta & 7);
         return this.getDefaultState().withProperty(FACING, facing);
     }
+
+    @Override
+    public @NotNull BlockFaceShape getBlockFaceShape(@NotNull IBlockAccess worldIn, @NotNull IBlockState state, @NotNull BlockPos pos, @NotNull EnumFacing face) {
+        return BlockFaceShape.UNDEFINED;
+    }
+
 
     @Override
     public int getMetaFromState(IBlockState state) {
@@ -86,7 +94,7 @@ public class ConnectorRedWire extends PylonBase implements ICustomBlockItem, IBl
     }
 
     @Override
-    public AxisAlignedBB getBoundingBox(IBlockState state, IBlockAccess world, BlockPos pos) {
+    public @NotNull AxisAlignedBB getBoundingBox(IBlockState state, @NotNull IBlockAccess world, @NotNull BlockPos pos) {
         EnumFacing facing = state.getValue(FACING);
         return switch (facing) {
             case NORTH -> AABB_NORTH;
@@ -100,7 +108,7 @@ public class ConnectorRedWire extends PylonBase implements ICustomBlockItem, IBl
 
     @Nullable
     @Override
-    public AxisAlignedBB getCollisionBoundingBox(IBlockState state, IBlockAccess worldIn, BlockPos pos) {
+    public AxisAlignedBB getCollisionBoundingBox(@NotNull IBlockState state, @NotNull IBlockAccess worldIn, @NotNull BlockPos pos) {
         return this.getBoundingBox(state, worldIn, pos);
     }
 
@@ -115,18 +123,18 @@ public class ConnectorRedWire extends PylonBase implements ICustomBlockItem, IBl
     }
 
     @Override
-    public boolean isFullCube(IBlockState state) {
+    public boolean isFullCube(@NotNull IBlockState state) {
         return false;
     }
 
     @Override
-    public void addInformation(ItemStack stack, World world, List<String> list, ITooltipFlag flagIn) {
+    public void addInformation(@NotNull ItemStack stack, World world, List<String> list, @NotNull ITooltipFlag flagIn) {
         list.add(TextFormatting.GOLD + "Connection Type: " + TextFormatting.YELLOW + "Single");
         list.add(TextFormatting.GOLD + "Connection Range: " + TextFormatting.YELLOW + "10m");
     }
 
     @Override
-    protected BlockStateContainer createBlockState() {
+    protected @NotNull BlockStateContainer createBlockState() {
         return new BlockStateContainer(this, FACING);
     }
 

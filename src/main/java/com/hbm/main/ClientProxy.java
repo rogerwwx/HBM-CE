@@ -34,10 +34,7 @@ import com.hbm.particle.bullet_hit.ParticleBulletImpact;
 import com.hbm.particle.bullet_hit.ParticleHitDebris;
 import com.hbm.particle.bullet_hit.ParticleSmokeAnim;
 import com.hbm.particle.helper.ParticleCreators;
-import com.hbm.particle_instanced.InstancedParticleRenderer;
-import com.hbm.particle_instanced.ParticleContrailInstanced;
-import com.hbm.particle_instanced.ParticleExSmokeInstanced;
-import com.hbm.particle_instanced.ParticleRocketFlameInstanced;
+import com.hbm.particle_instanced.*;
 import com.hbm.qmaw.QMAWLoader;
 import com.hbm.render.GLCompat;
 import com.hbm.render.anim.BusAnimation;
@@ -422,9 +419,12 @@ public class ClientProxy extends ServerProxy {
                 }
                 break;
             case 3: //Rad Fog
-
-                ParticleRadiationFog fog = new ParticleRadiationFog(world, x, y, z);
-                Minecraft.getMinecraft().effectRenderer.addEffect(fog);
+                if (GeneralConfig.instancedParticles) {
+                    InstancedParticleRenderer.addParticle(new ParticleRadiationFogInstanced(world, x, y, z));
+                } else {
+                    ParticleRadiationFog fog = new ParticleRadiationFog(world, x, y, z);
+                    Minecraft.getMinecraft().effectRenderer.addEffect(fog);
+                }
                 break;
             case 4:
                 world.spawnParticle(EnumParticleTypes.FLAME, x + world.rand.nextDouble(), y + 1.1, z + world.rand.nextDouble(), 0.0, 0.0, 0.0);
@@ -619,8 +619,12 @@ public class ClientProxy extends ServerProxy {
                 Minecraft.getMinecraft().effectRenderer.addEffect(contrail);
             }
             case "radFog", "radiationfog" -> {
-                ParticleRadiationFog contrail = new ParticleRadiationFog(world, x, y, z);
-                Minecraft.getMinecraft().effectRenderer.addEffect(contrail);
+                if (GeneralConfig.instancedParticles) {
+                    InstancedParticleRenderer.addParticle(new ParticleRadiationFogInstanced(world, x, y, z));
+                } else {
+                    ParticleRadiationFog contrail = new ParticleRadiationFog(world, x, y, z);
+                    Minecraft.getMinecraft().effectRenderer.addEffect(contrail);
+                }
             }
 
             // End MK2 porting.
@@ -1247,12 +1251,26 @@ public class ClientProxy extends ServerProxy {
             case "rift" -> Minecraft.getMinecraft().effectRenderer.addEffect(new ParticleRift(world, x, y, z));
             case "rbmkflame" -> {
                 int maxAge = data.getInteger("maxAge");
-                Minecraft.getMinecraft().effectRenderer.addEffect(new ParticleRBMKFlame(world, x, y, z, maxAge));
+                if(GeneralConfig.instancedParticles) {
+                    InstancedParticleRenderer.addParticle(new ParticleRBMKFlameInstanced(world, x, y, z, maxAge));
+                } else {
+                    Minecraft.getMinecraft().effectRenderer.addEffect(new ParticleRBMKFlame(world, x, y, z, maxAge));
+                }
             }
-            case "rbmksteam" -> Minecraft.getMinecraft().effectRenderer.addEffect(new ParticleRBMKSteam(world, x, y, z));
+            case "rbmksteam" -> {
+                if(GeneralConfig.instancedParticles) {
+                    InstancedParticleRenderer.addParticle(new ParticleRBMKSteamInstanced(world, x, y, z));
+                } else {
+                    Minecraft.getMinecraft().effectRenderer.addEffect(new ParticleRBMKSteam(world, x, y, z));
+                }
+            }
             case "rbmkmush" -> {
                 float scale = data.getFloat("scale");
-                Minecraft.getMinecraft().effectRenderer.addEffect(new ParticleRBMKMush(world, x, y, z, scale));
+                if(GeneralConfig.instancedParticles) {
+                    InstancedParticleRenderer.addParticle(new ParticleRBMKMushInstanced(world, x, y, z, scale));
+                } else {
+                    Minecraft.getMinecraft().effectRenderer.addEffect(new ParticleRBMKMush(world, x, y, z, scale));
+                }
             }
             case "tower" -> {
                 if (particleSetting == 0 || (particleSetting == 1 && rand.nextBoolean())) {

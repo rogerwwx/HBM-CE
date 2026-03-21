@@ -1,6 +1,8 @@
 package com.hbm.particle.tau;
 
 import com.hbm.main.ResourceManager;
+import com.hbm.render.util.NTMBufferBuilder;
+import com.hbm.render.util.NTMImmediate;
 import com.hbm.util.BobMathUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.particle.Particle;
@@ -9,13 +11,11 @@ import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.GlStateManager.DestFactor;
 import net.minecraft.client.renderer.GlStateManager.SourceFactor;
 import net.minecraft.client.renderer.RenderHelper;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
-import org.lwjgl.opengl.GL11; import net.minecraft.client.renderer.GlStateManager;
+import org.lwjgl.opengl.GL11;
 
 public class ParticleTauParticle extends Particle {
 
@@ -118,18 +118,20 @@ public class ParticleTauParticle extends Particle {
         float f7 = (float)(this.prevPosZ + (this.posZ - this.prevPosZ) * (double)partialTicks - interpPosZ);
         Vec3d[] avec3d = new Vec3d[] {new Vec3d((double)(-rotationX * f4 - rotationXY * f4), (double)(-rotationZ * f4), (double)(-rotationYZ * f4 - rotationXZ * f4)), new Vec3d((double)(-rotationX * f4 + rotationXY * f4), (double)(rotationZ * f4), (double)(-rotationYZ * f4 + rotationXZ * f4)), new Vec3d((double)(rotationX * f4 + rotationXY * f4), (double)(rotationZ * f4), (double)(rotationYZ * f4 + rotationXZ * f4)), new Vec3d((double)(rotationX * f4 - rotationXY * f4), (double)(-rotationZ * f4), (double)(rotationYZ * f4 - rotationXZ * f4))};
         
-        buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.PARTICLE_POSITION_TEX_COLOR_LMAP);
+        NTMBufferBuilder fastBuffer = NTMImmediate.INSTANCE.beginParticlePositionTexColorLmap(GL11.GL_QUADS, MathHelper.ceil(workingAlpha) * 4);
         
         float a = workingAlpha;
+        int packedLightmap = NTMBufferBuilder.packLightmap(240, 240);
         for(int i = 0; i < workingAlpha; i ++){
-	        buffer.pos((double)f5 + avec3d[0].x, (double)f6 + avec3d[0].y, (double)f7 + avec3d[0].z).tex(1, 1).color(this.particleRed, this.particleGreen, this.particleBlue, Math.min(a, 1)).lightmap(240, 240).endVertex();
-	        buffer.pos((double)f5 + avec3d[1].x, (double)f6 + avec3d[1].y, (double)f7 + avec3d[1].z).tex(1, 0).color(this.particleRed, this.particleGreen, this.particleBlue, Math.min(a, 1)).lightmap(240, 240).endVertex();
-	        buffer.pos((double)f5 + avec3d[2].x, (double)f6 + avec3d[2].y, (double)f7 + avec3d[2].z).tex(0, 0).color(this.particleRed, this.particleGreen, this.particleBlue, Math.min(a, 1)).lightmap(240, 240).endVertex();
-	        buffer.pos((double)f5 + avec3d[3].x, (double)f6 + avec3d[3].y, (double)f7 + avec3d[3].z).tex(0, 1).color(this.particleRed, this.particleGreen, this.particleBlue, Math.min(a, 1)).lightmap(240, 240).endVertex();
+	        int packedColor = NTMBufferBuilder.packColor(this.particleRed, this.particleGreen, this.particleBlue, Math.min(a, 1));
+	        fastBuffer.appendParticlePositionTexColorLmapUnchecked((double)f5 + avec3d[0].x, (double)f6 + avec3d[0].y, (double)f7 + avec3d[0].z, 1, 1, packedColor, packedLightmap);
+	        fastBuffer.appendParticlePositionTexColorLmapUnchecked((double)f5 + avec3d[1].x, (double)f6 + avec3d[1].y, (double)f7 + avec3d[1].z, 1, 0, packedColor, packedLightmap);
+	        fastBuffer.appendParticlePositionTexColorLmapUnchecked((double)f5 + avec3d[2].x, (double)f6 + avec3d[2].y, (double)f7 + avec3d[2].z, 0, 0, packedColor, packedLightmap);
+	        fastBuffer.appendParticlePositionTexColorLmapUnchecked((double)f5 + avec3d[3].x, (double)f6 + avec3d[3].y, (double)f7 + avec3d[3].z, 0, 1, packedColor, packedLightmap);
 	        a-=1;
         }
         
-        Tessellator.getInstance().draw();
+        NTMImmediate.INSTANCE.draw();
         
         GlStateManager.enableAlpha();
         GlStateManager.depthMask(true);

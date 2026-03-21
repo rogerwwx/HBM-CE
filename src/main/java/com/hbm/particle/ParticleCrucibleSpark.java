@@ -1,14 +1,15 @@
 package com.hbm.particle;
 
 import com.hbm.render.item.weapon.ItemRenderCrucible;
+import com.hbm.render.util.NTMBufferBuilder;
+import com.hbm.render.util.NTMImmediate;
 import com.hbm.util.BobMathUtil;
 import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.entity.Entity;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
-import org.lwjgl.opengl.GL11; import net.minecraft.client.renderer.GlStateManager;
+import org.lwjgl.opengl.GL11;
 
 public class ParticleCrucibleSpark extends ParticleFirstPerson {
 
@@ -109,17 +110,16 @@ public class ParticleCrucibleSpark extends ParticleFirstPerson {
         point2 = point2.add(f5, f6, f7);
         particleAxis = particleAxis.scale(stretch);
         
-        buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX);
+        NTMBufferBuilder fastBuffer = NTMImmediate.INSTANCE.beginPositionTex(GL11.GL_QUADS, MathHelper.ceil(this.particleAlpha) * 4);
         float alpha = this.particleAlpha;
         while(alpha > 0){
-        	buffer.pos(point2.x, point2.y, point2.z).tex(1, 0).endVertex();
-        	buffer.pos(point1.x, point1.y, point1.z).tex(1, 1).endVertex();
-        	
-        	buffer.pos(point1.x+particleAxis.x, point1.y+particleAxis.y, point1.z+particleAxis.z).tex(0, 1).endVertex();
-        	buffer.pos(point2.x+particleAxis.x, point2.y+particleAxis.y, point2.z+particleAxis.z).tex(0, 0).endVertex();
+        	fastBuffer.appendPositionTexUnchecked(point2.x, point2.y, point2.z, 1, 0);
+        	fastBuffer.appendPositionTexUnchecked(point1.x, point1.y, point1.z, 1, 1);
+        	fastBuffer.appendPositionTexUnchecked(point1.x+particleAxis.x, point1.y+particleAxis.y, point1.z+particleAxis.z, 0, 1);
+        	fastBuffer.appendPositionTexUnchecked(point2.x+particleAxis.x, point2.y+particleAxis.y, point2.z+particleAxis.z, 0, 0);
         	alpha -= 1;
         }
-        Tessellator.getInstance().draw();
+        NTMImmediate.INSTANCE.draw();
        
 	}
 	

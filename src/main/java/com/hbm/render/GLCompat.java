@@ -97,14 +97,14 @@ public class GLCompat {
 
     public static int genBuffers() {
         if (arbVbo)
-            return ARBVertexBufferObject.glGenBuffersARB();
+            return ARBBufferObject.glGenBuffersARB();
         else
             return GL15.glGenBuffers();
     }
 
     public static void bindBuffer(int target, int buf) {
         if (arbVbo)
-            ARBVertexBufferObject.glBindBufferARB(target, buf);
+            ARBBufferObject.glBindBufferARB(target, buf);
         else
             GL15.glBindBuffer(target, buf);
     }
@@ -201,15 +201,11 @@ public class GLCompat {
     }
 
     public static int genRenderbuffers() {
-        switch (fboType) {
-            case NORMAL:
-                return GL30.glGenRenderbuffers();
-            case ARB:
-                return ARBFramebufferObject.glGenRenderbuffers();
-            case EXT:
-                return EXTFramebufferObject.glGenRenderbuffersEXT();
-        }
-        return 0;
+        return switch (fboType) {
+            case NORMAL -> GL30.glGenRenderbuffers();
+            case ARB -> ARBFramebufferObject.glGenRenderbuffers();
+            case EXT -> EXTFramebufferObject.glGenRenderbuffersEXT();
+        };
     }
 
     public static void renderbufferStorage(int target, int internalformat, int width, int height) {
@@ -255,15 +251,11 @@ public class GLCompat {
     }
 
     public static int genFramebuffers() {
-        switch (fboType) {
-            case NORMAL:
-                return GL30.glGenFramebuffers();
-            case ARB:
-                return ARBFramebufferObject.glGenFramebuffers();
-            case EXT:
-                return EXTFramebufferObject.glGenFramebuffersEXT();
-        }
-        return 0;
+        return switch (fboType) {
+            case NORMAL -> GL30.glGenFramebuffers();
+            case ARB -> ARBFramebufferObject.glGenFramebuffers();
+            case EXT -> EXTFramebufferObject.glGenFramebuffersEXT();
+        };
     }
 
     public static void blitFramebuffer(int srcX0, int srcY0, int srcX1, int srcY1, int dstX0, int dstY0, int dstX1, int dstY1, int mask, int filter) {
@@ -592,8 +584,8 @@ public class GLCompat {
         if (arbVertexProgram) {
             GL_ARRAY_BUFFER = ARBVertexBufferObject.GL_ARRAY_BUFFER_ARB;
             GL_ELEMENT_ARRAY_BUFFER = ARBVertexBufferObject.GL_ELEMENT_ARRAY_BUFFER_ARB;
-            GL_DYNAMIC_DRAW = ARBVertexBufferObject.GL_DYNAMIC_DRAW_ARB;
-            GL_STATIC_DRAW = ARBVertexBufferObject.GL_STATIC_DRAW_ARB;
+            GL_DYNAMIC_DRAW = ARBBufferObject.GL_DYNAMIC_DRAW_ARB;
+            GL_STATIC_DRAW = ARBBufferObject.GL_STATIC_DRAW_ARB;
         } else {
             GL_ARRAY_BUFFER = GL15.GL_ARRAY_BUFFER;
             GL_ELEMENT_ARRAY_BUFFER = GL15.GL_ELEMENT_ARRAY_BUFFER;
@@ -696,23 +688,23 @@ public class GLCompat {
 
 
 
-    public static enum VAOType {
+    public enum VAOType {
         NORMAL,
         ARB,
         APPLE,
         APPLE_COMPAT
     }
 
-    public static enum FBOType {
+    public enum FBOType {
         NORMAL,
         ARB,
-        EXT;
+        EXT
     }
 
-    public static enum InstancingType {
+    public enum InstancingType {
         NORMAL,
         ARB,
-        EXT;
+        EXT
     }
 
 }

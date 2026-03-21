@@ -1,6 +1,7 @@
 package com.hbm.particle;
 
 import com.hbm.main.client.NTMClientRegistry;
+import com.hbm.render.util.NTMBufferBuilder;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.texture.TextureManager;
@@ -128,6 +129,7 @@ public class ParticleSmokePlume extends Particle {
 		}
 		
 		Random urandom = new Random(this.hashCode());
+		NTMBufferBuilder fastBuffer = (NTMBufferBuilder) buffer;
 		for (int ii = 0; ii < 6; ii++) {
 			
 			float f5 = (float) ((this.prevPosX + (this.posX - this.prevPosX) * (double) partialTicks - interpPosX) + urandom.nextGaussian() * 0.5);
@@ -154,10 +156,12 @@ public class ParticleSmokePlume extends Particle {
 				}
 			}
 
-			buffer.pos((double) f5 + avec3d[0].x, (double) f6 + avec3d[0].y, (double) f7 + avec3d[0].z).tex((double) f1, (double) f3).color(this.particleRed, this.particleGreen, this.particleBlue, this.particleAlpha).lightmap(j, k).endVertex();
-			buffer.pos((double) f5 + avec3d[1].x, (double) f6 + avec3d[1].y, (double) f7 + avec3d[1].z).tex((double) f1, (double) f2).color(this.particleRed, this.particleGreen, this.particleBlue, this.particleAlpha).lightmap(j, k).endVertex();
-			buffer.pos((double) f5 + avec3d[2].x, (double) f6 + avec3d[2].y, (double) f7 + avec3d[2].z).tex((double) f, (double) f2).color(this.particleRed, this.particleGreen, this.particleBlue, this.particleAlpha).lightmap(j, k).endVertex();
-			buffer.pos((double) f5 + avec3d[3].x, (double) f6 + avec3d[3].y, (double) f7 + avec3d[3].z).tex((double) f, (double) f3).color(this.particleRed, this.particleGreen, this.particleBlue, this.particleAlpha).lightmap(j, k).endVertex();
+			int packedColor = NTMBufferBuilder.packColor(this.particleRed, this.particleGreen, this.particleBlue, this.particleAlpha);
+			int packedLightmap = NTMBufferBuilder.packLightmap(j, k);
+			fastBuffer.appendParticlePositionTexColorLmap((double) f5 + avec3d[0].x, (double) f6 + avec3d[0].y, (double) f7 + avec3d[0].z, (double) f1, (double) f3, packedColor, packedLightmap);
+			fastBuffer.appendParticlePositionTexColorLmap((double) f5 + avec3d[1].x, (double) f6 + avec3d[1].y, (double) f7 + avec3d[1].z, (double) f1, (double) f2, packedColor, packedLightmap);
+			fastBuffer.appendParticlePositionTexColorLmap((double) f5 + avec3d[2].x, (double) f6 + avec3d[2].y, (double) f7 + avec3d[2].z, (double) f, (double) f2, packedColor, packedLightmap);
+			fastBuffer.appendParticlePositionTexColorLmap((double) f5 + avec3d[3].x, (double) f6 + avec3d[3].y, (double) f7 + avec3d[3].z, (double) f, (double) f3, packedColor, packedLightmap);
 		
 		}
 	}

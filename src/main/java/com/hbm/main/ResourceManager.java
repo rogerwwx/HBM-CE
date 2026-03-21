@@ -4,6 +4,7 @@ import com.hbm.Tags;
 import com.hbm.animloader.AnimatedModel;
 import com.hbm.animloader.Animation;
 import com.hbm.animloader.ColladaLoader;
+import com.hbm.config.GeneralConfig;
 import com.hbm.handler.HbmShaderManager2;
 import com.hbm.handler.HbmShaderManager2.Shader;
 import com.hbm.lib.internal.MethodHandleHelper;
@@ -1399,14 +1400,19 @@ public class ResourceManager {
     public static AnimatedModel hf_sword;
     public static Animation hf_sword_equip;
     //SHADERS
-    public static Shader lit_particles = HbmShaderManager2.loadShader(new ResourceLocation(Tags.MODID, "shaders/lit_particles"), shader -> {
-        GLCompat.bindAttribLocation(shader, 0, "pos");
-        GLCompat.bindAttribLocation(shader, 1, "offsetPos");
-        GLCompat.bindAttribLocation(shader, 2, "scale");
-        GLCompat.bindAttribLocation(shader, 3, "texData");
-        GLCompat.bindAttribLocation(shader, 4, "color");
-        GLCompat.bindAttribLocation(shader, 5, "lightmap");
-    }).withUniforms(HbmShaderManager2.MODELVIEW_MATRIX, HbmShaderManager2.PROJECTION_MATRIX, HbmShaderManager2.INV_PLAYER_ROT_MATRIX, HbmShaderManager2.LIGHTMAP);
+    public static Shader lit_particles = loadLitParticlesShader();
+
+    public static Shader loadLitParticlesShader() {
+        return HbmShaderManager2.loadShader(new ResourceLocation(Tags.MODID, "shaders/lit_particles"), shader -> {
+            GLCompat.bindAttribLocation(shader, 0, "pos");
+            GLCompat.bindAttribLocation(shader, 1, "offsetPos");
+            GLCompat.bindAttribLocation(shader, 2, "scale");
+            GLCompat.bindAttribLocation(shader, 3, "texData");
+            GLCompat.bindAttribLocation(shader, 4, "color");
+            GLCompat.bindAttribLocation(shader, 5, "lightmap");
+        }, true, GeneralConfig.instancedParticles).withUniforms(HbmShaderManager2.MODELVIEW_MATRIX, HbmShaderManager2.PROJECTION_MATRIX, HbmShaderManager2.INV_PLAYER_ROT_MATRIX, HbmShaderManager2.LIGHTMAP);
+    }
+
     public static Shader gluon_beam = HbmShaderManager2.loadShader(new ResourceLocation(Tags.MODID, "shaders/gluon_beam"))
             .withUniforms(shader -> {
                 GLCompat.activeTexture(GLCompat.GL_TEXTURE0 + 3);

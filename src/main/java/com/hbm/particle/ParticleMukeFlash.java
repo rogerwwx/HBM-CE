@@ -1,13 +1,13 @@
 package com.hbm.particle;
 
 import com.hbm.Tags;
+import com.hbm.render.util.NTMBufferBuilder;
+import com.hbm.render.util.NTMImmediate;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.RenderHelper;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.World;
@@ -102,11 +102,11 @@ public class ParticleMukeFlash extends Particle {
         final int lightJ = 240;
         final int lightK = 240;
 
-        Tessellator tess = Tessellator.getInstance();
-        BufferBuilder buf = tess.getBuffer();
-        buf.begin(GL11.GL_QUADS, DefaultVertexFormats.PARTICLE_POSITION_TEX_COLOR_LMAP);
+        NTMBufferBuilder buf = NTMImmediate.INSTANCE.beginParticlePositionTexColorLmap(GL11.GL_QUADS, 24 * 4);
         float r = 1.0F, g = 0.9F, b = 0.75F, a = this.particleAlpha * 0.5F;
         Random seeded = new Random();
+        int packedColor = NTMBufferBuilder.packColor(r, g, b, a);
+        int packedLightmap = NTMBufferBuilder.packLightmap(lightJ, lightK);
 
         for (int i = 0; i < 24; i++) {
             seeded.setSeed(i * 31L + 1L);
@@ -131,13 +131,13 @@ public class ParticleMukeFlash extends Particle {
             double y3 = pY - rotationZ * scale;
             double z3 = pZ + rotationYZ * scale - rotationXZ * scale;
 
-            buf.pos(x0, y0, z0).tex(1, 1).color(r, g, b, a).lightmap(lightJ, lightK).endVertex();
-            buf.pos(x1, y1, z1).tex(1, 0).color(r, g, b, a).lightmap(lightJ, lightK).endVertex();
-            buf.pos(x2, y2, z2).tex(0, 0).color(r, g, b, a).lightmap(lightJ, lightK).endVertex();
-            buf.pos(x3, y3, z3).tex(0, 1).color(r, g, b, a).lightmap(lightJ, lightK).endVertex();
+            buf.appendParticlePositionTexColorLmapUnchecked(x0, y0, z0, 1, 1, packedColor, packedLightmap);
+            buf.appendParticlePositionTexColorLmapUnchecked(x1, y1, z1, 1, 0, packedColor, packedLightmap);
+            buf.appendParticlePositionTexColorLmapUnchecked(x2, y2, z2, 0, 0, packedColor, packedLightmap);
+            buf.appendParticlePositionTexColorLmapUnchecked(x3, y3, z3, 0, 1, packedColor, packedLightmap);
         }
 
-        tess.draw();
+        NTMImmediate.INSTANCE.draw();
 
         GlStateManager.alphaFunc(GL11.GL_GREATER, 0.1F);
         GlStateManager.enableLighting();

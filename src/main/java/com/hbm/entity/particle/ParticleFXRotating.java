@@ -1,5 +1,6 @@
 package com.hbm.entity.particle;
 
+import com.hbm.render.util.NTMBufferBuilder;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.entity.Entity;
@@ -60,10 +61,13 @@ public class ParticleFXRotating extends Particle {
         }
 
 
-        buffer.pos((double) f5 + avec3d[0].x, (double) f6 + avec3d[0].y, (double) f7 + avec3d[0].z).tex((double) maxU, (double) maxV).color(this.particleRed, this.particleGreen, this.particleBlue, this.particleAlpha).lightmap(lightMapJ, lightMapK).endVertex();
-        buffer.pos((double) f5 + avec3d[1].x, (double) f6 + avec3d[1].y, (double) f7 + avec3d[1].z).tex((double) maxU, (double) minV).color(this.particleRed, this.particleGreen, this.particleBlue, this.particleAlpha).lightmap(lightMapJ, lightMapK).endVertex();
-        buffer.pos((double) f5 + avec3d[2].x, (double) f6 + avec3d[2].y, (double) f7 + avec3d[2].z).tex((double) minU, (double) minV).color(this.particleRed, this.particleGreen, this.particleBlue, this.particleAlpha).lightmap(lightMapJ, lightMapK).endVertex();
-        buffer.pos((double) f5 + avec3d[3].x, (double) f6 + avec3d[3].y, (double) f7 + avec3d[3].z).tex((double) minU, (double) maxV).color(this.particleRed, this.particleGreen, this.particleBlue, this.particleAlpha).lightmap(lightMapJ, lightMapK).endVertex();
+        NTMBufferBuilder fastBuffer = (NTMBufferBuilder) buffer;
+        int packedColor = NTMBufferBuilder.packColor(this.particleRed, this.particleGreen, this.particleBlue, this.particleAlpha);
+        int packedLightmap = NTMBufferBuilder.packLightmap(lightMapJ, lightMapK);
+        fastBuffer.appendParticlePositionTexColorLmap((double) f5 + avec3d[0].x, (double) f6 + avec3d[0].y, (double) f7 + avec3d[0].z, (double) maxU, (double) maxV, packedColor, packedLightmap);
+        fastBuffer.appendParticlePositionTexColorLmap((double) f5 + avec3d[1].x, (double) f6 + avec3d[1].y, (double) f7 + avec3d[1].z, (double) maxU, (double) minV, packedColor, packedLightmap);
+        fastBuffer.appendParticlePositionTexColorLmap((double) f5 + avec3d[2].x, (double) f6 + avec3d[2].y, (double) f7 + avec3d[2].z, (double) minU, (double) minV, packedColor, packedLightmap);
+        fastBuffer.appendParticlePositionTexColorLmap((double) f5 + avec3d[3].x, (double) f6 + avec3d[3].y, (double) f7 + avec3d[3].z, (double) minU, (double) maxV, packedColor, packedLightmap);
     }
 
 

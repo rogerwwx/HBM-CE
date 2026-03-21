@@ -160,7 +160,7 @@ public class GeneralConfig {
 		Property ssg_anim = config.get(CommonConfig.CATEGORY_GENERAL, "1.24_ssgAnimType", true);
 		ssg_anim.setComment("Which supershotgun reload animation to use. True is Drillgon's animation, false is Bob's animation");
 		ssgAnim = ssg_anim.getBoolean();
-		instancedParticles = CommonConfig.createConfigBool(config, CommonConfig.CATEGORY_GENERAL, "1.25_instancedParticles", "Enables instanced particle rendering for some particles, which makes them render several times faster. May not work on all computers, and will break with shaders.", true);
+		instancedParticles = CommonConfig.createConfigBool(config, CommonConfig.CATEGORY_GENERAL, "1.25_instancedParticles", "Enables instanced particle rendering for supported particles, including Torex cloudlets and RBMK particles, which makes them render several times faster. May not work on all computers, and will break with shaders.", true);
 		depthEffects = CommonConfig.createConfigBool(config, CommonConfig.CATEGORY_GENERAL, "1.25_depthBufferEffects", "Enables effects that make use of reading from the depth buffer", true);
 		flashlight = CommonConfig.createConfigBool(config, CommonConfig.CATEGORY_GENERAL, "1.25_flashlights", "Enables dynamic directional lights", true);
 		flashlightVolumetric = CommonConfig.createConfigBool(config, CommonConfig.CATEGORY_GENERAL, "1.25_flashlight_volumetrics", "Enables volumetric lighting for directional lights", true);
@@ -194,12 +194,17 @@ public class GeneralConfig {
         enableImpactWorldProvider = config.get(CommonConfig.CATEGORY_GENERAL, "1.32_enableImpactWorldProvider", true, "If enabled, registers a custom overworld provider which modifies lighting and sky colors for post-impact effects.").getBoolean(true);
         bloodFX = CommonConfig.createConfigBool(config, CommonConfig.CATEGORY_GENERAL, "1.32_enable_blood_effects", "Enables the over-the-top blood visual effects for some weapons", true);
 	
-		if((instancedParticles || depthEffects || flowingDecalAmountMax > 0 || bloodFX || bloom || heatDistortion) && (!GLCompat.error.isEmpty() || !useShaders2)){
-			MainRegistry.logger.error("Warning - Open GL 3.3 not supported! Disabling 3.3 effects...");
+		if(instancedParticles && !GLCompat.error.isEmpty()){
+			MainRegistry.logger.error("Warning - Open GL 3.3 not supported! Disabling instanced particles...");
+			instancedParticles = false;
+		}
+		if((depthEffects || flowingDecalAmountMax > 0 || bloodFX || bloom || heatDistortion) && (!GLCompat.error.isEmpty() || !useShaders2)){
+			if(!GLCompat.error.isEmpty()){
+				MainRegistry.logger.error("Warning - Open GL 3.3 not supported! Disabling shader-driven effects...");
+			}
 			if(!useShaders2){
 				MainRegistry.logger.error("Shader effects manually disabled");
 			}
-			instancedParticles = false;
 			depthEffects = false;
 			flowingDecalAmountMax = 0;
 			bloodFX = false;

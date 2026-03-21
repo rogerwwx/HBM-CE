@@ -1,5 +1,6 @@
 package com.hbm.particle;
 
+import com.hbm.render.util.NTMBufferBuilder;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.util.math.Vec3d;
@@ -73,30 +74,25 @@ public class ParticleRotating extends Particle {
     double y04 = y4 * cosTh + (nZ * x4 - nX * z4) * sinTh;
     double z04 = z4 * cosTh + (nX * y4 - nY * x4) * sinTh;
 
-    buffer
-        .pos(pX + x01, pY + y01, pZ + z01)
-        .tex(particleTexture.getMaxU(), particleTexture.getMaxV())
-        .color(particleRed, particleGreen, particleBlue, particleAlpha)
-        .lightmap(240, 0)
-        .endVertex();
-    buffer
-        .pos(pX + x02, pY + y02, pZ + z02)
-        .tex(particleTexture.getMaxU(), particleTexture.getMinV())
-        .color(particleRed, particleGreen, particleBlue, particleAlpha)
-        .lightmap(240, 0)
-        .endVertex();
-    buffer
-        .pos(pX + x03, pY + y03, pZ + z03)
-        .tex(particleTexture.getMinU(), particleTexture.getMinV())
-        .color(particleRed, particleGreen, particleBlue, particleAlpha)
-        .lightmap(240, 0)
-        .endVertex();
-    buffer
-        .pos(pX + x04, pY + y04, pZ + z04)
-        .tex(particleTexture.getMinU(), particleTexture.getMaxV())
-        .color(particleRed, particleGreen, particleBlue, particleAlpha)
-        .lightmap(240, 0)
-        .endVertex();
+    NTMBufferBuilder fastBuffer = (NTMBufferBuilder) buffer;
+    int packedColor = NTMBufferBuilder.packColor(particleRed, particleGreen, particleBlue, particleAlpha);
+    int packedLightmap = NTMBufferBuilder.packLightmap(240, 0);
+    fastBuffer.appendParticlePositionTexColorLmap(
+        pX + x01, pY + y01, pZ + z01,
+        particleTexture.getMaxU(), particleTexture.getMaxV(),
+        packedColor, packedLightmap);
+    fastBuffer.appendParticlePositionTexColorLmap(
+        pX + x02, pY + y02, pZ + z02,
+        particleTexture.getMaxU(), particleTexture.getMinV(),
+        packedColor, packedLightmap);
+    fastBuffer.appendParticlePositionTexColorLmap(
+        pX + x03, pY + y03, pZ + z03,
+        particleTexture.getMinU(), particleTexture.getMinV(),
+        packedColor, packedLightmap);
+    fastBuffer.appendParticlePositionTexColorLmap(
+        pX + x04, pY + y04, pZ + z04,
+        particleTexture.getMinU(), particleTexture.getMaxV(),
+        packedColor, packedLightmap);
   }
 
   public double getPosX(){
