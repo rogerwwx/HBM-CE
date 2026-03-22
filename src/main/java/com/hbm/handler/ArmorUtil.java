@@ -262,14 +262,16 @@ public class ArmorUtil {
 	
 	public static void installGasMaskFilter(ItemStack mask, ItemStack filter) {
 		
-		if(mask == null || filter == null)
+		if(mask == null || filter == null || filter.isEmpty())
 			return;
 		
 		if(!mask.hasTagCompound())
 			mask.setTagCompound(new NBTTagCompound());
 		
+		ItemStack copy = filter.copy();
+		copy.setCount(1);
 		NBTTagCompound attach = new NBTTagCompound();
-		filter.writeToNBT(attach);
+		copy.writeToNBT(attach);
 		
 		mask.getTagCompound().setTag(FILTERK_KEY, attach);
 	}

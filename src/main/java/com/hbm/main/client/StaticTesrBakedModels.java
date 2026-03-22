@@ -539,6 +539,8 @@ public final class StaticTesrBakedModels {
                     return model;
                 },
                 radioboxSprite,
+                radioboxTexture.uScale,
+                radioboxTexture.vScale,
                 radioboxYaws,
                 0.0F,
                 (float) Math.toRadians(180.0D),
@@ -563,7 +565,7 @@ public final class StaticTesrBakedModels {
                                               float tx, float ty, float tz) {
         TextureInfo textureInfo = inspectTexture(new ResourceLocation(textureLocation.getNamespace(), "textures/" + textureLocation.getPath() + ".png"), textureLocation);
         TextureAtlasSprite sprite = atlas.getAtlasSprite(textureInfo.spriteLocation.toString());
-        IBakedModel model = new StaticModelRendererBakedModel(modelFactory, sprite, yaws, roll, pitch,
+        IBakedModel model = new StaticModelRendererBakedModel(modelFactory, sprite, textureInfo.uScale, textureInfo.vScale, yaws, roll, pitch,
                 preTranslateX, preTranslateY, preTranslateZ, tx, ty, tz, 0.0625F);
         registry.putObject(new ModelResourceLocation(block.getRegistryName(), "facing=north"), model);
         registry.putObject(new ModelResourceLocation(block.getRegistryName(), "facing=south"), model);

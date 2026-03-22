@@ -133,7 +133,7 @@ public class ArmorLiquidator extends ArmorFSB implements IGasMask {
 				ItemStack stack = player.getHeldItem(hand);
 				ItemStack filter = this.getFilter(stack);
 				
-				if(filter != null) {
+				if(!filter.isEmpty()) {
 					ArmorUtil.removeFilter(stack);
 					
 					if(!player.inventory.addItemStackToInventory(filter)) {

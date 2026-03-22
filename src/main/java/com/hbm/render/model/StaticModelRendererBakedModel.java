@@ -19,6 +19,8 @@ import java.util.function.IntFunction;
 public class StaticModelRendererBakedModel extends AbstractBakedModel {
     private final IntFunction<ModelBase> modelFactory;
     private final TextureAtlasSprite sprite;
+    private final float uScale;
+    private final float vScale;
     private final float[] yawsByMeta;
     private final float roll;
     private final float pitch;
@@ -31,13 +33,15 @@ public class StaticModelRendererBakedModel extends AbstractBakedModel {
     private final float scale;
     private final List<BakedQuad>[] cache;
 
-    public StaticModelRendererBakedModel(IntFunction<ModelBase> modelFactory, TextureAtlasSprite sprite, float[] yawsByMeta,
+    public StaticModelRendererBakedModel(IntFunction<ModelBase> modelFactory, TextureAtlasSprite sprite, float uScale, float vScale, float[] yawsByMeta,
                                          float roll, float pitch,
                                          float preTranslateX, float preTranslateY, float preTranslateZ,
                                          float tx, float ty, float tz, float scale) {
         super(BakedModelTransforms.forDeco(BakedModelTransforms.standardBlock()));
         this.modelFactory = modelFactory;
         this.sprite = sprite;
+        this.uScale = uScale;
+        this.vScale = vScale;
         this.yawsByMeta = Arrays.copyOf(yawsByMeta, yawsByMeta.length);
         this.roll = roll;
         this.pitch = pitch;
@@ -144,8 +148,8 @@ public class StaticModelRendererBakedModel extends AbstractBakedModel {
             px[i] = (float) local[0] + worldTx;
             py[i] = (float) local[1] + worldTy;
             pz[i] = (float) local[2] + worldTz;
-            uu[i] = vertex.texturePositionX * 16.0F;
-            vv[i] = vertex.texturePositionY * 16.0F;
+            uu[i] = vertex.texturePositionX * 16.0F * uScale;
+            vv[i] = vertex.texturePositionY * 16.0F * vScale;
         }
 
         Vector3f normal = computeNormal(px, py, pz);
