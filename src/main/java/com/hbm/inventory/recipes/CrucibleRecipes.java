@@ -325,7 +325,7 @@ public class CrucibleRecipes extends SerializableRecipe {
               List<ItemStack> stacks = new ArrayList<>();
               stacks.add(
                   ItemScraps.create(
-                      new Mats.MaterialStack(convert, (int) (shape.q(1) * out / in)), true));
+                      new Mats.MaterialStack(convert, shape.q(1) * out / in), true));
               map.put(new RecipesCommon.OreDictStack(name), stacks);
             }
           }

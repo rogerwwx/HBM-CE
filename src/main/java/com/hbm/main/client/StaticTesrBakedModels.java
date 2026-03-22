@@ -502,23 +502,23 @@ public final class StaticTesrBakedModels {
 
     private static void bakeLegacyModelRendererModels(IRegistry<ModelResourceLocation, IBakedModel> registry, TextureMap atlas) {
         bakeLegacyFacingModel(registry, atlas, ModBlocks.broadcaster_pc,
-                meta -> new ModelBroadcaster(),
+                _ -> new ModelBroadcaster(),
                 new ResourceLocation(Tags.MODID, "models/deco/ModelBroadcaster"),
-                yawMap().meta(2, 0).meta(3, 180).meta(4, 270).meta(5, 90).build(),
+                yawMap().meta(2, 0).meta(3, 180).meta(4, 90).meta(5, 270).build(),
                 0.0F, (float) Math.toRadians(180.0D),
                 0.0F, 0.0F, 0.0F,
                 0.5F, 1.5F, 0.5F);
         bakeLegacyFacingModel(registry, atlas, ModBlocks.radiorec,
-                meta -> new ModelBroadcaster(),
+                _ -> new ModelBroadcaster(),
                 new ResourceLocation(Tags.MODID, "models/deco/ModelRadioReceiver"),
-                yawMap().meta(2, 0).meta(3, 180).meta(4, 270).meta(5, 90).build(),
+                yawMap().meta(2, 0).meta(3, 180).meta(4, 90).meta(5, 270).build(),
                 0.0F, (float) Math.toRadians(180.0D),
                 0.0F, 0.0F, 0.0F,
                 0.5F, 1.5F, 0.5F);
         bakeLegacyFacingModel(registry, atlas, ModBlocks.pole_satellite_receiver,
-                meta -> new ModelSatelliteReceiver(),
+                _ -> new ModelSatelliteReceiver(),
                 new ResourceLocation(Tags.MODID, "models/deco/PoleSatelliteReceiver"),
-                yawMap().meta(2, 0).meta(3, 180).meta(4, 270).meta(5, 90).build(),
+                yawMap().meta(2, 0).meta(3, 180).meta(4, 90).meta(5, 270).build(),
                 0.0F, (float) Math.toRadians(180.0D),
                 0.0F, 0.0F, 0.0F,
                 0.5F, 1.5F, 0.5F);
