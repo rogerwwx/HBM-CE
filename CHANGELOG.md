@@ -46,7 +46,7 @@ on the previous client-side binding path may require API updates
 - Oil Well, Pumpjack, and Fracking Tower now serialize only the NTM-native tank/power fields; legacy fluid/power
 contents are not migrated on load
 - Tsar Bomba now uses the upstream six-slot inventory layout; contents from the removed legacy stage slots are
-discarded on load
+discarded on load, and the GUI/recipe/starter kit now match the new `tsar_core` slot
 - Removed old `struct_plasma_core` and `marker_structure` 
 
 ### Fixes
@@ -72,12 +72,13 @@ railgun blasts, and other entity-backed chunkloaders so restored tickets are reu
 - Fixed gas centrifuge speed upgrades not being accepted
 - Fixed empty container returns being deleted in autocrafters
 - Fixed Heatex multiblock parts opening the wrong GUI instead of the core
-- Fixed hazmat/gas-mask helmet behavior parity, gas mask filter removal, Mass Storage capacity sync, and Assembly Machine
-slot validation for meteorite alloyed sword recipes
+- Fixed hazmat/gas-mask helmet behavior parity, gas mask filter removal, swapping, and installation, Mass Storage
+capacity sync, and Assembly Machine slot validation for meteorite alloyed sword recipes
 - Fixed low-pressure steam pipes not visually connecting to Industrial Steam Turbines
 - Fixed missing radiation resistance on the M1TTY Environment Suit armor set
-- Fixed special-model rendering/orientation issues across modular spotlights, scaffolds, wavefront-based models, cable
-diodes, pneumo tubes, ducts, and cables
+- Fixed special-model rendering/orientation issues across modular spotlights, scaffolds, wavefront-based models,
+standard-block item transforms, crane partitioners, spinny lights, UV-scaled baked models, cable diodes, pneumo tubes,
+ducts, and cables
 - Fixed keybind and sound issues around invalid overlap handling, the alternate copy-tool binding, looped sound pitch,
 and laser pistol/bobble sound registration
 - Fixed bedrock ore crumbs crystallizing with `Slop` instead of `Nitric Acid`
@@ -88,12 +89,12 @@ links are preserved, and missing controls are kept as placeholders instead of be
 - Fixed Rotary Furnace JEI recipes not showing steam usage
 - Fixed guide book grant state not being preserved correctly across player lifecycle events
 - Fixed gas flares not polluting while burning vented fluids
-- Fixed Electric Press and Shredder sided automation/input validation edge cases, corrected crane output textures, and
-avoided Sedna weapon-mod priority overflow
+- Fixed Electric Press, Sawmill, and Shredder automation, input, and output-space edge cases, corrected crane output
+textures, and avoided Sedna weapon-mod priority overflow
 - Fixed Assembly Machine, Assembly Factory, and Press recipe previews rendering with incorrect orientation/scaling
 (#845)
-- Fixed several custom-rendered armor and powered-suit items using incorrect fancy-missing-model perspective transforms
-in inventory/hand views
+- Fixed several custom-rendered armor, powered-suit items, and back modules using incorrect fancy-missing-model
+perspective transforms or wrong equipped-slot poses in inventory/hand/player views
 - Fixed machine upgrade tooltips not showing machine-specific descriptions for `IUpgradeInfoProvider` GUIs, including
 oil drill family machines and Maxwell turrets (#1152)
 - Fixed oily terrain generation replacing the wrong surface layer and leaving floating snow layers/leaves behind (#1184)
@@ -101,6 +102,11 @@ oil drill family machines and Maxwell turrets (#1152)
 - Fixed special-AABB block placement checks so cables, cable boxes, red wire connectors, and fluid pipe anchors use
 the actual placement state for preview/collision
 - Fixed RBMK client column-height sync
+- Fixed Radio Receiver functionality and facing, adding a tuning GUI and restoring RTTY note playback; also corrected
+broadcaster/satellite receiver rotation, Geiger Counter collision, and RTG base rendering
+- Fixed named-tag smithing rename recipes consuming input stacks incorrectly
+- Fixed several structure/worldgen issues, including weighted biome structure selection, flat-world height handling,
+required/instance-limited jigsaw pieces, and missing dungeon helper assets/blocks
 
 ### Changes
 - Diesel Generator now uses a refreshed animated model/GUI, rotates like other machines, emits smoke while running, supports a larger internal power buffer when fueled with Nitan, and has corrected block/item presentation
@@ -128,6 +134,11 @@ longer trigger balefire/cloud effects
 Gadget, Fat Man, Ivy Mike, and Tsar Bomba screens toward the upstream info-panel style
 - Rebalanced SILEX MOX reprocessing yields and restored xenon output on the alternate MOX processing path
 - Updated `_explosive8`, steel tool, and plasma forge textures
+- Chainsaw now uses a refreshed animated 3D item/in-hand renderer
+- Post-impact sky and overworld lighting can now use an impact-aware skybox/world provider, configurable via
+`enableImpactWorldProvider`
+- Armor radiation resistance is now configurable via `config/hbmConfig/hbmRadResist.json`; `_hbmRadResist.json` is
+generated as a template until the live file is created
 
 ### New Features
 - Added Satellite Laser Designator
@@ -157,6 +168,10 @@ from panels
 - Added `Universal Fluid Tank V2` and `Hazardous Material Tank V2`, which support partial fill/drain and recipe
 conversions from the legacy tanks (PR #1370 by Hacker6329)
 - Ported `Heavy Duty Electricity Connector` with a 100m single-connection range (PR #1413 by purpl3xity)
+- Added Snowglobes with inspection GUI, plus Moonstone chunks and related Crystallizer/pedestal uses
+- Added Bobmazon leftover products, Bobble bobblehead drops, and new Crystallizer recipes for Reinforced Concrete and
+Cinnabar
+- Added ore-dictionary matching support to `hbmFallout.json` so fallout conversions can target blocks by ore tag
 
 ### Performance
 - Added baked-quad caches for Combinator Funnel and Spotlight models
@@ -164,8 +179,10 @@ conversions from the legacy tanks (PR #1370 by Hacker6329)
 - Migrated a lot of machines / blocks / items from TESR/TEISR to baked models, thereby significantly reducing draw calls
 - Added specialized fast-immediate vertex buffers
 - Fixed laggy crates
+- Moved more particle effects onto instanced/immediate rendering paths and improved billboard batching
 
 ### Misc
 - Expanded the in-game manual with Redstone-over-Radio, crude oil, and remaining QMAW/ammo pages
 - Corrected some translations
 - Added more JEI transfer handlers
+- Made make control panel instrument GUI rendering modifiable (PR #1439 by Leafia)
