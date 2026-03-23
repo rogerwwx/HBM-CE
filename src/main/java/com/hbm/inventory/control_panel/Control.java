@@ -1,8 +1,10 @@
 package com.hbm.inventory.control_panel;
 
-import com.hbm.inventory.control_panel.controls.ControlType;
+import com.hbm.inventory.control_panel.controls.*;
 import com.hbm.inventory.control_panel.controls.configs.SubElementBaseConfig;
 import com.hbm.render.loader.IModelCustom;
+import com.hbm.render.util.NTMBufferBuilder;
+import com.hbm.render.util.NTMImmediate;
 import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.minecraft.nbt.NBTBase;
@@ -89,6 +91,24 @@ public abstract class Control {
 	public abstract IModelCustom getModel();
 	@SideOnly(Side.CLIENT)
 	public abstract ResourceLocation getGuiTexture();
+
+	@SideOnly(Side.CLIENT)
+	protected final void appendGuiQuad(NTMBufferBuilder buf,float minX,float minY,float maxX,float maxY,float minU,float minV,float maxU,float maxV,int packedColor) {
+		buf.appendPositionTexColorQuadUnchecked(
+				minX, maxY, 0.0D, minU, maxV, packedColor,
+				maxX, maxY, 0.0D, maxU, maxV, packedColor,
+				maxX, minY, 0.0D, maxU, minV, packedColor,
+				minX, minY, 0.0D, minU, minV, packedColor
+		);
+	}
+
+	@SideOnly(Side.CLIENT)
+	public void renderControl(float[] renderBox,Control selectedControl,GuiControlEdit gui) {
+		NTMBufferBuilder buf = NTMImmediate.INSTANCE.beginPositionTexColorQuads(1);
+		int packedColor = NTMBufferBuilder.packColor(1.0F, this == selectedControl ? 0.8F : 1.0F, 1.0F, 1.0F);
+		appendGuiQuad(buf, renderBox[0], renderBox[1], renderBox[2], renderBox[3], 0.0F, 0.0F, 1.0F, 1.0F, packedColor);
+		NTMImmediate.INSTANCE.draw();
+	}
 
 	public AxisAlignedBB getBoundingBox() {
 		float width = getSize()[0];

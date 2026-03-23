@@ -140,6 +140,25 @@ public class Label extends Control {
         return ResourceManager.ctrl_display_seven_seg_gui_tex;
     }
 
+    @SideOnly(Side.CLIENT)
+    @Override
+    public void renderControl(float[] renderBox,Control selectedControl,GuiControlEdit gui) {
+        String text = getConfigs().get("text").toString();
+        float scale = getConfigs().get("scale").getNumber()/500F;
+
+        int r = (int) (getConfigs().get("colorR").getNumber()*255);
+        int g = (int) (getConfigs().get("colorG").getNumber()*255 * ((this == selectedControl) ? .5F : 1F));
+        int b = (int) (getConfigs().get("colorB").getNumber()*255);
+        int rgb2 = (r << 16) | (g << 8) | b;
+
+        GlStateManager.pushMatrix();
+        GlStateManager.translate(posX, posY, 0);
+        GlStateManager.scale(scale, scale, scale);
+        GlStateManager.translate(-posX, -posY, 0);
+        gui.getFontRenderer().drawString(text, posX, posY, rgb2, false);
+        GlStateManager.popMatrix();
+    }
+
     @Override
     public AxisAlignedBB getBoundingBox() {
         return null;
