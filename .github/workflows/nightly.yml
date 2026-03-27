@@ -2,7 +2,7 @@ name: Nightly Gradle Build (Java25 only)
 
 on:
   schedule:
-    - cron: '30 22 * * *'
+    - cron: '40 23 * * *'
   workflow_dispatch:
 
 concurrency:
