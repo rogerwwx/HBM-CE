@@ -46,7 +46,7 @@ import java.util.List;
 import java.util.Random;
 
 
-public class BlockMeta extends BlockBase implements ICustomBlockItem, IDynamicModels, IMetaBlock {
+public class BlockMeta extends BlockBase implements ICustomBlockItem, IDynamicModels {
 
     //Norwood:Yes you could use strings, enums or whatever, but this is much simpler and more efficient, as well as has exactly same scope as 1.7.10
     public static final PropertyInteger META = PropertyInteger.create("meta", 0, 15);

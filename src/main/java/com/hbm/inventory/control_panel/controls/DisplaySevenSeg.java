@@ -6,6 +6,8 @@ import com.hbm.render.loader.WaveFrontObjectVAO;
 import com.hbm.inventory.control_panel.*;
 import com.hbm.main.ResourceManager;
 import com.hbm.render.loader.IModelCustom;
+import com.hbm.render.util.NTMBufferBuilder;
+import com.hbm.render.util.NTMImmediate;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.OpenGlHelper;
@@ -157,6 +159,25 @@ public class DisplaySevenSeg extends Control {
     @SideOnly(Side.CLIENT)
     public ResourceLocation getGuiTexture() {
         return ResourceManager.ctrl_display_seven_seg_gui_tex;
+    }
+
+    @SideOnly(Side.CLIENT)
+    @Override
+    public void renderControl(float[] renderBox,Control selectedControl,GuiControlEdit gui) {
+        float boxMinX = renderBox[0];
+        float boxMinY = renderBox[1];
+        float boxMaxX = renderBox[2];
+        float boxMaxY = renderBox[3];
+        int digitCount = (int) getConfigs().get("digitCount").getNumber();
+        float digitWidth = (boxMaxX - boxMinX) / digitCount;
+        int packedColor = NTMBufferBuilder.packColor(1.0F, this == selectedControl ? 0.8F : 1.0F, 1.0F, 1.0F);
+        NTMBufferBuilder buf = NTMImmediate.INSTANCE.beginPositionTexColorQuads(digitCount);
+        for (int i = 0; i < digitCount; i++) {
+            float digitMinX = boxMinX + digitWidth * i;
+            float digitMaxX = digitMinX + digitWidth;
+            appendGuiQuad(buf, digitMinX, boxMinY, digitMaxX, boxMaxY, 0.0F, 0.0F, 1.0F, 1.0F, packedColor);
+        }
+        NTMImmediate.INSTANCE.draw();
     }
 
     @Override

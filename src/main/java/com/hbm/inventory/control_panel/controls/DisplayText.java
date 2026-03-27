@@ -156,6 +156,29 @@ public class DisplayText extends Control {
         return ResourceManager.ctrl_display_seven_seg_gui_tex;
     }
 
+    @SideOnly(Side.CLIENT)
+    @Override
+    public void renderControl(float[] renderBox,Control selectedControl,GuiControlEdit gui) {
+        String text = getVar("text").toString();
+        float scale = getConfigs().get("scale").getNumber()/500F;
+
+        Minecraft.getMinecraft().getTextureManager().bindTexture(ResourceManager.white);
+        NTMBufferBuilder buf = NTMImmediate.INSTANCE.beginPositionTexColorQuads(1);
+        int packedColor = NTMBufferBuilder.packColor(0.2F, this == selectedControl ? 0.1F : 0.2F, 0.2F, 1.0F);
+        appendGuiQuad(buf, renderBox[0], renderBox[1], renderBox[2], renderBox[3], 0.0F, 0.0F, 1.0F, 1.0F, packedColor);
+        NTMImmediate.INSTANCE.draw();
+
+        EnumDyeColor dyeColor = getVar("color").getEnum(EnumDyeColor.class);
+        int color = dyeColor.getColorValue();
+
+        GlStateManager.pushMatrix();
+        GlStateManager.translate(posX, posY, 0);
+        GlStateManager.scale(scale, scale, scale);
+        GlStateManager.translate(-posX, -posY, 0);
+        gui.getFontRenderer().drawString(text, posX, posY, color, false);
+        GlStateManager.popMatrix();
+    }
+
     @Override
     public AxisAlignedBB getBoundingBox() {
         return null;

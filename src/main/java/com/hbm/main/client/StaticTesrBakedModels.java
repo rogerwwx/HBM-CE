@@ -2,8 +2,8 @@ package com.hbm.main.client;
 
 import com.hbm.Tags;
 import com.hbm.blocks.ModBlocks;
-import com.hbm.main.MainRegistry;
-import com.hbm.render.icon.TextureAtlasSpritePadded;
+import com.hbm.render.icon.PaddedSpriteUtil;
+import com.hbm.render.icon.PaddedSpriteUtil.TextureInfo;
 import com.hbm.render.loader.HFRWavefrontObject;
 import com.hbm.render.model.*;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
@@ -16,9 +16,6 @@ import net.minecraft.client.renderer.texture.TextureMap;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.registry.IRegistry;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.IntFunction;
@@ -319,12 +316,9 @@ public final class StaticTesrBakedModels {
 
     public static void registerSprites(TextureMap map) {
         for (Spec spec : SPECS) {
-            TextureInfo textureInfo = inspectTexture(spec.itemTextureLocation(), spec.textureLocation);
-            if (textureInfo.generated) {
-                map.setTextureEntry(new TextureAtlasSpritePadded(textureInfo.spriteLocation.toString(), spec.textureLocation.getPath()));
-            } else {
-                map.registerSprite(textureInfo.spriteLocation);
-            }
+            ResourceLocation itemTex = spec.itemTextureLocation();
+            TextureInfo textureInfo = PaddedSpriteUtil.inspectTexture(itemTex, spec.textureLocation);
+            PaddedSpriteUtil.register(map, textureInfo);
         }
         registerLegacyModelRendererSprite(map, new ResourceLocation(Tags.MODID, "models/deco/ModelBroadcaster"));
         registerLegacyModelRendererSprite(map, new ResourceLocation(Tags.MODID, "models/deco/ModelRadioReceiver"));
@@ -336,8 +330,9 @@ public final class StaticTesrBakedModels {
         TextureMap atlas = Minecraft.getMinecraft().getTextureMapBlocks();
 
         for (Spec spec : SPECS) {
-            TextureInfo textureInfo = inspectTexture(spec.itemTextureLocation(), spec.textureLocation);
-            TextureAtlasSprite sprite = atlas.getAtlasSprite(textureInfo.spriteLocation.toString());
+            ResourceLocation itemTex = spec.itemTextureLocation();
+            TextureInfo textureInfo = PaddedSpriteUtil.inspectTexture(itemTex, spec.textureLocation);
+            TextureAtlasSprite sprite = PaddedSpriteUtil.sprite(atlas, textureInfo);
             HFRWavefrontObject model = new HFRWavefrontObject(spec.modelLocation);
 
             StaticMetaWavefrontBakedModel worldModel = new StaticMetaWavefrontBakedModel(
@@ -397,43 +392,6 @@ public final class StaticTesrBakedModels {
         return MANAGED_BLOCKS.contains(block);
     }
 
-    private static TextureInfo inspectTexture(ResourceLocation itemTex, ResourceLocation tex) {
-        try {
-            BufferedImage image = ImageIO.read(Minecraft.getMinecraft().getResourceManager().getResource(itemTex).getInputStream());
-            if (image == null) {
-                return TextureInfo.original(tex);
-            }
-            int width = image.getWidth();
-            int height = image.getHeight();
-            int requiredMultiple = mipRequirement();
-            int size = paddedSpriteSize(width, height, requiredMultiple);
-            boolean generated = width != size || height != size;
-            return new TextureInfo(
-                    generated ? new ResourceLocation(tex.getNamespace(), "generated_atlas/" + tex.getPath()) : tex,
-                    width / (float) size,
-                    height / (float) size,
-                    generated
-            );
-        } catch (IOException e) {
-            MainRegistry.logger.warn("Failed to inspect texture dimensions for {}", itemTex, e);
-            return TextureInfo.original(tex);
-        }
-    }
-
-    private static int mipRequirement() {
-        int mipLevels = Minecraft.getMinecraft().getTextureMapBlocks().getMipmapLevels();
-        return mipLevels <= 0 ? 1 : 1 << mipLevels;
-    }
-
-    private static int paddedSpriteSize(int width, int height, int requiredMultiple) {
-        int size = Math.max(width, height);
-        int remainder = size % requiredMultiple;
-        if (remainder != 0) {
-            size += requiredMultiple - remainder;
-        }
-        return size;
-    }
-
     private static Spec facingSpec(Block block, String modelPath, String texturePath, float[] yawsByMeta) {
         ModelResourceLocation north = new ModelResourceLocation(block.getRegistryName(), "facing=north");
         ModelResourceLocation south = new ModelResourceLocation(block.getRegistryName(), "facing=south");
@@ -468,7 +426,8 @@ public final class StaticTesrBakedModels {
             return baseModel;
         }
 
-        TextureInfo pipeTexture = inspectTexture(new ResourceLocation(Tags.MODID, "textures/blocks/pipe_silver.png"),
+        ResourceLocation itemTex = new ResourceLocation(Tags.MODID, "textures/blocks/pipe_silver.png");
+        TextureInfo pipeTexture = PaddedSpriteUtil.inspectTexture(itemTex,
                 new ResourceLocation(Tags.MODID, "blocks/pipe_silver"));
         TextureAtlasSprite pipeSprite = atlas.getAtlasSprite(pipeTexture.spriteLocation.toString());
         StaticMetaWavefrontBakedModel pipeLayer = new StaticMetaWavefrontBakedModel(
@@ -492,38 +451,36 @@ public final class StaticTesrBakedModels {
     }
 
     private static void registerLegacyModelRendererSprite(TextureMap map, ResourceLocation textureLocation) {
-        TextureInfo textureInfo = inspectTexture(new ResourceLocation(textureLocation.getNamespace(), "textures/" + textureLocation.getPath() + ".png"), textureLocation);
-        if (textureInfo.generated) {
-            map.setTextureEntry(new TextureAtlasSpritePadded(textureInfo.spriteLocation.toString(), textureLocation.getPath()));
-        } else {
-            map.registerSprite(textureInfo.spriteLocation);
-        }
+        ResourceLocation itemTex = new ResourceLocation(textureLocation.getNamespace(), "textures/" + textureLocation.getPath() + ".png");
+        TextureInfo textureInfo = PaddedSpriteUtil.inspectTexture(itemTex, textureLocation);
+        PaddedSpriteUtil.register(map, textureInfo);
     }
 
     private static void bakeLegacyModelRendererModels(IRegistry<ModelResourceLocation, IBakedModel> registry, TextureMap atlas) {
         bakeLegacyFacingModel(registry, atlas, ModBlocks.broadcaster_pc,
-                meta -> new ModelBroadcaster(),
+                _ -> new ModelBroadcaster(),
                 new ResourceLocation(Tags.MODID, "models/deco/ModelBroadcaster"),
-                yawMap().meta(2, 0).meta(3, 180).meta(4, 270).meta(5, 90).build(),
+                yawMap().meta(2, 0).meta(3, 180).meta(4, 90).meta(5, 270).build(),
                 0.0F, (float) Math.toRadians(180.0D),
                 0.0F, 0.0F, 0.0F,
                 0.5F, 1.5F, 0.5F);
         bakeLegacyFacingModel(registry, atlas, ModBlocks.radiorec,
-                meta -> new ModelBroadcaster(),
+                _ -> new ModelBroadcaster(),
                 new ResourceLocation(Tags.MODID, "models/deco/ModelRadioReceiver"),
-                yawMap().meta(2, 0).meta(3, 180).meta(4, 270).meta(5, 90).build(),
+                yawMap().meta(2, 0).meta(3, 180).meta(4, 90).meta(5, 270).build(),
                 0.0F, (float) Math.toRadians(180.0D),
                 0.0F, 0.0F, 0.0F,
                 0.5F, 1.5F, 0.5F);
         bakeLegacyFacingModel(registry, atlas, ModBlocks.pole_satellite_receiver,
-                meta -> new ModelSatelliteReceiver(),
+                _ -> new ModelSatelliteReceiver(),
                 new ResourceLocation(Tags.MODID, "models/deco/PoleSatelliteReceiver"),
-                yawMap().meta(2, 0).meta(3, 180).meta(4, 270).meta(5, 90).build(),
+                yawMap().meta(2, 0).meta(3, 180).meta(4, 90).meta(5, 270).build(),
                 0.0F, (float) Math.toRadians(180.0D),
                 0.0F, 0.0F, 0.0F,
                 0.5F, 1.5F, 0.5F);
 
-        TextureInfo radioboxTexture = inspectTexture(new ResourceLocation(Tags.MODID, "textures/models/turrets/ModelRadio.png"),
+        ResourceLocation itemTex = new ResourceLocation(Tags.MODID, "textures/models/turrets/ModelRadio.png");
+        TextureInfo radioboxTexture = PaddedSpriteUtil.inspectTexture(itemTex,
                 new ResourceLocation(Tags.MODID, "models/turrets/ModelRadio"));
         TextureAtlasSprite radioboxSprite = atlas.getAtlasSprite(radioboxTexture.spriteLocation.toString());
         float[] radioboxYaws = yawMap()
@@ -563,7 +520,8 @@ public final class StaticTesrBakedModels {
                                               float[] yaws, float roll, float pitch,
                                               float preTranslateX, float preTranslateY, float preTranslateZ,
                                               float tx, float ty, float tz) {
-        TextureInfo textureInfo = inspectTexture(new ResourceLocation(textureLocation.getNamespace(), "textures/" + textureLocation.getPath() + ".png"), textureLocation);
+        ResourceLocation itemTex = new ResourceLocation(textureLocation.getNamespace(), "textures/" + textureLocation.getPath() + ".png");
+        TextureInfo textureInfo = PaddedSpriteUtil.inspectTexture(itemTex, textureLocation);
         TextureAtlasSprite sprite = atlas.getAtlasSprite(textureInfo.spriteLocation.toString());
         IBakedModel model = new StaticModelRendererBakedModel(modelFactory, sprite, textureInfo.uScale, textureInfo.vScale, yaws, roll, pitch,
                 preTranslateX, preTranslateY, preTranslateZ, tx, ty, tz, 0.0625F);
@@ -644,7 +602,8 @@ public final class StaticTesrBakedModels {
         }
 
         private ResourceLocation spriteLocation() {
-            return inspectTexture(itemTextureLocation(), textureLocation).spriteLocation;
+            ResourceLocation itemTex = itemTextureLocation();
+            return PaddedSpriteUtil.inspectTexture(itemTex, textureLocation).spriteLocation;
         }
 
         private ResourceLocation itemTextureLocation() {
@@ -731,11 +690,4 @@ public final class StaticTesrBakedModels {
             return new ModelResourceLocation(block.getRegistryName(), "inventory");
         }
     }
-
-    private record TextureInfo(ResourceLocation spriteLocation, float uScale, float vScale, boolean generated) {
-
-        private static TextureInfo original(ResourceLocation textureLocation) {
-                return new TextureInfo(textureLocation, 1.0F, 1.0F, false);
-            }
-        }
 }

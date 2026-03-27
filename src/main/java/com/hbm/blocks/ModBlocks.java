@@ -125,6 +125,9 @@ public class ModBlocks {
     public static final Block reinforced_brick_stairs = new BlockGenericStairs(reinforced_brick, "reinforced_brick_stairs", "reinforced_brick", 0).setCreativeTab(MainRegistry.blockTab).setLightOpacity(15).setHardness(15.0F).setResistance(240.0F);
     public static final Block brick_compound_stairs = new BlockGenericStairs(brick_compound, "brick_compound_stairs", "brick_compound", 0).setCreativeTab(MainRegistry.blockTab).setHardness(15.0F).setResistance(320.0F);
     public static final Block brick_asbestos_stairs = new BlockGenericStairs(brick_asbestos, "brick_asbestos_stairs", "brick_asbestos", 0).setCreativeTab(MainRegistry.blockTab).setResistance(28.0F);
+    public static final Block brick_light_stairs = new BlockGenericStairs(brick_light, "brick_light_stairs", "brick_light", 0).setCreativeTab(MainRegistry.blockTab).setHardness(15.0F).setResistance(20.0F);
+    public static final Block lightstone_tile_stairs = new BlockGenericStairs(lightstone, "lightstone_tile_stairs", "lightstone.tile", BlockEnums.LightstoneType.TILE.ordinal()).setCreativeTab(MainRegistry.blockTab).setHardness(15.0F).setResistance(20.0F);
+    public static final Block lightstone_bricks_stairs = new BlockGenericStairs(lightstone, "lightstone_bricks_stairs", "lightstone.bricks", BlockEnums.LightstoneType.BRICKS.ordinal()).setCreativeTab(MainRegistry.blockTab).setHardness(15.0F).setResistance(20.0F);
     public static final Block reinforced_sand_stairs = new BlockGenericStairs(reinforced_sand, "reinforced_sand_stairs", "reinforced_sand", 0).setCreativeTab(MainRegistry.blockTab).setLightOpacity(15).setHardness(15.0F).setResistance(32.0F);
     public static final Block brick_obsidian_stairs = new BlockGenericStairs(brick_obsidian, "brick_obsidian_stairs", "brick_obsidian", 0).setCreativeTab(MainRegistry.blockTab).setLightOpacity(15).setHardness(15.0F).setResistance(96.0F);
     public static final Block cmb_brick_reinforced_stairs = new BlockGenericStairs(cmb_brick_reinforced, "cmb_brick_reinforced_stairs", "cmb_brick_reinforced", 0).setCreativeTab(MainRegistry.blockTab).setHardness(25.0F).setResistance(45000.0F);
@@ -180,8 +183,10 @@ public class ModBlocks {
     public static final Block brick_concrete_cracked_slab = new BlockGenericSlab(Material.ROCK, "brick_concrete_cracked_slab").setCreativeTab(MainRegistry.blockTab).setHardness(15.0F).setResistance(30.0F);
     public static final Block brick_concrete_broken_slab = new BlockGenericSlab(Material.ROCK, "brick_concrete_broken_slab").setCreativeTab(MainRegistry.blockTab).setHardness(15.0F).setResistance(22.0F);
     public static final Block reinforced_brick_slab = new BlockGenericSlab(Material.ROCK, "reinforced_brick_slab").setCreativeTab(MainRegistry.blockTab).setLightOpacity(15).setHardness(15.0F).setResistance(150.0F);
+    public static final Block brick_light_slab = new BlockGenericSlab(Material.ROCK, "brick_light_slab").setCreativeTab(null).setHardness(15.0F).setResistance(20.0F);
     public static final Block brick_compound_slab = new BlockGenericSlab(Material.ROCK, "brick_compound_slab").setCreativeTab(MainRegistry.blockTab).setHardness(15.0F).setResistance(200.0F);
     public static final Block brick_asbestos_slab = new BlockGenericSlab(Material.ROCK, "brick_asbestos_slab").setCreativeTab(MainRegistry.blockTab).setResistance(20.0F);
+    public static final Block brick_fire_slab = new BlockGenericSlab(Material.ROCK, "brick_fire_slab").setCreativeTab(null).setHardness(15.0F).setResistance(35.0F);
     public static final Block reinforced_sand_slab = new BlockGenericSlab(Material.ROCK, "reinforced_sand_slab").setCreativeTab(MainRegistry.blockTab).setLightOpacity(15).setHardness(15.0F).setResistance(20.0F);
     public static final Block brick_obsidian_slab = new BlockGenericSlab(Material.ROCK, "brick_obsidian_slab").setCreativeTab(MainRegistry.blockTab).setLightOpacity(15).setHardness(15.0F).setResistance(60.0F);
     public static final Block cmb_brick_reinforced_slab = new BlockGenericSlab(Material.ROCK, "cmb_brick_reinforced_slab").setCreativeTab(MainRegistry.blockTab).setHardness(25.0F).setResistance(25000.0F);
@@ -220,8 +225,10 @@ public class ModBlocks {
     public static final Block brick_concrete_cracked_double_slab = new BlockGenericSlab(Material.ROCK, brick_concrete_cracked_slab, "brick_concrete_cracked_double_slab").setCreativeTab(MainRegistry.blockTab).setHardness(15.0F).setResistance(30.0F);
     public static final Block brick_concrete_broken_double_slab = new BlockGenericSlab(Material.ROCK, brick_concrete_broken_slab, "brick_concrete_broken_double_slab").setCreativeTab(MainRegistry.blockTab).setHardness(15.0F).setResistance(22.0F);
     public static final Block reinforced_brick_double_slab = new BlockGenericSlab(Material.ROCK, reinforced_brick_slab, "reinforced_brick_double_slab").setCreativeTab(MainRegistry.blockTab).setLightOpacity(15).setHardness(15.0F).setResistance(150.0F);
+    public static final Block brick_light_double_slab = new BlockGenericSlab(Material.ROCK, brick_light_slab, "brick_light_double_slab").setCreativeTab(null).setLightOpacity(15).setHardness(15.0F).setResistance(20.0F);
     public static final Block brick_compound_double_slab = new BlockGenericSlab(Material.ROCK, brick_compound_slab, "brick_compound_double_slab").setCreativeTab(MainRegistry.blockTab).setHardness(15.0F).setResistance(200.0F);
     public static final Block brick_asbestos_double_slab = new BlockGenericSlab(Material.ROCK, brick_asbestos_slab, "brick_asbestos_double_slab").setCreativeTab(MainRegistry.blockTab).setResistance(20.0F);
+    public static final Block brick_fire_double_slab = new BlockGenericSlab(Material.ROCK, brick_fire_slab, "brick_fire_double_slab").setCreativeTab(null).setLightOpacity(15).setHardness(15.0F).setResistance(35.0F);
     public static final Block reinforced_sand_double_slab = new BlockGenericSlab(Material.ROCK, reinforced_sand_slab, "reinforced_sand_double_slab").setCreativeTab(MainRegistry.blockTab).setLightOpacity(15).setHardness(15.0F).setResistance(20.0F);
     public static final Block brick_obsidian_double_slab = new BlockGenericSlab(Material.ROCK, brick_obsidian_slab, "brick_obsidian_double_slab").setCreativeTab(MainRegistry.blockTab).setLightOpacity(15).setHardness(15.0F).setResistance(60.0F);
     public static final Block cmb_brick_reinforced_double_slab = new BlockGenericSlab(Material.ROCK, cmb_brick_reinforced_slab, "cmb_brick_reinforced_double_slab").setCreativeTab(MainRegistry.blockTab).setHardness(25.0F).setResistance(25000.0F);
@@ -399,6 +406,7 @@ public class ModBlocks {
     public static final Block deco_toaster = new BlockDecoToaster(Material.IRON, SoundType.METAL, "deco_toaster").setCreativeTab(MainRegistry.blockTab).setHardness(5.0F).setResistance(10.0F);
     public static final Block filing_cabinet = new BlockDecoContainer<>(Material.IRON, SoundType.METAL, "filing_cabinet", BlockEnums.DecoCabinetEnum.VALUES, true, false,
             TileEntityFileCabinet::new).setBlockBoundsTo(.1875F, 0F, 0F, .8125F, 1F, .75F).setCreativeTab(MainRegistry.blockTab).setHardness(10.0F).setResistance(15.0F);
+    public static final Block dungeon_spawner = new DungeonSpawner().setCreativeTab(null).setBlockUnbreakable().setResistance(500000.0F);
 
     public static final Block brick_dungeon = new BlockBase(Material.ROCK, "brick_dungeon").setCreativeTab(MainRegistry.blockTab).setHardness(15.0F).setResistance(360.0F);
     public static final Block brick_dungeon_flat = new BlockBase(Material.ROCK, "brick_dungeon_flat").setCreativeTab(MainRegistry.blockTab).setHardness(15.0F).setResistance(360.0F);
@@ -485,6 +493,7 @@ public class ModBlocks {
     public static final Block plushie = new BlockPlushie("plushie").setResistance(50_0000.0F).setCreativeTab(MainRegistry.blockTab).setHardness(0.0F).setResistance(0.0F);
 
     public static final Block pedestal = new BlockPedestal("pedestal").setCreativeTab(null).setHardness(2.0F).setResistance(10.0F);
+    public static final Block skeleton_holder = new BlockSkeletonHolder("skeleton_holder", BlockBakeFrame.cubeAll("dirt_dead")).setCreativeTab(null).setHardness(2.0F).setResistance(10.0F);
 
     public static final Block spinny_light = new BlockSpinnyLight(Material.IRON, "spinny_light").setCreativeTab(MainRegistry.blockTab).setHardness(5.0F).setResistance(5.0F);
 
@@ -611,6 +620,7 @@ public class ModBlocks {
     public static final Block block_rubber = new BlockBeaconable(Material.ROCK, "block_rubber").setCreativeTab(MainRegistry.blockTab).setHardness(3.0F).setResistance(10.0F);
     public static final Block block_asbestos = new BlockOutgas(true, 4, true, "block_asbestos").setHardness(10.0F).setResistance(10.0F).setCreativeTab(MainRegistry.blockTab);
     public static final Block brick_fire = new BlockBakeBase(Material.ROCK, "brick_fire").setHardness(10.0F).setResistance(10.0F).setCreativeTab(MainRegistry.blockTab);
+    public static final Block brick_fire_stairs = new BlockGenericStairs(brick_fire, "brick_fire_stairs", "brick_fire", 0).setCreativeTab(MainRegistry.blockTab).setHardness(15.0F).setResistance(35.0F);
     public static final Block block_cobalt = new BlockBase(Material.IRON, "block_cobalt").setCreativeTab(MainRegistry.blockTab).setHardness(5.0F).setResistance(10.0F);
     public static final Block block_lithium = new BlockHydroreactive(Material.IRON, "block_lithium").setCreativeTab(MainRegistry.blockTab).setHardness(5.0F).setResistance(10.0F);
     public static final Block block_zirconium = new BlockBeaconable(Material.IRON, "block_zirconium").setSoundType(SoundType.METAL).setCreativeTab(MainRegistry.blockTab).setHardness(5.0F).setResistance(10.0F);

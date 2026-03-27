@@ -255,11 +255,7 @@ public class BlockWandTandem extends BlockContainerBakeable implements IBlockSid
             if (!this.isArmed || target == null || target.isEmpty() || pool == null || pool.isEmpty()) return;
 
             JigsawPool pool;
-            try {
-                pool = structure.getPool(this.pool);
-            } catch (CloneNotSupportedException e) {
-                throw new RuntimeException(e);
-            }
+            pool = structure.getPool(this.pool);
             if (pool == null) return;
 
             JigsawPiece nextPiece = pool.get(world.rand);

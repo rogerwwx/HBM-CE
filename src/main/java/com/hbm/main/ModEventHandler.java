@@ -37,6 +37,7 @@ import com.hbm.items.IEquipReceiver;
 import com.hbm.items.ModItems;
 import com.hbm.items.armor.*;
 import com.hbm.items.food.ItemConserve;
+import com.hbm.items.machine.IItemFluidIdentifier;
 import com.hbm.items.gear.ArmorFSB;
 import com.hbm.items.special.ItemHot;
 import com.hbm.items.tool.ItemDigammaDiagnostic;
@@ -544,6 +545,15 @@ public class ModEventHandler {
     public void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
         BlockPos pos = event.getPos();
         World world = event.getWorld();
+        EntityPlayer player = event.getEntityPlayer();
+
+        if (player.isSneaking()) {
+            ItemStack held = player.getHeldItem(event.getHand());
+            if (!held.isEmpty() && held.getItem() instanceof IItemFluidIdentifier) {
+                // Forge only allows sneak-activation when both hands bypass use; an offhand shield otherwise suppresses identifier interactions.
+                event.setUseBlock(Result.ALLOW);
+            }
+        }
 
         if(GeneralConfig.enable528ExplosiveEnergistics && !world.isRemote) {
             Block b = world.getBlockState(pos).getBlock();

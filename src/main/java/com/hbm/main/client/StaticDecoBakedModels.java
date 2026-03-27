@@ -3,7 +3,8 @@ package com.hbm.main.client;
 import com.hbm.Tags;
 import com.hbm.blocks.ModBlocks;
 import com.hbm.lib.ObjectDoubleFunction;
-import com.hbm.render.icon.TextureAtlasSpritePadded;
+import com.hbm.render.icon.PaddedSpriteUtil;
+import com.hbm.render.icon.PaddedSpriteUtil.TextureInfo;
 import com.hbm.render.loader.HFRWavefrontObject;
 import com.hbm.render.model.*;
 import net.minecraft.block.Block;
@@ -17,10 +18,7 @@ import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.registry.IRegistry;
 
-import javax.imageio.ImageIO;
 import javax.vecmath.Matrix4f;
-import java.awt.image.BufferedImage;
-import java.io.IOException;
 import java.util.function.Function;
 
 import static com.hbm.render.model.BakedModelMatrixUtil.*;
@@ -207,57 +205,15 @@ public final class StaticDecoBakedModels {
     }
 
     private static TextureAtlasSprite sprite(TextureMap atlas, TextureInfo texture) {
-        String spriteName = texture.spriteLocation.toString();
-        TextureAtlasSprite sprite = atlas.getTextureExtry(spriteName);
-        return sprite != null ? sprite : atlas.getAtlasSprite(spriteName);
+        return PaddedSpriteUtil.sprite(atlas, texture);
     }
 
     private static void register(TextureMap map, String path) {
-        TextureInfo texture = inspectTexture(path);
-        if (texture.generated) {
-            map.setTextureEntry(new TextureAtlasSpritePadded(texture.spriteLocation.toString(), path));
-        } else {
-            map.registerSprite(texture.spriteLocation);
-        }
+        PaddedSpriteUtil.register(map, PaddedSpriteUtil.inspectTexture(new ResourceLocation(Tags.MODID, path)));
     }
 
     private static TextureInfo inspectTexture(String path) {
-        ResourceLocation textureLocation = new ResourceLocation(Tags.MODID, path);
-        try {
-            BufferedImage image = ImageIO.read(Minecraft.getMinecraft().getResourceManager()
-                    .getResource(new ResourceLocation(textureLocation.getNamespace(), "textures/" + textureLocation.getPath() + ".png"))
-                    .getInputStream());
-            if (image == null) {
-                return TextureInfo.original(textureLocation);
-            }
-            int width = image.getWidth();
-            int height = image.getHeight();
-            int requiredMultiple = mipRequirement();
-            int size = paddedSpriteSize(width, height, requiredMultiple);
-            boolean generated = width != size || height != size;
-            return new TextureInfo(
-                    generated ? new ResourceLocation(textureLocation.getNamespace(), "generated_atlas/" + textureLocation.getPath()) : textureLocation,
-                    width / (float) size,
-                    height / (float) size,
-                    generated
-            );
-        } catch (IOException e) {
-            return TextureInfo.original(textureLocation);
-        }
-    }
-
-    private static int mipRequirement() {
-        int mipLevels = Minecraft.getMinecraft().getTextureMapBlocks().getMipmapLevels();
-        return mipLevels <= 0 ? 1 : 1 << mipLevels;
-    }
-
-    private static int paddedSpriteSize(int width, int height, int requiredMultiple) {
-        int size = Math.max(width, height);
-        int remainder = size % requiredMultiple;
-        if (remainder != 0) {
-            size += requiredMultiple - remainder;
-        }
-        return size;
+        return PaddedSpriteUtil.inspectTexture(new ResourceLocation(Tags.MODID, path));
     }
 
     private static ModelResourceLocation facingLocation(Block block, EnumFacing facing) {
@@ -302,11 +258,5 @@ public final class StaticDecoBakedModels {
             case EAST -> 90.0D;
             default -> 0.0D;
         };
-    }
-
-    private record TextureInfo(ResourceLocation spriteLocation, float uScale, float vScale, boolean generated) {
-        private static TextureInfo original(ResourceLocation textureLocation) {
-            return new TextureInfo(textureLocation, 1.0F, 1.0F, false);
-        }
     }
 }
