@@ -3,6 +3,7 @@ package com.hbm.render.model;
 import com.hbm.render.loader.*;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.block.model.ItemCameraTransforms;
+import net.minecraft.client.renderer.block.model.ItemOverrideList;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.renderer.vertex.VertexFormat;
 import net.minecraft.util.EnumFacing;
@@ -28,7 +29,7 @@ public abstract class AbstractWavefrontBakedModel extends AbstractBakedModel {
     protected float tz;
 
     protected AbstractWavefrontBakedModel(HFRWavefrontObject model, VertexFormat format, float baseScale, float tx, float ty, float tz, ItemCameraTransforms transforms) {
-        super(transforms);
+        super(false, true, false, transforms, ItemOverrideList.NONE);
         this.model = model;
         this.format = format;
         this.baseScale = baseScale;
@@ -174,7 +175,7 @@ public abstract class AbstractWavefrontBakedModel extends AbstractBakedModel {
             for (int i = 0; i < 4; i++)
                 GeometryBakeUtil.putVertex(format, vertexData, i, px[i], py[i], pz[i], uu[i] * uScale, vv[i] * vScale,
                         color, color, color, vertexNormals[i], sprite, scratch);
-            return new BakedQuad(vertexData, tintIndex, facing, sprite, true, format);
+            return new BakedQuad(vertexData, tintIndex, facing, sprite, false, format);
         }
 
         public BakedQuad buildBackQuad(TextureAtlasSprite sprite, int tintIndex) {
@@ -193,7 +194,7 @@ public abstract class AbstractWavefrontBakedModel extends AbstractBakedModel {
                 GeometryBakeUtil.putVertex(format, vertexData, vertexIndex, px[index], py[index], pz[index],
                         uu[index] * uScale, vv[index] * vScale, color, color, color, reversedNormal, sprite, scratch);
             }
-            return new BakedQuad(vertexData, tintIndex, facing.getOpposite(), sprite, true, format);
+            return new BakedQuad(vertexData, tintIndex, facing.getOpposite(), sprite, false, format);
         }
     }
 }
