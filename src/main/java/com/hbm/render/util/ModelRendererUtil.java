@@ -728,6 +728,33 @@ public class ModelRendererUtil {
 				@SuppressWarnings("unchecked")
 				List<CutModelData> bottom = (List<CutModelData>) ((Object[]) result)[1];
 
+				// 在主线程里：先把 cap 三角解压并调用 capConsumer（与同步版行为一致）
+				if (capConsumer != null) {
+					List<Triangle> tris = new ArrayList<>();
+					for (CutModelData d : top) {
+						if (d.cap != null) {
+							for (Triangle t : decompress(d.cap)) {
+								tris.add(t);
+							}
+						}
+					}
+					// 如果你希望也包含 bottom 的 cap，可以把下面这段也加上
+					for (CutModelData d : bottom) {
+						if (d.cap != null) {
+							for (Triangle t : decompress(d.cap)) {
+								tris.add(t);
+							}
+						}
+					}
+
+					try {
+						System.out.println("generateCutParticlesAsync: calling capConsumer, cap tris size = " + tris.size());
+						capConsumer.accept(tris);
+					} catch (Throwable ex) {
+						ex.printStackTrace();
+					}
+				}
+
 				List<List<CutModelData>> particleChunks = new ArrayList<>();
 				generateChunks(particleChunks, top);
 				generateChunks(particleChunks, bottom);
