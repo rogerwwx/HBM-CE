@@ -118,75 +118,88 @@ public class PacketSpecialDeath implements IMessage {
 							break;
 						case 3:
 							ent.isDead = true;
-							//ModEventHandlerClient.specialDeathEffectEntities.add((EntityLivingBase) ent);
 							float[] data = m.auxData;
 							int id = Float.floatToIntBits(data[4]);
 							ResourceLocation capTex;
-							if(id == 0){
+							if (id == 0) {
 								capTex = ResourceManager.gore_generic;
 							} else {
 								capTex = ResourceManager.crucible_cap;
 							}
-							ParticleSlicedMob[] particles = ModelRendererUtil.generateCutParticles(ent, data, capTex, id == 1 ? 1 : 0, capTris -> {
-								int bloodCount = 5;
-								int cCount = id == 1 ? 8 : 0;
-								if(capTris.isEmpty()){
-									return;
-								}
-								for(int i = 0; i < bloodCount+cCount; i ++){
-									Triangle randTriangle = capTris.get(ent.world.rand.nextInt(capTris.size()));
-									//Hopefully this works for getting a random position in a triangle
-									float rand1 = ent.world.rand.nextFloat();
-									float rand2 = ent.world.rand.nextFloat();
-									if(rand2 < rand1){
-										float tmp = rand2;
-										rand2 = rand1;
-										rand1 = tmp;
-									}
-									Vec3d pos = randTriangle.p1.pos.scale(rand1);
-									pos = pos.add(randTriangle.p2.pos.scale(rand2-rand1));
-									pos = pos.add(randTriangle.p3.pos.scale(1-rand2));
-									pos = pos.add(ent.posX, ent.posY, ent.posZ);
 
-									Random rand = ent.world.rand;
-									if(i < bloodCount){
-										ParticleBlood blood = new ParticleBlood(ent.world, pos.x, pos.y, pos.z, 1, 0.4F+rand.nextFloat()*0.4F, 18+rand.nextInt(10), 0.05F);
-										Vec3d direction = Minecraft.getMinecraft().player.getLook(1).crossProduct(new Vec3d(data[0], data[1], data[2])).normalize().scale(-0.6F);
-										Vec3d randMotion = new Vec3d(rand.nextDouble()*2-1, rand.nextDouble()*2-1, rand.nextDouble()*2-1).scale(0.2F);
-										direction = direction.add(randMotion);
-										blood.motion((float)direction.x, (float)direction.y, (float)direction.z);
-										blood.color(0.5F, 0.1F, 0.1F, 1F);
-										blood.onUpdate();
-										Minecraft.getMinecraft().effectRenderer.addEffect(blood);
-									} else {
-										Vec3d direction = capTris.get(0).p2.pos.subtract(capTris.get(0).p1.pos).crossProduct(capTris.get(2).p2.pos.subtract(capTris.get(0).p1.pos)).normalize().scale(i%2==0 ? 0.4 : -0.4);
-										NBTTagCompound tag = new NBTTagCompound();
-										tag.setString("type", "spark");
-										tag.setString("mode", "coneBurst");
-										tag.setDouble("posX", pos.x);
-										tag.setDouble("posY", pos.y);
-										tag.setDouble("posZ", pos.z);
-										tag.setDouble("dirX", direction.x);
-										tag.setDouble("dirY", direction.y);
-										tag.setDouble("dirZ", direction.z);
-										tag.setFloat("r", 0.8F);
-										tag.setFloat("g", 0.6F);
-										tag.setFloat("b", 0.5F);
-										tag.setFloat("a", 1.5F);
-										tag.setInteger("lifetime", 20);
-										tag.setFloat("width", 0.02F);
-										tag.setFloat("length", 0.8F);
-										tag.setFloat("randLength", 1.3F);
-										tag.setFloat("gravity", 0.1F);
-										tag.setFloat("angle", 60F);
-										tag.setInteger("count", 12);
-										tag.setFloat("randomVelocity", 0.3F);
-										MainRegistry.proxy.effectNT(tag);
+							ModelRendererUtil.generateCutParticlesAsync(
+									ent,
+									data,
+									capTex,
+									id == 1 ? 1 : 0,
+									capTris -> {
+										int bloodCount = 5;
+										int cCount = id == 1 ? 8 : 0;
+										if (capTris.isEmpty()) {
+											return;
+										}
+										for (int i = 0; i < bloodCount + cCount; i++) {
+											Triangle randTriangle = capTris.get(ent.world.rand.nextInt(capTris.size()));
+											float rand1 = ent.world.rand.nextFloat();
+											float rand2 = ent.world.rand.nextFloat();
+											if (rand2 < rand1) {
+												float tmp = rand2;
+												rand2 = rand1;
+												rand1 = tmp;
+											}
+											Vec3d pos = randTriangle.p1.pos.scale(rand1);
+											pos = pos.add(randTriangle.p2.pos.scale(rand2 - rand1));
+											pos = pos.add(randTriangle.p3.pos.scale(1 - rand2));
+											pos = pos.add(ent.posX, ent.posY, ent.posZ);
+
+											Random rand = ent.world.rand;
+											if (i < bloodCount) {
+												ParticleBlood blood = new ParticleBlood(ent.world, pos.x, pos.y, pos.z, 1, 0.4F + rand.nextFloat() * 0.4F, 18 + rand.nextInt(10), 0.05F);
+												Vec3d direction = Minecraft.getMinecraft().player.getLook(1).crossProduct(new Vec3d(data[0], data[1], data[2])).normalize().scale(-0.6F);
+												Vec3d randMotion = new Vec3d(rand.nextDouble() * 2 - 1, rand.nextDouble() * 2 - 1, rand.nextDouble() * 2 - 1).scale(0.2F);
+												direction = direction.add(randMotion);
+												blood.motion((float) direction.x, (float) direction.y, (float) direction.z);
+												blood.color(0.5F, 0.1F, 0.1F, 1F);
+												blood.onUpdate();
+												Minecraft.getMinecraft().effectRenderer.addEffect(blood);
+											} else {
+												Vec3d direction = capTris.get(0).p2.pos.subtract(capTris.get(0).p1.pos)
+														.crossProduct(capTris.get(2).p2.pos.subtract(capTris.get(0).p1.pos))
+														.normalize().scale(i % 2 == 0 ? 0.4 : -0.4);
+												NBTTagCompound tag = new NBTTagCompound();
+												tag.setString("type", "spark");
+												tag.setString("mode", "coneBurst");
+												tag.setDouble("posX", pos.x);
+												tag.setDouble("posY", pos.y);
+												tag.setDouble("posZ", pos.z);
+												tag.setDouble("dirX", direction.x);
+												tag.setDouble("dirY", direction.y);
+												tag.setDouble("dirZ", direction.z);
+												tag.setFloat("r", 0.8F);
+												tag.setFloat("g", 0.6F);
+												tag.setFloat("b", 0.5F);
+												tag.setFloat("a", 1.5F);
+												tag.setInteger("lifetime", 20);
+												tag.setFloat("width", 0.02F);
+												tag.setFloat("length", 0.8F);
+												tag.setFloat("randLength", 1.3F);
+												tag.setFloat("gravity", 0.1F);
+												tag.setFloat("angle", 60F);
+												tag.setInteger("count", 12);
+												tag.setFloat("randomVelocity", 0.3F);
+												MainRegistry.proxy.effectNT(tag);
+											}
+										}
+									},
+									particles -> {
+										// callback 在主线程执行：把生成的切片粒子加入 effectRenderer
+										if (particles != null) {
+											for (ParticleSlicedMob p : particles) {
+												Minecraft.getMinecraft().effectRenderer.addEffect(p);
+											}
+										}
 									}
-								}
-							});
-							for(ParticleSlicedMob p : particles)
-								Minecraft.getMinecraft().effectRenderer.addEffect(p);
+							);
 							break;
 						case 4:
 							ent.setDead();
