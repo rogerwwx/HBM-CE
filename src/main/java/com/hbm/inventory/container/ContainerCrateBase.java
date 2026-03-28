@@ -2,6 +2,7 @@ package com.hbm.inventory.container;
 
 import com.cleanroommc.bogosorter.api.ISortableContainer;
 import com.cleanroommc.bogosorter.api.ISortingContextBuilder;
+import com.hbm.inventory.TransferStrategy;
 import com.hbm.tileentity.machine.IHandHeldCrate;
 import com.hbm.tileentity.machine.TileEntityCrate;
 import com.hbm.util.InventoryUtil;
@@ -19,9 +20,13 @@ import org.jetbrains.annotations.NotNull;
 public class ContainerCrateBase extends Container implements ISortableContainer {
 
     protected final TileEntityCrate crate;
+    private final TransferStrategy transferStrategy;
 
     public ContainerCrateBase(InventoryPlayer invPlayer, TileEntityCrate crate) {
         this.crate = crate;
+        this.transferStrategy = TransferStrategy.builder(() -> this.crate.inventory.getSlots())
+                                                .genericMachineRange(0)
+                                                .build();
 
         for (int row = 0; row < crate.getCrateRows(); row++) {
             for (int col = 0; col < crate.getCrateColumns(); col++) {
@@ -43,7 +48,7 @@ public class ContainerCrateBase extends Container implements ISortableContainer 
 
     @Override
     public @NotNull ItemStack transferStackInSlot(@NotNull EntityPlayer player, int index) {
-        return InventoryUtil.transferStack(this.inventorySlots, index, crate.inventory.getSlots());
+        return InventoryUtil.transferStack(this.inventorySlots, index, this.transferStrategy, player);
     }
 
     @Override
