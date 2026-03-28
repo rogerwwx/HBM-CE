@@ -865,6 +865,10 @@ public class CraftingManager {
 
 		addRecipeAuto(new ItemStack(ModBlocks.deco_rbmk, 8), "R", 'R', ModBlocks.rbmk_blank );
 		addRecipeAuto(new ItemStack(ModBlocks.deco_rbmk_smooth, 1), "R", 'R', ModBlocks.deco_rbmk );
+		addRecipeAuto(new ItemStack(ModBlocks.deco_rbmk_panel, 1), "P", "R", 'P', STEEL.plate(), 'R', ModBlocks.deco_rbmk );
+		addRecipeAuto(new ItemStack(ModBlocks.deco_rbmk_smooth_panel, 1), "P", "R", 'P', STEEL.plate(), 'R', ModBlocks.deco_rbmk_smooth );
+		addRecipeAuto(new ItemStack(ModBlocks.deco_rbmk_panel_slab, 8), "R", 'R', ModBlocks.deco_rbmk_panel );
+		addRecipeAuto(new ItemStack(ModBlocks.deco_rbmk_smooth_panel_slab, 8), "R", 'R', ModBlocks.deco_rbmk_smooth_panel );
 		addRecipeAuto(new ItemStack(ModBlocks.rbmk_blank, 1), "RRR", "R R", "RRR", 'R', ModBlocks.deco_rbmk );
 		addRecipeAuto(new ItemStack(ModBlocks.rbmk_blank, 1), "RRR", "R R", "RRR", 'R', ModBlocks.deco_rbmk_smooth );
 

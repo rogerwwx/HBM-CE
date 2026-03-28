@@ -6,7 +6,6 @@ import com.hbm.items.block.ItemBlockBase;
 import com.hbm.main.MainRegistry;
 import net.minecraft.advancements.CriteriaTriggers;
 import net.minecraft.block.Block;
-import net.minecraft.block.BlockSnow;
 import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.BlockFaceShape;
@@ -123,7 +122,7 @@ public class BlockRBMKSlab extends BlockBase implements ICustomBlockItem {
 		public EnumActionResult onItemUse(EntityPlayer player,World worldIn,BlockPos pos,EnumHand hand,EnumFacing facing,float hitX,float hitY,float hitZ) {
 			ItemStack itemstack = player.getHeldItem(hand);
 
-			if (!itemstack.isEmpty() && player.canPlayerEdit(pos, facing, itemstack))
+			if (!itemstack.isEmpty() && player.canPlayerEdit(pos.offset(facing), facing, itemstack))
 			{
 				IBlockState iblockstate = worldIn.getBlockState(pos);
 				Block block = iblockstate.getBlock();
@@ -143,12 +142,12 @@ public class BlockRBMKSlab extends BlockBase implements ICustomBlockItem {
 
 					if (axisalignedbb != Block.NULL_AABB && worldIn.checkNoEntityCollision(axisalignedbb.offset(blockpos)) && worldIn.setBlockState(blockpos, iblockstate1, 10))
 					{
-						SoundType soundtype = this.block.getSoundType(iblockstate1, worldIn, pos, player);
+						SoundType soundtype = this.block.getSoundType(iblockstate1, worldIn, blockpos, player);
 						worldIn.playSound(player, blockpos, soundtype.getPlaceSound(), SoundCategory.BLOCKS, (soundtype.getVolume() + 1.0F) / 2.0F, soundtype.getPitch() * 0.8F);
 
 						if (player instanceof EntityPlayerMP)
 						{
-							CriteriaTriggers.PLACED_BLOCK.trigger((EntityPlayerMP)player, pos, itemstack);
+							CriteriaTriggers.PLACED_BLOCK.trigger((EntityPlayerMP)player, blockpos, itemstack);
 						}
 
 						itemstack.shrink(1);
@@ -166,7 +165,12 @@ public class BlockRBMKSlab extends BlockBase implements ICustomBlockItem {
 		@Override
 		public boolean canPlaceBlockOnSide(World world,BlockPos pos,EnumFacing side,EntityPlayer player,ItemStack stack) {
 			IBlockState state = world.getBlockState(pos);
-			return (state.getBlock() instanceof BlockRBMKSlab rbmkSlab && !rbmkSlab.isDouble) || super.canPlaceBlockOnSide(world,pos,side,player,stack);
+			if (state.getBlock() == this.block) {
+				return true;
+			}
+
+			BlockPos offsetPos = pos.offset(side);
+			return world.getBlockState(offsetPos).getBlock() == this.block || super.canPlaceBlockOnSide(world,pos,side,player,stack);
 		}
 	}
 }
