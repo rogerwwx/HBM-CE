@@ -24,26 +24,39 @@ public abstract class AbstractWavefrontBakedModel extends AbstractBakedModel {
     protected final HFRWavefrontObject model;
     protected final VertexFormat format;
     protected final float baseScale;
-    protected float tx;
-    protected float ty;
-    protected float tz;
+    protected final float baseTx;
+    protected final float baseTy;
+    protected final float baseTz;
 
-    protected AbstractWavefrontBakedModel(HFRWavefrontObject model, VertexFormat format, float baseScale, float tx, float ty, float tz, ItemCameraTransforms transforms) {
+    protected AbstractWavefrontBakedModel(HFRWavefrontObject model, VertexFormat format, float baseScale, float tx,
+                                          float ty, float tz, ItemCameraTransforms transforms) {
         super(false, true, false, transforms, ItemOverrideList.NONE);
         this.model = model;
         this.format = format;
         this.baseScale = baseScale;
-        this.tx = tx;
-        this.ty = ty;
-        this.tz = tz;
+        this.baseTx = tx;
+        this.baseTy = ty;
+        this.baseTz = tz;
     }
 
-    protected List<BakedQuad> bakeSimpleQuads(Set<String> partNames, float roll, float pitch, float yaw, boolean applyShading, boolean centerToBlock, TextureAtlasSprite sprite) {
+    protected List<BakedQuad> bakeSimpleQuads(Set<String> partNames, float roll, float pitch, float yaw,
+                                              boolean applyShading, boolean centerToBlock, TextureAtlasSprite sprite) {
         return bakeSimpleQuads(partNames, roll, pitch, yaw, applyShading, centerToBlock, sprite, -1);
     }
 
-    protected List<BakedQuad> bakeSimpleQuads(Set<String> partNames, float roll, float pitch, float yaw, boolean applyShading, boolean centerToBlock, TextureAtlasSprite sprite, int tintIndex) {
-        List<FaceGeometry> geometries = buildGeometry(partNames, roll, pitch, yaw, applyShading, centerToBlock);
+    protected List<BakedQuad> bakeSimpleQuads(Set<String> partNames, float roll, float pitch, float yaw,
+                                              boolean applyShading, boolean centerToBlock, TextureAtlasSprite sprite,
+                                              int tintIndex) {
+        return bakeSimpleQuads(partNames, roll, pitch, yaw, applyShading, centerToBlock, sprite, tintIndex, 0.0F, 0.0F,
+                0.0F);
+    }
+
+    protected List<BakedQuad> bakeSimpleQuads(Set<String> partNames, float roll, float pitch, float yaw,
+                                              boolean applyShading,
+                                              boolean centerToBlock, TextureAtlasSprite sprite, int tintIndex,
+                                              float extraTx, float extraTy, float extraTz) {
+        List<FaceGeometry> geometries = buildGeometry(partNames, roll, pitch, yaw, applyShading, centerToBlock, extraTx,
+                extraTy, extraTz);
         List<BakedQuad> quads = new ArrayList<>(geometries.size());
         for (FaceGeometry geometry : geometries) {
             quads.add(geometry.buildQuad(sprite, tintIndex));
@@ -51,7 +64,14 @@ public abstract class AbstractWavefrontBakedModel extends AbstractBakedModel {
         return quads;
     }
 
-    protected List<FaceGeometry> buildGeometry(Set<String> partNames, float roll, float pitch, float yaw, boolean applyShading, boolean centerToBlock) {
+    protected List<FaceGeometry> buildGeometry(Set<String> partNames, float roll, float pitch, float yaw,
+                                               boolean applyShading, boolean centerToBlock) {
+        return buildGeometry(partNames, roll, pitch, yaw, applyShading, centerToBlock, 0.0F, 0.0F, 0.0F);
+    }
+
+    protected List<FaceGeometry> buildGeometry(Set<String> partNames, float roll, float pitch, float yaw,
+                                               boolean applyShading,
+                                               boolean centerToBlock, float extraTx, float extraTy, float extraTz) {
         List<FaceGeometry> geometries = new ArrayList<>();
 
         for (GroupObject group : model.groupObjects) {
@@ -62,15 +82,11 @@ public abstract class AbstractWavefrontBakedModel extends AbstractBakedModel {
             for (Face face : group.faces) {
                 Vertex normal = face.faceNormal;
 
-                double[] n1 = GeometryBakeUtil.rotateX(normal.x, normal.y, normal.z, roll);
-                double[] n2 = GeometryBakeUtil.rotateZ(n1[0], n1[1], n1[2], pitch);
-                double[] n3 = GeometryBakeUtil.rotateY(n2[0], n2[1], n2[2], yaw);
+                float[] n1 = GeometryBakeUtil.rotateX(normal.x, normal.y, normal.z, roll);
+                float[] n2 = GeometryBakeUtil.rotateZ(n1[0], n1[1], n1[2], pitch);
+                float[] n3 = GeometryBakeUtil.rotateY(n2[0], n2[1], n2[2], yaw);
 
-                float fnx = (float) n3[0];
-                float fny = (float) n3[1];
-                float fnz = (float) n3[2];
-
-                int color = applyShading ? GeometryBakeUtil.computeShade(fnx, fny, fnz) : 255;
+                int color = applyShading ? GeometryBakeUtil.computeShade(n3[0], n3[1], n3[2]) : 255;
 
                 int vertexCount = face.vertices.length;
                 if (vertexCount < 3) {
@@ -90,13 +106,13 @@ public abstract class AbstractWavefrontBakedModel extends AbstractBakedModel {
                     int idx = indices[v];
                     Vertex vertex = face.vertices[idx];
 
-                    double[] p1 = GeometryBakeUtil.rotateX(vertex.x, vertex.y, vertex.z, roll);
-                    double[] p2 = GeometryBakeUtil.rotateZ(p1[0], p1[1], p1[2], pitch);
-                    double[] p3 = GeometryBakeUtil.rotateY(p2[0], p2[1], p2[2], yaw);
+                    float[] p1 = GeometryBakeUtil.rotateX(vertex.x, vertex.y, vertex.z, roll);
+                    float[] p2 = GeometryBakeUtil.rotateZ(p1[0], p1[1], p1[2], pitch);
+                    float[] p3 = GeometryBakeUtil.rotateY(p2[0], p2[1], p2[2], yaw);
 
-                    float x = (float) p3[0];
-                    float y = (float) p3[1];
-                    float z = (float) p3[2];
+                    float x = p3[0];
+                    float y = p3[1];
+                    float z = p3[2];
 
                     if (centerToBlock) {
                         x += 0.5F;
@@ -104,28 +120,28 @@ public abstract class AbstractWavefrontBakedModel extends AbstractBakedModel {
                         z += 0.5F;
                     }
 
-                    x = x * baseScale + tx;
-                    y = y * baseScale + ty;
-                    z = z * baseScale + tz;
+                    x = x * baseScale + baseTx + extraTx;
+                    y = y * baseScale + baseTy + extraTy;
+                    z = z * baseScale + baseTz + extraTz;
 
                     TextureCoordinate tex = face.textureCoordinates[idx];
-                    uu[v] = (float) (tex.u * 16.0D);
-                    vv[v] = (float) (tex.v * 16.0D);
+                    uu[v] = tex.u * 16.0f;
+                    vv[v] = tex.v * 16.0f;
 
                     Vertex vertexNormal = face.vertexNormals != null && idx < face.vertexNormals.length ? face.vertexNormals[idx] : null;
                     if (vertexNormal != null) {
-                        double[] vn1 = GeometryBakeUtil.rotateX(vertexNormal.x, vertexNormal.y, vertexNormal.z, roll);
-                        double[] vn2 = GeometryBakeUtil.rotateZ(vn1[0], vn1[1], vn1[2], pitch);
-                        double[] vn3 = GeometryBakeUtil.rotateY(vn2[0], vn2[1], vn2[2], yaw);
-                        Vector3f vectorNormal = new Vector3f((float) vn3[0], (float) vn3[1], (float) vn3[2]);
+                        float[] vn1 = GeometryBakeUtil.rotateX(vertexNormal.x, vertexNormal.y, vertexNormal.z, roll);
+                        float[] vn2 = GeometryBakeUtil.rotateZ(vn1[0], vn1[1], vn1[2], pitch);
+                        float[] vn3 = GeometryBakeUtil.rotateY(vn2[0], vn2[1], vn2[2], yaw);
+                        Vector3f vectorNormal = new Vector3f(vn3[0], vn3[1], vn3[2]);
                         if (vectorNormal.lengthSquared() > 0.0F) {
                             vectorNormal.normalize();
                         } else {
-                            vectorNormal.set(fnx, fny, fnz);
+                            vectorNormal.set(n3[0], n3[1], n3[2]);
                         }
                         vertexNormals[v] = vectorNormal;
                     } else {
-                        vertexNormals[v] = new Vector3f(fnx, fny, fnz);
+                        vertexNormals[v] = new Vector3f(n3[0], n3[1], n3[2]);
                     }
 
                     px[v] = x;
@@ -133,10 +149,7 @@ public abstract class AbstractWavefrontBakedModel extends AbstractBakedModel {
                     pz[v] = z;
                 }
 
-                EnumFacing facing = EnumFacing.getFacingFromVector(fnx, fny, fnz);
-                Vector3f vectorNormal = new Vector3f(fnx, fny, fnz);
-                vectorNormal.normalize();
-
+                EnumFacing facing = EnumFacing.getFacingFromVector(n3[0], n3[1], n3[2]);
                 geometries.add(new FaceGeometry(facing, px, py, pz, uu, vv, vertexNormals, color));
             }
         }
@@ -154,7 +167,8 @@ public abstract class AbstractWavefrontBakedModel extends AbstractBakedModel {
         private final Vector3f[] vertexNormals;
         private final int color;
 
-        private FaceGeometry(EnumFacing facing, float[] px, float[] py, float[] pz, float[] uu, float[] vv, Vector3f[] vertexNormals, int color) {
+        private FaceGeometry(EnumFacing facing, float[] px, float[] py, float[] pz, float[] uu, float[] vv,
+                             Vector3f[] vertexNormals, int color) {
             this.facing = facing;
             this.px = px;
             this.py = py;

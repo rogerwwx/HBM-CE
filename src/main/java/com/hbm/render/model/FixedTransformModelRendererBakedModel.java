@@ -24,11 +24,13 @@ public class FixedTransformModelRendererBakedModel extends AbstractBakedModel {
     private final float vScale;
     private List<BakedQuad> cache;
 
-    public FixedTransformModelRendererBakedModel(Supplier<ModelBase> modelFactory, TextureAtlasSprite sprite, Matrix4f transform, float modelScale) {
+    public FixedTransformModelRendererBakedModel(Supplier<ModelBase> modelFactory, TextureAtlasSprite sprite,
+                                                 Matrix4f transform, float modelScale) {
         this(modelFactory, sprite, transform, modelScale, 1.0F, 1.0F);
     }
 
-    public FixedTransformModelRendererBakedModel(Supplier<ModelBase> modelFactory, TextureAtlasSprite sprite, Matrix4f transform, float modelScale,
+    public FixedTransformModelRendererBakedModel(Supplier<ModelBase> modelFactory, TextureAtlasSprite sprite,
+                                                 Matrix4f transform, float modelScale,
                                                  float uScale, float vScale) {
         super(BakedModelTransforms.forDeco(BakedModelTransforms.standardBlock()));
         this.modelFactory = modelFactory;
@@ -40,7 +42,8 @@ public class FixedTransformModelRendererBakedModel extends AbstractBakedModel {
     }
 
     @Override
-    public @NotNull List<BakedQuad> getQuads(@Nullable net.minecraft.block.state.IBlockState state, @Nullable EnumFacing side, long rand) {
+    public @NotNull List<BakedQuad> getQuads(@Nullable net.minecraft.block.state.IBlockState state,
+                                             @Nullable EnumFacing side, long rand) {
         if (side != null) {
             return Collections.emptyList();
         }
@@ -95,10 +98,10 @@ public class FixedTransformModelRendererBakedModel extends AbstractBakedModel {
 
         for (int i = 0; i < 4; i++) {
             PositionTextureVertex vertex = vertices[i];
-            double[] local = {
-                    vertex.vector3D.x * modelScale,
-                    vertex.vector3D.y * modelScale,
-                    vertex.vector3D.z * modelScale
+            float[] local = {
+                    ((float) vertex.vector3D.x) * modelScale,
+                    ((float) vertex.vector3D.y) * modelScale,
+                    ((float) vertex.vector3D.z) * modelScale
             };
 
             local = GeometryBakeUtil.rotateX(local[0], local[1], local[2], renderer.rotateAngleX);
@@ -109,7 +112,7 @@ public class FixedTransformModelRendererBakedModel extends AbstractBakedModel {
             local[1] += renderer.rotationPointY * modelScale + renderer.offsetY;
             local[2] += renderer.rotationPointZ * modelScale + renderer.offsetZ;
 
-            Vector3f transformed = BakedModelMatrixUtil.transformPosition(transform, (float) local[0], (float) local[1], (float) local[2]);
+            Vector3f transformed = BakedModelMatrixUtil.transformPosition(transform, local[0], local[1], local[2]);
             px[i] = transformed.x;
             py[i] = transformed.y;
             pz[i] = transformed.z;
@@ -123,9 +126,10 @@ public class FixedTransformModelRendererBakedModel extends AbstractBakedModel {
         int[] vertexData = new int[DefaultVertexFormats.BLOCK.getIntegerSize() * 4];
         float[] scratch = new float[4];
         for (int i = 0; i < 4; i++) {
-            GeometryBakeUtil.putVertex(DefaultVertexFormats.BLOCK, vertexData, i, px[i], py[i], pz[i], uu[i] * uScale, vv[i] * vScale, color, color, color, normal, sprite, scratch);
+            GeometryBakeUtil.putVertex(DefaultVertexFormats.BLOCK, vertexData, i, px[i], py[i], pz[i], uu[i] * uScale,
+                    vv[i] * vScale, color, color, color, normal, sprite, scratch);
         }
-        return new BakedQuad(vertexData, -1, facing, sprite, true, DefaultVertexFormats.BLOCK);
+        return new BakedQuad(vertexData, -1, facing, sprite, false, DefaultVertexFormats.BLOCK);
     }
 
     private static Vector3f computeNormal(float[] px, float[] py, float[] pz) {

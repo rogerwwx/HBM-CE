@@ -418,13 +418,19 @@ public class TileEntityRBMKRod extends TileEntityRBMKSlottedBase implements IRBM
 	@Override
 	public Map<String, DataValue> getQueryData() {
 		Map<String, DataValue> data = super.getQueryData();
+		ItemStack stack = inventory.getStackInSlot(0);
 
-		if (inventory.getStackInSlot(0).getItem() instanceof ItemRBMKRod) {
-			ItemRBMKRod rod = ((ItemRBMKRod)inventory.getStackInSlot(0).getItem());
-			data.put("enrichment", new DataValueFloat((float) ItemRBMKRod.getEnrichment(inventory.getStackInSlot(0))));
-			data.put("xenon", new DataValueFloat((float) ItemRBMKRod.getPoison(inventory.getStackInSlot(0))));
-			data.put("c_heat", new DataValueFloat((float) ItemRBMKRod.getHullHeat(inventory.getStackInSlot(0))));
-			data.put("c_coreHeat", new DataValueFloat((float) ItemRBMKRod.getCoreHeat(inventory.getStackInSlot(0))));
+		data.put("enrichment", new DataValueFloat(0));
+		data.put("xenon", new DataValueFloat(0));
+		data.put("c_heat", new DataValueFloat(0));
+		data.put("c_coreHeat", new DataValueFloat(0));
+		data.put("c_maxHeat", new DataValueFloat(0));
+
+		if (stack.getItem() instanceof ItemRBMKRod rod) {
+			data.put("enrichment", new DataValueFloat((float) ItemRBMKRod.getEnrichment(stack)));
+			data.put("xenon", new DataValueFloat((float) ItemRBMKRod.getPoison(stack)));
+			data.put("c_heat", new DataValueFloat((float) ItemRBMKRod.getHullHeat(stack)));
+			data.put("c_coreHeat", new DataValueFloat((float) ItemRBMKRod.getCoreHeat(stack)));
 			data.put("c_maxHeat", new DataValueFloat((float) rod.meltingPoint));
 		}
 		return data;

@@ -36,19 +36,23 @@ public class StaticWavefrontItemBakedModel extends AbstractWavefrontBakedModel {
     private final float uScale;
     private final float vScale;
     private final boolean doubleSided;
-    private final EnumMap<ItemCameraTransforms.TransformType, Matrix4f> perspectiveMatrices = new EnumMap<>(ItemCameraTransforms.TransformType.class);
+    private final EnumMap<ItemCameraTransforms.TransformType, Matrix4f> perspectiveMatrices = new EnumMap<>(
+            ItemCameraTransforms.TransformType.class);
     private List<BakedQuad> cache;
 
     public StaticWavefrontItemBakedModel(HFRWavefrontObject model, TextureAtlasSprite sprite,
                                          @Nullable String[] partNames,
                                          float scale, float yaw, boolean doubleSided, float uScale, float vScale,
                                          float roll, float pitch,
-                                         double guiTranslateX, double guiTranslateY, double guiTranslateZ, double guiScale, double guiYaw,
+                                         double guiTranslateX, double guiTranslateY, double guiTranslateZ,
+                                         double guiScale, double guiYaw,
                                          float preTranslateX, float preTranslateY, float preTranslateZ,
                                          float translateX, float translateY, float translateZ) {
-        super(model, DefaultVertexFormats.ITEM, scale, translateX, translateY, translateZ, ItemCameraTransforms.DEFAULT);
+        super(model, DefaultVertexFormats.ITEM, scale, translateX, translateY, translateZ,
+                ItemCameraTransforms.DEFAULT);
         this.sprite = sprite;
-        this.partNames = partNames == null || partNames.length == 0 ? null : new LinkedHashSet<>(Arrays.asList(partNames));
+        this.partNames = partNames == null || partNames.length == 0 ? null : new LinkedHashSet<>(
+                Arrays.asList(partNames));
         this.yaw = yaw;
         this.roll = roll;
         this.pitch = pitch;
@@ -71,32 +75,22 @@ public class StaticWavefrontItemBakedModel extends AbstractWavefrontBakedModel {
             return cache;
         }
 
-        double[] rotatedPreTranslate = GeometryBakeUtil.rotateY(preTranslateX, preTranslateY, preTranslateZ, yaw);
+        float[] rotatedPreTranslate = GeometryBakeUtil.rotateY(preTranslateX, preTranslateY, preTranslateZ, yaw);
+        float extraTx = rotatedPreTranslate[0];
+        float extraTy = rotatedPreTranslate[1];
+        float extraTz = rotatedPreTranslate[2];
 
-        float previousTx = tx;
-        float previousTy = ty;
-        float previousTz = tz;
-
-        tx = previousTx + (float) rotatedPreTranslate[0];
-        ty = previousTy + (float) rotatedPreTranslate[1];
-        tz = previousTz + (float) rotatedPreTranslate[2];
-
-        try {
-            List<FaceGeometry> geometry = buildGeometry(partNames, roll, pitch, yaw, false, false);
-            List<BakedQuad> quads = new ArrayList<>(doubleSided ? geometry.size() * 2 : geometry.size());
-            for (FaceGeometry face : geometry) {
-                quads.add(face.buildQuad(sprite, -1, uScale, vScale));
-                if (doubleSided) {
-                    quads.add(face.buildBackQuad(sprite, -1, uScale, vScale));
-                }
+        List<FaceGeometry> geometry = buildGeometry(partNames, roll, pitch, yaw, false, false, extraTx, extraTy,
+                extraTz);
+        List<BakedQuad> quads = new ArrayList<>(doubleSided ? geometry.size() * 2 : geometry.size());
+        for (FaceGeometry face : geometry) {
+            quads.add(face.buildQuad(sprite, -1, uScale, vScale));
+            if (doubleSided) {
+                quads.add(face.buildBackQuad(sprite, -1, uScale, vScale));
             }
-            cache = Collections.unmodifiableList(quads);
-            return cache;
-        } finally {
-            tx = previousTx;
-            ty = previousTy;
-            tz = previousTz;
         }
+        cache = Collections.unmodifiableList(quads);
+        return cache;
     }
 
     @Override
@@ -105,16 +99,19 @@ public class StaticWavefrontItemBakedModel extends AbstractWavefrontBakedModel {
     }
 
     @Override
-    public Pair<? extends IBakedModel, Matrix4f> handlePerspective(ItemCameraTransforms.TransformType cameraTransformType) {
+    public Pair<? extends IBakedModel, Matrix4f> handlePerspective(
+            ItemCameraTransforms.TransformType cameraTransformType) {
         Matrix4f matrix = perspectiveMatrices.get(cameraTransformType);
         return Pair.of(this, matrix != null ? new Matrix4f(matrix) : null);
     }
 
-    private void initPerspectiveMatrices(double guiTranslateX, double guiTranslateY, double guiTranslateZ, double guiScale) {
+    private void initPerspectiveMatrices(double guiTranslateX, double guiTranslateY, double guiTranslateZ,
+                                         double guiScale) {
         initPerspectiveMatrices(guiTranslateX, guiTranslateY, guiTranslateZ, guiScale, 0.0D);
     }
 
-    private void initPerspectiveMatrices(double guiTranslateX, double guiTranslateY, double guiTranslateZ, double guiScale, double guiYaw) {
+    private void initPerspectiveMatrices(double guiTranslateX, double guiTranslateY, double guiTranslateZ,
+                                         double guiScale, double guiYaw) {
         perspectiveMatrices.put(ItemCameraTransforms.TransformType.FIRST_PERSON_RIGHT_HAND,
                 stageTransform(
                         translate(0.5, 0.0, 0.5),

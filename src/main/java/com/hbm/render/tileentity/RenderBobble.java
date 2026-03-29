@@ -10,6 +10,7 @@ import com.hbm.main.ResourceManager;
 import com.hbm.render.item.ItemRenderBase;
 import com.hbm.render.loader.HFRWavefrontObject;
 import com.hbm.render.loader.IModelCustom;
+import com.hbm.util.RenderUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.renderer.BufferBuilder;
@@ -77,6 +78,12 @@ public class RenderBobble extends TileEntitySpecialRenderer<TileEntityBobble> im
     }
 
     public void renderBobble(BobbleType type) {
+        boolean prevBlend = RenderUtil.isBlendEnabled();
+        int prevSrc = RenderUtil.getBlendSrcFactor();
+        int prevDst = RenderUtil.getBlendDstFactor();
+        int prevSrcAlpha = RenderUtil.getBlendSrcAlphaFactor();
+        int prevDstAlpha = RenderUtil.getBlendDstAlphaFactor();
+
         GlStateManager.enableLighting();
         GlStateManager.enableRescaleNormal();
 
@@ -124,6 +131,13 @@ public class RenderBobble extends TileEntitySpecialRenderer<TileEntityBobble> im
         GlStateManager.popMatrix();
 
         renderSocket(type);
+
+        GlStateManager.tryBlendFuncSeparate(prevSrc, prevDst, prevSrcAlpha, prevDstAlpha);
+        if (prevBlend) {
+            GlStateManager.enableBlend();
+        } else {
+            GlStateManager.disableBlend();
+        }
     }
 
     /* RENDER STANDARD PLAYER MODEL */

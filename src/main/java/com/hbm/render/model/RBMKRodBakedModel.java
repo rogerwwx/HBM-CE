@@ -56,7 +56,8 @@ public class RBMKRodBakedModel extends AbstractRBMKLiddedBakedModel {
             Vector3f to = new Vector3f(16.0f, (i + 1) * 16.0f, 16.0f);
 
             for (EnumFacing face : baseFaces) {
-                BlockFaceUV uv = AbstractBakedModel.makeFaceUV(face, new Vector3f(0, 0, 0), new Vector3f(16.0f, 16.0f, 16.0f));
+                BlockFaceUV uv = AbstractBakedModel.makeFaceUV(face, new Vector3f(0, 0, 0),
+                        new Vector3f(16.0f, 16.0f, 16.0f));
                 BlockPartFace partFace = new BlockPartFace(face, -1, "", uv);
                 BakedQuad quad = bakery.makeBakedQuad(from, to, partFace, sideSprite, face,
                         TRSRTransformation.identity(), null, true, true);
@@ -97,13 +98,7 @@ public class RBMKRodBakedModel extends AbstractRBMKLiddedBakedModel {
     }
 
     private List<BakedQuad> bakeWavefrontAtYOffset(Set<String> parts, float yOffsetBlocks, TextureAtlasSprite sprite) {
-        float oldTy = this.ty;
-        try {
-            this.ty = oldTy + yOffsetBlocks;
-            return bakeSimpleQuads(parts, 0, 0, 0, !isInventory, false, sprite);
-        } finally {
-            this.ty = oldTy;
-        }
+        return bakeSimpleQuads(parts, 0, 0, 0, !isInventory, false, sprite, -1, 0.0F, yOffsetBlocks, 0.0F);
     }
 
     @Override

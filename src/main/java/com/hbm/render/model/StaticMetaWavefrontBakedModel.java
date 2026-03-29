@@ -34,10 +34,12 @@ public class StaticMetaWavefrontBakedModel extends AbstractWavefrontBakedModel {
                                          boolean doubleSided, float uScale, float vScale,
                                          float preTranslateX, float preTranslateY, float preTranslateZ,
                                          float translateX, float translateY, float translateZ) {
-        super(model, DefaultVertexFormats.BLOCK, 1.0F, translateX, translateY, translateZ, BakedModelTransforms.forDeco(BakedModelTransforms.standardBlock()));
+        super(model, DefaultVertexFormats.BLOCK, 1.0F, translateX, translateY, translateZ,
+                BakedModelTransforms.forDeco(BakedModelTransforms.standardBlock()));
         this.sprite = sprite;
         this.yawsByMeta = Arrays.copyOf(yawsByMeta, yawsByMeta.length);
-        this.partNames = partNames == null || partNames.length == 0 ? null : new LinkedHashSet<>(Arrays.asList(partNames));
+        this.partNames = partNames == null || partNames.length == 0 ? null : new LinkedHashSet<>(
+                Arrays.asList(partNames));
         this.roll = roll;
         this.pitch = pitch;
         this.doubleSided = doubleSided;
@@ -76,31 +78,21 @@ public class StaticMetaWavefrontBakedModel extends AbstractWavefrontBakedModel {
     }
 
     private List<BakedQuad> buildQuads(float yaw) {
-        double[] rotatedPreTranslate = GeometryBakeUtil.rotateY(preTranslateX, preTranslateY, preTranslateZ, yaw);
+        float[] rotatedPreTranslate = GeometryBakeUtil.rotateY(preTranslateX, preTranslateY, preTranslateZ, yaw);
+        float extraTx = 0.5F + rotatedPreTranslate[0];
+        float extraTy = rotatedPreTranslate[1];
+        float extraTz = 0.5F + rotatedPreTranslate[2];
 
-        float previousTx = tx;
-        float previousTy = ty;
-        float previousTz = tz;
-
-        tx = previousTx + 0.5F + (float) rotatedPreTranslate[0];
-        ty = previousTy + (float) rotatedPreTranslate[1];
-        tz = previousTz + 0.5F + (float) rotatedPreTranslate[2];
-
-        try {
-            List<FaceGeometry> geometry = buildGeometry(partNames, roll, pitch, yaw, true, false);
-            List<BakedQuad> quads = new ArrayList<>(doubleSided ? geometry.size() * 2 : geometry.size());
-            for (FaceGeometry face : geometry) {
-                quads.add(face.buildQuad(sprite, -1, uScale, vScale));
-                if (doubleSided) {
-                    quads.add(face.buildBackQuad(sprite, -1, uScale, vScale));
-                }
+        List<FaceGeometry> geometry = buildGeometry(partNames, roll, pitch, yaw, true, false, extraTx, extraTy,
+                extraTz);
+        List<BakedQuad> quads = new ArrayList<>(doubleSided ? geometry.size() * 2 : geometry.size());
+        for (FaceGeometry face : geometry) {
+            quads.add(face.buildQuad(sprite, -1, uScale, vScale));
+            if (doubleSided) {
+                quads.add(face.buildBackQuad(sprite, -1, uScale, vScale));
             }
-            return quads;
-        } finally {
-            tx = previousTx;
-            ty = previousTy;
-            tz = previousTz;
         }
+        return quads;
     }
 
     @Override

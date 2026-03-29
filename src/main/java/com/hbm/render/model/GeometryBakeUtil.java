@@ -3,8 +3,8 @@ package com.hbm.render.model;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.renderer.vertex.VertexFormat;
 import net.minecraft.client.renderer.vertex.VertexFormatElement;
+import net.minecraft.util.math.MathHelper;
 import net.minecraftforge.client.model.pipeline.LightUtil;
-import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import javax.vecmath.Vector3f;
@@ -25,34 +25,32 @@ public final class GeometryBakeUtil {
         return Math.min(Math.max(value, 0), 255);
     }
 
-    @Contract("_, _, _, _ -> new")
-    public static double @NotNull [] rotateX(double x, double y, double z, float angle) {
-        double cos = Math.cos(angle);
-        double sin = Math.sin(angle);
-        double ny = y * cos + z * sin;
-        double nz = z * cos - y * sin;
-        return new double[]{x, ny, nz};
+    public static float @NotNull [] rotateX(float x, float y, float z, float angle) {
+        float cos = MathHelper.cos(angle);
+        float sin = MathHelper.sin(angle);
+        float ny = y * cos + z * sin;
+        float nz = z * cos - y * sin;
+        return new float[]{x, ny, nz};
     }
 
-    @Contract("_, _, _, _ -> new")
-    public static double @NotNull [] rotateY(double x, double y, double z, float angle) {
-        double cos = Math.cos(angle);
-        double sin = Math.sin(angle);
-        double nx = x * cos + z * sin;
-        double nz = -x * sin + z * cos;
-        return new double[]{nx, y, nz};
+    public static float @NotNull [] rotateY(float x, float y, float z, float angle) {
+        float cos = MathHelper.cos(angle);
+        float sin = MathHelper.sin(angle);
+        float nx = x * cos + z * sin;
+        float nz = -x * sin + z * cos;
+        return new float[]{nx, y, nz};
     }
 
-    @Contract("_, _, _, _ -> new")
-    public static double @NotNull [] rotateZ(double x, double y, double z, float angle) {
-        double cos = Math.cos(angle);
-        double sin = Math.sin(angle);
-        double nx = x * cos + y * sin;
-        double ny = y * cos - x * sin;
-        return new double[]{nx, ny, z};
+    public static float @NotNull [] rotateZ(float x, float y, float z, float angle) {
+        float cos = MathHelper.cos(angle);
+        float sin = MathHelper.sin(angle);
+        float nx = x * cos + y * sin;
+        float ny = y * cos - x * sin;
+        return new float[]{nx, ny, z};
     }
 
-    public static void putVertex(VertexFormat format, int[] vertexData, int vertexIndex, float x, float y, float z, float u16, float v16,
+    public static void putVertex(VertexFormat format, int[] vertexData, int vertexIndex, float x, float y, float z,
+                                 float u16, float v16,
                                  int cr, int cg, int cb, Vector3f normal, TextureAtlasSprite sprite, float[] scratch) {
         for (int elementIndex = 0; elementIndex < format.getElementCount(); elementIndex++) {
             VertexFormatElement element = format.getElement(elementIndex);

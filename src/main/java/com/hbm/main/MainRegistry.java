@@ -85,7 +85,7 @@ import java.io.File;
 import java.util.Random;
 
 @Mod(modid = Tags.MODID, version = Tags.VERSION, name = Tags.MODNAME,
-        dependencies = "required-client:ctm;"
+        dependencies = "required-after:mixinbooter;required-client:ctm;"
 )
 public class MainRegistry {
 

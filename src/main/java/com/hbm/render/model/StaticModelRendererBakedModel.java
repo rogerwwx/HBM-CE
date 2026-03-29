@@ -33,7 +33,8 @@ public class StaticModelRendererBakedModel extends AbstractBakedModel {
     private final float scale;
     private final List<BakedQuad>[] cache;
 
-    public StaticModelRendererBakedModel(IntFunction<ModelBase> modelFactory, TextureAtlasSprite sprite, float uScale, float vScale, float[] yawsByMeta,
+    public StaticModelRendererBakedModel(IntFunction<ModelBase> modelFactory, TextureAtlasSprite sprite, float uScale,
+                                         float vScale, float[] yawsByMeta,
                                          float roll, float pitch,
                                          float preTranslateX, float preTranslateY, float preTranslateZ,
                                          float tx, float ty, float tz, float scale) {
@@ -88,10 +89,10 @@ public class StaticModelRendererBakedModel extends AbstractBakedModel {
             return Collections.emptyList();
         }
 
-        double[] rotatedPreTranslate = GeometryBakeUtil.rotateY(preTranslateX, preTranslateY, preTranslateZ, yaw);
-        float worldTx = tx + (float) rotatedPreTranslate[0];
-        float worldTy = ty + (float) rotatedPreTranslate[1];
-        float worldTz = tz + (float) rotatedPreTranslate[2];
+        float[] rotatedPreTranslate = GeometryBakeUtil.rotateY(preTranslateX, preTranslateY, preTranslateZ, yaw);
+        float worldTx = tx + rotatedPreTranslate[0];
+        float worldTy = ty + rotatedPreTranslate[1];
+        float worldTz = tz + rotatedPreTranslate[2];
 
         List<BakedQuad> quads = new ArrayList<>();
         for (ModelRenderer renderer : model.boxList) {
@@ -113,7 +114,8 @@ public class StaticModelRendererBakedModel extends AbstractBakedModel {
         return quads;
     }
 
-    private BakedQuad bakeQuad(ModelRenderer renderer, TexturedQuad quad, float yaw, float worldTx, float worldTy, float worldTz) {
+    private BakedQuad bakeQuad(ModelRenderer renderer, TexturedQuad quad, float yaw, float worldTx, float worldTy,
+                               float worldTz) {
         PositionTextureVertex[] vertices = quad.vertexPositions;
         if (vertices == null || vertices.length != 4) {
             return null;
@@ -127,10 +129,10 @@ public class StaticModelRendererBakedModel extends AbstractBakedModel {
 
         for (int i = 0; i < 4; i++) {
             PositionTextureVertex vertex = vertices[i];
-            double[] local = {
-                    vertex.vector3D.x * scale,
-                    vertex.vector3D.y * scale,
-                    vertex.vector3D.z * scale
+            float[] local = {
+                    ((float) vertex.vector3D.x) * scale,
+                    ((float) vertex.vector3D.y) * scale,
+                    ((float) vertex.vector3D.z) * scale
             };
 
             local = GeometryBakeUtil.rotateX(local[0], local[1], local[2], renderer.rotateAngleX);
@@ -145,9 +147,9 @@ public class StaticModelRendererBakedModel extends AbstractBakedModel {
             local = GeometryBakeUtil.rotateZ(local[0], local[1], local[2], pitch);
             local = GeometryBakeUtil.rotateY(local[0], local[1], local[2], yaw);
 
-            px[i] = (float) local[0] + worldTx;
-            py[i] = (float) local[1] + worldTy;
-            pz[i] = (float) local[2] + worldTz;
+            px[i] = local[0] + worldTx;
+            py[i] = local[1] + worldTy;
+            pz[i] = local[2] + worldTz;
             uu[i] = vertex.texturePositionX * 16.0F * uScale;
             vv[i] = vertex.texturePositionY * 16.0F * vScale;
         }
@@ -158,9 +160,10 @@ public class StaticModelRendererBakedModel extends AbstractBakedModel {
         int[] vertexData = new int[DefaultVertexFormats.BLOCK.getIntegerSize() * 4];
         float[] scratch = new float[4];
         for (int i = 0; i < 4; i++) {
-            GeometryBakeUtil.putVertex(DefaultVertexFormats.BLOCK, vertexData, i, px[i], py[i], pz[i], uu[i], vv[i], color, color, color, normal, sprite, scratch);
+            GeometryBakeUtil.putVertex(DefaultVertexFormats.BLOCK, vertexData, i, px[i], py[i], pz[i], uu[i], vv[i],
+                    color, color, color, normal, sprite, scratch);
         }
-        return new BakedQuad(vertexData, -1, facing, sprite, true, DefaultVertexFormats.BLOCK);
+        return new BakedQuad(vertexData, -1, facing, sprite, false, DefaultVertexFormats.BLOCK);
     }
 
     private static Vector3f computeNormal(float[] px, float[] py, float[] pz) {

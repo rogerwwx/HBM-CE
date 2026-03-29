@@ -20,6 +20,7 @@ public class InventoryHook {
     public static void onClientSlotChange(InventoryPlayer inventory, int slotIndex, ItemStack newStack) {
         EntityPlayer player = inventory.player;
         if (player == null || !player.world.isRemote) return;
+        if (HbmCorePlugin.isInventoryTrackerHookDisabled()) return;
         ItemStack oldStack = inventory.getStackInSlot(slotIndex);
         if (ItemStack.areItemStacksEqual(oldStack, newStack)) return;
         if (GeneralConfig.enableExtendedLogging) coreLogger.debug("Client slot change detected with slotIndex {}", slotIndex);
@@ -27,6 +28,7 @@ public class InventoryHook {
     }
 
     public static void onContainerChange(Container container, int slotIndex, ItemStack oldStack, ItemStack newStack) {
+        if (HbmCorePlugin.isInventoryTrackerHookDisabled()) return;
         if (!(container instanceof ContainerPlayer containerPlayer)) return;
         for (IContainerListener listener : container.listeners) {
             if (listener instanceof EntityPlayerMP player) {

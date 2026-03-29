@@ -1080,8 +1080,9 @@ public class ModEventHandlerClient {
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public void onRenderHUD(RenderGameOverlayEvent.Pre event) {
 
-        //TODO: using ALL doesn't work as anticipated - still hides in F1. need a different event for this
-        if(event.getType() == ElementType.ALL) {
+        // TODO: using ALL doesn't work as anticipated - still hides in F1. need a different event for this
+        // Th3_Sl1ze: I'm excluding everything that fucks with xaero's rendering, hopefully it'd work
+        if(event.getType() == RenderGameOverlayEvent.ElementType.TEXT) {
             if(ClientConfig.BADGES_HUD.get()) RenderScreenOverlay.renderBadges(event.getResolution(), Minecraft.getMinecraft().ingameGUI);
         }
     }

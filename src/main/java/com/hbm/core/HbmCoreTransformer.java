@@ -9,22 +9,16 @@ public final class HbmCoreTransformer implements IClassTransformer {
 
         // a class is transformed at most once
         return switch (transformedName) {
-            case BufferBuilderTransformer.TARGET ->
-                    BufferBuilderTransformer.transform(name, transformedName, basicClass);
             case GlStateManagerTransformer.TARGET ->
                     GlStateManagerTransformer.transform(name, transformedName, basicClass);
             case ContainerTransformer.TARGET ->
-                    ContainerTransformer.transform(name, transformedName, basicClass);
+                    HbmCorePlugin.isInventoryTrackerTransformerDisabled() ? basicClass : ContainerTransformer.transform(name, transformedName, basicClass);
             case InventoryPlayerTransformer.TARGET ->
-                    InventoryPlayerTransformer.transform(name, transformedName, basicClass);
+                    HbmCorePlugin.isInventoryTrackerTransformerDisabled() ? basicClass : InventoryPlayerTransformer.transform(name, transformedName, basicClass);
             case ForgeHooksTransformer.TARGET ->
                     ForgeHooksTransformer.transform(name, transformedName, basicClass);
             case PlayerInteractionManagerTransformer.TARGET ->
                     PlayerInteractionManagerTransformer.transform(name, transformedName, basicClass);
-            case FMLNetworkTransformer.TARGET_DISPATCHER ->
-                    FMLNetworkTransformer.transformNetworkDispatcher(name, transformedName, basicClass);
-            case FMLNetworkTransformer.TARGET_PACKET ->
-                    FMLNetworkTransformer.transformFMLProxyPacket(name, transformedName, basicClass);
             case AncientWarfare2NetworkTransformer.TARGET ->
                     AncientWarfare2NetworkTransformer.transform(name, transformedName, basicClass);
             case EntityItemHazardTransformer.TARGET ->

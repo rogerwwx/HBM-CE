@@ -34,7 +34,8 @@ public class RBMKControlBakedModel extends AbstractRBMKLiddedBakedModel {
                                  TextureAtlasSprite glassTop, TextureAtlasSprite glassSide,
                                  TextureAtlasSprite lidSprite,
                                  boolean isInventory) {
-        super((HFRWavefrontObject) ResourceManager.rbmk_rods, isInventory ? DefaultVertexFormats.ITEM : DefaultVertexFormats.BLOCK,
+        super((HFRWavefrontObject) ResourceManager.rbmk_rods,
+                isInventory ? DefaultVertexFormats.ITEM : DefaultVertexFormats.BLOCK,
                 1.0F, 0.5F, 0.0F, 0.5F, BakedModelTransforms.rbmkColumn(),
                 coverTop, coverSide, glassTop, glassSide, isInventory);
         this.baseTopSprite = baseTop;
@@ -75,7 +76,8 @@ public class RBMKControlBakedModel extends AbstractRBMKLiddedBakedModel {
         List<BakedQuad>[] sideQuads = createSideArray();
 
         for (EnumFacing face : EnumFacing.VALUES) {
-            addTexturedBoxFace(sideQuads[face.ordinal()], 0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F, face, baseTopSprite, baseSideSprite, baseBottomSprite);
+            addTexturedBoxFace(sideQuads[face.ordinal()], 0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F, face, baseTopSprite,
+                    baseSideSprite, baseBottomSprite);
         }
 
         if (lidType != RBMKBase.LID_NONE && lidType != RBMKBase.LID_NULL) {
@@ -88,20 +90,18 @@ public class RBMKControlBakedModel extends AbstractRBMKLiddedBakedModel {
     }
 
     private void addPipes(List<BakedQuad> quads, float yBase) {
-        addTexturedBox(quads, 0.0625F, yBase, 0.0625F, 0.4375F, yBase + 0.125F, 0.4375F, pipeTopSprite, pipeSideSprite, pipeTopSprite);
-        addTexturedBox(quads, 0.0625F, yBase, 0.5625F, 0.4375F, yBase + 0.125F, 0.9375F, pipeTopSprite, pipeSideSprite, pipeTopSprite);
-        addTexturedBox(quads, 0.5625F, yBase, 0.5625F, 0.9375F, yBase + 0.125F, 0.9375F, pipeTopSprite, pipeSideSprite, pipeTopSprite);
-        addTexturedBox(quads, 0.5625F, yBase, 0.0625F, 0.9375F, yBase + 0.125F, 0.4375F, pipeTopSprite, pipeSideSprite, pipeTopSprite);
+        addTexturedBox(quads, 0.0625F, yBase, 0.0625F, 0.4375F, yBase + 0.125F, 0.4375F, pipeTopSprite, pipeSideSprite,
+                pipeTopSprite);
+        addTexturedBox(quads, 0.0625F, yBase, 0.5625F, 0.4375F, yBase + 0.125F, 0.9375F, pipeTopSprite, pipeSideSprite,
+                pipeTopSprite);
+        addTexturedBox(quads, 0.5625F, yBase, 0.5625F, 0.9375F, yBase + 0.125F, 0.9375F, pipeTopSprite, pipeSideSprite,
+                pipeTopSprite);
+        addTexturedBox(quads, 0.5625F, yBase, 0.0625F, 0.9375F, yBase + 0.125F, 0.4375F, pipeTopSprite, pipeSideSprite,
+                pipeTopSprite);
     }
 
     private List<BakedQuad> bakeWavefrontAtYOffset(Set<String> parts, float yOffsetBlocks, TextureAtlasSprite sprite) {
-        float oldTy = this.ty;
-        try {
-            this.ty = oldTy + yOffsetBlocks;
-            return bakeSimpleQuads(parts, 0, 0, 0, !isInventory, false, sprite);
-        } finally {
-            this.ty = oldTy;
-        }
+        return bakeSimpleQuads(parts, 0, 0, 0, !isInventory, false, sprite, -1, 0.0F, yOffsetBlocks, 0.0F);
     }
 
     @Override
