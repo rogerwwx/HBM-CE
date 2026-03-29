@@ -6,7 +6,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import zone.rong.mixinbooter.IEarlyMixinLoader;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Arrays;
 import java.util.Map;
