@@ -41,10 +41,7 @@ public class MixinMinecraft {
         return controller.interactWithEntity(player, target, hit, hand);
     }
 
-    /**
-     * 替换 rightClickMouse 中调用 PlayerControllerMP.interactWithEntity(player, entity, hand)
-     * 当手持自定义武器时返回 PASS，让后续物品使用逻辑继续执行。
-     */
+    //区
     @Redirect(
             method = "rightClickMouse",
             at = @At(
