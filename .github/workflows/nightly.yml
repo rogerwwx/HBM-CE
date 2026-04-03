@@ -1,8 +1,8 @@
-name: Nightly Gradle Build (Java25 only)
+name: Nightly Gradle Build
 
 on:
   schedule:
-    - cron: '40 23 * * *'
+    - cron: '55 23 * * *'
   workflow_dispatch:
 
 concurrency:
@@ -53,7 +53,7 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
-      - name: Build Java25 reobf jar
+      - name: Build reobf jar
         run: ./gradlew releaseBuild
 
       - name: Create nightly tag
@@ -67,12 +67,45 @@ jobs:
           git tag -f $TAG
           git push --force origin $TAG
 
-      - name: Collect release jars (Java25 only)
+      - name: Collect release jars
+        shell: bash
         run: |
-          mkdir -p release
-          find build/publication-libs -name '*.jar' \
-            ! -name '*dev*.jar' \
-            -exec cp {} release/ \;
+          set -euo pipefail
+          shopt -s nullglob
+          OUT_DIR="release"
+          rm -rf "$OUT_DIR"
+          mkdir -p "$OUT_DIR"
+          # 收集 build/libs 下的 jar，排除不需要的
+          for file in build/libs/*; do
+            name=$(basename "$file")
+            case "$name" in
+              *-downgraded.jar|*-dev-shadow.jar)
+                continue
+                ;;
+            esac
+            cp "$file" "$OUT_DIR/$name"
+          done
+          # 收集 build/publication-libs 下的 jar，严格检查命名
+          for file in build/publication-libs/*.jar; do
+            name=$(basename "$file")
+            if [[ "$name" != *-java25-publish-* ]]; then
+              echo "::error::Unexpected publication artifact name: $name"
+              exit 1
+            fi
+            prefix="${name%%-java25-publish-*}"
+            rest="${name#*-java25-publish-}"
+            case "$rest" in
+              *-dev-compile.jar|*-api.jar)
+                continue
+                ;;
+              *.jar)
+                version="${rest%.jar}"
+                compat_name="${prefix}-${version}-java25.jar"
+                ;;
+            esac
+            cp "$file" "$OUT_DIR/$compat_name"
+          done
+      
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
@@ -81,7 +114,7 @@ jobs:
           name: "Nightly Build v${{ env.MOD_VERSION }} (Java25)"
           prerelease: true
           body: |
-            Auto Build (Java25 only)
+            Auto Build 
             Commit: `${{ github.sha }}`
           files: release/*.jar
         env:
