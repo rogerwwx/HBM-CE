@@ -46,13 +46,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 public class ModelRendererUtil {
-	// Simple display list cache: key -> glListId
-	private static final java.util.Map<Integer, Integer> DISPLAY_LIST_CACHE = new java.util.HashMap<>();
-	// reverse map: glListId -> key
-	private static final java.util.Map<Integer, Integer> DISPLAY_LIST_KEY_BY_LIST = new java.util.HashMap<>();
-	// refcount for list ids
-	private static final java.util.Map<Integer, Integer> DISPLAY_LIST_REFCOUNT = new java.util.HashMap<>();
-	// 复用缓冲，避免频繁 new 大数组
 	private static final ThreadLocal<float[]> TL_VERTEX_BUF = ThreadLocal.withInitial(() -> new float[16384]);
 	private static final ThreadLocal<int[]> TL_INDEX_BUF = ThreadLocal.withInitial(() -> new int[8192]);
 
@@ -314,52 +307,42 @@ public class ModelRendererUtil {
 
 	public static VertexData compress(Triangle[] tris) {
 		final int vertexCount = tris.length * 3;
-		// 让触手更容易脱离（更严格的合并，减少“焊接”）
-		final double posEps = 3e-7;       // 比 1e-6 更严格
-		final double uvEps  = 1e-6;       // UV 不必改太多
-		final double bucketScale = 3e-5;  // 比 1e-4 更小
+		if (vertexCount == 0) {
+			return new VertexData(); // 处理空输入
+		}
 
+		// 让触手更容易脱离（更严格的合并，减少“焊接”）
+		final double posEps = 3e-7;
+		final double uvEps  = 1e-6;
+		final double bucketScale = 3e-5;
+		final double posEps2 = posEps * posEps;
+
+		// --- 动态扩容参数 ---
+		int initialCapacity = 256; // 从一个合理的较小容量开始
+		final float loadFactor = 0.75f;
+		int capacity = 1;
+		while(capacity < initialCapacity) capacity <<= 1; // 确保容量是2的幂
+		int threshold = (int)(capacity * loadFactor); // 扩容阈值
 
 		// 1. 预分配结果容器
-		List<Vec3d> uniquePositions = new ArrayList<>(vertexCount);
+		List<Vec3d> uniquePositions = new ArrayList<>(Math.min(vertexCount, initialCapacity));
 		int[] indices = new int[vertexCount];
 		float[] texCoords = new float[tris.length * 6];
+		float[] representativeUVs = new float[vertexCount * 2]; // 保持较大容量，避免这个也动态扩容
 
-		// 2. 用于比较 UV 的临时数组 (按唯一顶点索引存储)
-		float[] representativeUVs = new float[vertexCount * 2];
-
-		// 3. 动态计算 HASH_SIZE（2 的幂），基于顶点估计，避免桶过小或过大
-		int minSize = 1024;
-		int maxSize = 16384;
-		int target = Math.max(minSize, vertexCount / 2); // 目标桶数，平均每桶 ~2 顶点
-		int HASH_SIZE = 1;
-		while (HASH_SIZE < target && HASH_SIZE < maxSize) {
-			HASH_SIZE <<= 1;
-		}
-		if (HASH_SIZE > maxSize) HASH_SIZE = maxSize;
-		if (HASH_SIZE < minSize) HASH_SIZE = minSize;
-		final int HASH_MASK = HASH_SIZE - 1;
-
-		// 初始化链表头与 next 数组
-		int[] head = new int[HASH_SIZE];
-		int[] next = new int[vertexCount];
+		// 2. 初始化哈希表
+		int[] head = new int[capacity];
+		int[] next = new int[vertexCount]; // 这个也保持最大容量
 		java.util.Arrays.fill(head, -1);
-		java.util.Arrays.fill(next, -1);
-
-		// 预计算平方阈值用于快速筛选
-		final double posEps2 = posEps * posEps;
 
 		for (int i = 0; i < tris.length; i++) {
 			Triangle t = tris[i];
 
 			// 保持 UV 顺序与渲染一致
 			int baseUV = i * 6;
-			texCoords[baseUV + 0] = t.p1.texX;
-			texCoords[baseUV + 1] = t.p1.texY;
-			texCoords[baseUV + 2] = t.p2.texX;
-			texCoords[baseUV + 3] = t.p2.texY;
-			texCoords[baseUV + 4] = t.p3.texX;
-			texCoords[baseUV + 5] = t.p3.texY;
+			texCoords[baseUV + 0] = t.p1.texX; texCoords[baseUV + 1] = t.p1.texY;
+			texCoords[baseUV + 2] = t.p2.texX; texCoords[baseUV + 3] = t.p2.texY;
+			texCoords[baseUV + 4] = t.p3.texX; texCoords[baseUV + 5] = t.p3.texY;
 
 			// 处理三顶点
 			for (int v = 0; v < 3; v++) {
@@ -375,12 +358,11 @@ public class ModelRendererUtil {
 				long key = (qx & 0x1FFFFFL);
 				key = (key << 21) ^ (qy & 0x1FFFFFL);
 				key = (key << 21) ^ (qz & 0x1FFFFFL);
-
 				int h = (int) (key ^ (key >>> 32));
-				int bucketIdx = h & HASH_MASK;
+				int bucketIdx = h & (capacity - 1);
 
 				int foundIdx = -1;
-				// 遍历桶内链表，先做平方和快速筛选再精确比较
+				// 遍历桶内链表
 				for (int curr = head[bucketIdx]; curr != -1; curr = next[curr]) {
 					Vec3d existingPos = uniquePositions.get(curr);
 					double dx = existingPos.x - pos.x;
@@ -408,8 +390,35 @@ public class ModelRendererUtil {
 					// 插入链表头
 					next[foundIdx] = head[bucketIdx];
 					head[bucketIdx] = foundIdx;
-				}
 
+					// --- 检查是否需要扩容 ---
+					if (uniquePositions.size() > threshold && capacity < (1 << 30)) {
+						// 扩容
+						int newCapacity = capacity << 1;
+						int[] newHead = new int[newCapacity];
+						java.util.Arrays.fill(newHead, -1);
+
+						// Rehash: 重新组织所有已存在的唯一顶点
+						for(int j = 0; j < uniquePositions.size(); j++) {
+							Vec3d p = uniquePositions.get(j);
+							long nqx = Math.round(p.x / bucketScale);
+							long nqy = Math.round(p.y / bucketScale);
+							long nqz = Math.round(p.z / bucketScale);
+							long nkey = (nqx & 0x1FFFFFL);
+							nkey = (nkey << 21) ^ (nqy & 0x1FFFFFL);
+							nkey = (nkey << 21) ^ (nqz & 0x1FFFFFL);
+							int nh = (int) (nkey ^ (nkey >>> 32));
+							int newBucketIdx = nh & (newCapacity - 1);
+
+							next[j] = newHead[newBucketIdx];
+							newHead[newBucketIdx] = j;
+						}
+
+						head = newHead;
+						capacity = newCapacity;
+						threshold = (int)(capacity * loadFactor);
+					}
+				}
 				indices[i * 3 + v] = foundIdx;
 			}
 		}
@@ -616,8 +625,8 @@ public class ModelRendererUtil {
 					bottom.add(bt);
 				}
 				if(dat[2].positionIndices != null && dat[2].positionIndices.length > 0){
-					tp.cap = dat[2];
-					bt.cap = dat[2];
+					if(tp != null) tp.cap = dat[2]; // 安全检查
+					if(bt != null) bt.cap = dat[2]; // 安全检查
 				}
 			}
 		}
@@ -644,9 +653,6 @@ public class ModelRendererUtil {
 
 		ResourceLocation tex = getEntityTexture(ent);
 
-
-
-
 		for(List<CutModelData> l : particleChunks){
 			float scale = 3.5F;
 			if(l.get(0).flip){
@@ -662,9 +668,9 @@ public class ModelRendererUtil {
 			body.addColliders(colliders);
 			body.impulseVelocityDirect(new Vec3(plane[0]*scale, plane[1]*scale, plane[2]*scale), body.globalCentroid.add(0, 0, 0));
 
-			// Create or fetch cached display lists for body and cap
-			int bodyDL = getOrCreateDisplayListForChunk(l, false, buf);
-			int capDL = getOrCreateDisplayListForChunk(l, true, buf);
+			// 直接创建显示列表，不再通过缓存获取
+			int bodyDL = createDisplayListForChunk(l, false, buf);
+			int capDL = createDisplayListForChunk(l, true, buf);
 
 			particles.add(new ParticleSlicedMob(ent.world, body, bodyDL, capDL, tex, capTex, capBloom));
 		}
@@ -685,7 +691,7 @@ public class ModelRendererUtil {
 		// 1. 主线程收集 GL/模型相关数据
 		List<Pair<Matrix4f, ModelRenderer>> boxes = ModelRendererUtil.getBoxesFromMob((EntityLivingBase) ent);
 
-		// 2. 异步执行数据处理 + 碰撞体构建 + 哈希计算
+		// 2. 异步执行数据处理 + 碰撞体构建
 		CompletableFuture.supplyAsync(() -> {
 			// 后台：几何切割 + 碰撞体构建 + 数据准备
 			List<CutModelData> top = new ArrayList<>();
@@ -714,12 +720,8 @@ public class ModelRendererUtil {
 				}
 			}
 
-			// 可选：提前计算哈希值，避免主线程再算
-			int topHash = computeChunkHash(top, false);
-			int bottomHash = computeChunkHash(bottom, false);
-
-			// 返回结果对象，包含准备好的数据
-			return new Object[]{top, bottom, topHash, bottomHash};
+			// 不再需要计算哈希值，直接返回处理好的数据
+			return new Object[]{top, bottom};
 		}, MODEL_UTIL_EXECUTOR).thenAccept(result -> {
 			// 主线程：上传 GL 资源并创建粒子
 			Minecraft.getMinecraft().addScheduledTask(() -> {
@@ -728,7 +730,6 @@ public class ModelRendererUtil {
 				@SuppressWarnings("unchecked")
 				List<CutModelData> bottom = (List<CutModelData>) ((Object[]) result)[1];
 
-				// 在主线程里：先把 cap 三角解压并调用 capConsumer（与同步版行为一致）
 				if (capConsumer != null) {
 					List<Triangle> tris = new ArrayList<>();
 					for (CutModelData d : top) {
@@ -738,7 +739,6 @@ public class ModelRendererUtil {
 							}
 						}
 					}
-					// 如果你希望也包含 bottom 的 cap，可以把下面这段也加上
 					for (CutModelData d : bottom) {
 						if (d.cap != null) {
 							for (Triangle t : decompress(d.cap)) {
@@ -748,7 +748,6 @@ public class ModelRendererUtil {
 					}
 
 					try {
-						System.out.println("generateCutParticlesAsync: calling capConsumer, cap tris size = " + tris.size());
 						capConsumer.accept(tris);
 					} catch (Throwable ex) {
 						ex.printStackTrace();
@@ -770,7 +769,6 @@ public class ModelRendererUtil {
 						scale = -scale;
 					}
 
-					// 主线程只负责 RigidBody 注册和 GL 调用
 					RigidBody body = new RigidBody(ent.world, ent.posX, ent.posY, ent.posZ);
 					Collider[] colliders = new Collider[l.size()];
 					int i = 0;
@@ -781,9 +779,9 @@ public class ModelRendererUtil {
 					body.impulseVelocityDirect(new Vec3(plane[0] * scale, plane[1] * scale, plane[2] * scale),
 							body.globalCentroid.add(0, 0, 0));
 
-					// 使用缓存的 DisplayList
-					int bodyDL = getOrCreateDisplayListForChunk(l, false, buf);
-					int capDL = getOrCreateDisplayListForChunk(l, true, buf);
+					// 直接创建显示列表，不再通过缓存
+					int bodyDL = createDisplayListForChunk(l, false, buf);
+					int capDL = createDisplayListForChunk(l, true, buf);
 
 					particles.add(new ParticleSlicedMob(ent.world, body, bodyDL, capDL, tex, capTex, capBloom));
 				}
@@ -798,29 +796,17 @@ public class ModelRendererUtil {
 	private static final float[] EMPTY_FLOAT_ARRAY = new float[0];
 	private static final int[] EMPTY_INT_ARRAY = new int[0];
 
-	private static int computeChunkHash(List<CutModelData> l, boolean cap) {
-		int h = 1;
-		for (CutModelData d : l) {
-			VertexData vd = cap ? d.cap : d.data;
-			if (vd == null) continue;
-			h = 31 * h + vd.vertexArrayHash(); // 直接读取缓存哈希
-			h = 31 * h + java.util.Arrays.hashCode(vd.texCoords == null ? EMPTY_FLOAT_ARRAY : vd.texCoords);
-			h = 31 * h + java.util.Arrays.hashCode(vd.positionIndices == null ? EMPTY_INT_ARRAY : vd.positionIndices);
-			h = 31 * h + (d.flip ? 1231 : 1237);
-		}
-		return h;
-	}
-
-
-	private static int getOrCreateDisplayListForChunk(List<CutModelData> chunk, boolean cap, BufferBuilder buf) {
-		int key = computeChunkHash(chunk, cap);
-		Integer cached = DISPLAY_LIST_CACHE.get(key);
-		if (cached != null) {
-			DISPLAY_LIST_REFCOUNT.put(cached, DISPLAY_LIST_REFCOUNT.getOrDefault(cached, 0) + 1);
-			return cached;
-		}
-
+	/**
+	 * 为给定的数据块创建并编译一个新的显示列表。
+	 * @param chunk 数据列表
+	 * @param cap 是否是盖子部分
+	 * @param buf BufferBuilder实例
+	 * @return 生成的OpenGL显示列表ID
+	 */
+	private static int createDisplayListForChunk(List<CutModelData> chunk, boolean cap, BufferBuilder buf) {
 		int list = GL11.glGenLists(1);
+		if (list == 0) return 0; // glGenLists 失败
+
 		GL11.glNewList(list, GL11.GL_COMPILE);
 		buf.begin(GL11.GL_TRIANGLES, DefaultVertexFormats.POSITION_TEX_NORMAL);
 		for (CutModelData dat : chunk) {
@@ -833,32 +819,20 @@ public class ModelRendererUtil {
 		Tessellator.getInstance().draw();
 		GL11.glEndList();
 
-		DISPLAY_LIST_CACHE.put(key, list);
-		DISPLAY_LIST_KEY_BY_LIST.put(list, key);
-		DISPLAY_LIST_REFCOUNT.put(list, 1);
 		return list;
 	}
 
-
+	/**
+	 * 直接删除一个OpenGL显示列表。
+	 * 确保你的 ParticleSlicedMob 在生命周期结束时会调用这个方法。
+	 */
 	public static void releaseDisplayList(int list) {
-		Integer c = DISPLAY_LIST_REFCOUNT.get(list);
-		if (c == null) return;
-		c = c - 1;
-		if (c <= 0) {
-			// remove from refcount map
-			DISPLAY_LIST_REFCOUNT.remove(list);
-			// remove mapping and delete GL list to avoid unbounded growth
-			Integer key = DISPLAY_LIST_KEY_BY_LIST.remove(list);
-			if (key != null) {
-				DISPLAY_LIST_CACHE.remove(key);
-			}
+		if (list > 0) { // 检查是否为有效的列表ID
 			try {
 				GL11.glDeleteLists(list, 1);
 			} catch (Exception ex) {
-				// ignore deletion errors
+				// 忽略删除错误，例如当OpenGL上下文丢失时
 			}
-		} else {
-			DISPLAY_LIST_REFCOUNT.put(list, c);
 		}
 	}
 
