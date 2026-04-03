@@ -10,6 +10,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   build:
     name: Build Mod
@@ -17,18 +20,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Cache rfg sources
-        uses: actions/cache@v4
-        with:
-          path: build/rfg
-          key: rfg-${{ runner.os }}-mc1.12.2-${{ hashFiles('**/*.gradle*', 'gradle.properties') }}
-          restore-keys: |
-            rfg-${{ runner.os }}-mc1.12.2-
+        uses: actions/checkout@v6
 
       - name: Set up JDK 25
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: graalvm
           java-version: '25'
@@ -39,55 +34,82 @@ jobs:
             **/gradle-wrapper.properties
             **/gradle.lockfile
             src/main/resources/hbm_at.cfg
-
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
       - name: Build with Gradle
-        run: ./gradlew build --no-daemon
+        run: ./gradlew releaseBuild
 
+      - name: Prepare artifact bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          OUT_DIR="build/artifact-upload"
+          rm -rf "$OUT_DIR"
+          mkdir -p "$OUT_DIR"
+          for file in build/libs/*; do
+            name=$(basename "$file")
+            case "$name" in
+              *-downgraded.jar|*-dev-shadow.jar)
+                continue
+                ;;
+            esac
+            cp "$file" "$OUT_DIR/$name"
+          done
+          for file in build/publication-libs/*.jar; do
+            name=$(basename "$file")
+            if [[ "$name" != *-java25-publish-* ]]; then
+              echo "::error::Unexpected publication artifact name: $name"
+              exit 1
+            fi
+            prefix="${name%%-java25-publish-*}"
+            rest="${name#*-java25-publish-}"
+            case "$rest" in
+              *-dev-compile.jar)
+                continue
+                ;;
+              *-api.jar)
+                continue
+                ;;
+              *.jar)
+                version="${rest%.jar}"
+                compat_name="${prefix}-${version}-java25.jar"
+                ;;
+            esac
+            cp "$file" "$OUT_DIR/$compat_name"
+          done
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ github.event.repository.name }}
-          path: |
-            build/libs/*.jar
-            !build/libs/**/*-downgraded.jar
+          path: build/artifact-upload/**
           if-no-files-found: error
 
       - name: Run server
         run: |
           set -euo pipefail
-
           mkdir -p run/server
           echo "eula=true" > run/server/eula.txt
-
           # Set a constant seed with a village at spawn
           printf "level-seed=-6202107849386030209\nonline-mode=true\n" > run/server/server.properties
-
           echo "stop" > run/server/stop.txt
           set +e
-          timeout 120s ./gradlew runServer --no-daemon --stacktrace < run/server/stop.txt 2>&1 | tee server.log
+          timeout 120s ./gradlew runServer --stacktrace < run/server/stop.txt 2>&1 | tee server.log
           code=${PIPESTATUS[0]}
           set -e
-
           if [ "$code" -ne 0 ] && [ "$code" -ne 124 ]; then
             echo "runServer exited with code $code"
             exit "$code"
           fi
-
       - name: Validate server run
         run: |
           set -euo pipefail
-
           RUNDIR="run/server"
           CRASH="crash-reports"
           SERVERLOG="$RUNDIR/logs/latest.log"
-
           shopt -s nullglob
-
           crash_reports=("$RUNDIR/$CRASH/crash"*.txt)
-
           if [ "${#crash_reports[@]}" -gt 0 ]; then
             latest_crash_report="${crash_reports[-1]}"
             {
@@ -96,7 +118,6 @@ jobs:
             } >&2
             exit 1
           fi
-
           if [ -f "$SERVERLOG" ]; then
             if grep -qF 'Fatal errors were detected' "$SERVERLOG"; then
               {
@@ -105,7 +126,6 @@ jobs:
               } >&2
               exit 1
             fi
-
             if grep -qF 'The state engine was in incorrect state ERRORED and forced into state SERVER_STOPPED' \
               "$SERVERLOG"; then
               {
@@ -114,7 +134,6 @@ jobs:
               } >&2
               exit 1
             fi
-
             if grep -qF 'Exception stopping the server' "$SERVERLOG"; then
               {
                 printf "Server didn't shut down cleanly:\n"
@@ -122,7 +141,6 @@ jobs:
               } >&2
               exit 1
             fi
-
             if ! grep -qP '.+Done \(.+\)\! For help, type "help" or "\?"' "$SERVERLOG"; then
               {
                 printf 'Server did not finish startup:\n'
@@ -133,5 +151,4 @@ jobs:
           else
             echo "No latest.log found at $SERVERLOG (server may not have fully started)."
           fi
-
           echo 'No crash reports detected'

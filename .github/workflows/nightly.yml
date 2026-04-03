@@ -54,7 +54,7 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Build Java25 reobf jar
-        run: ./gradlew reobfJarJava25 --no-daemon
+        run: ./gradlew releaseBuild
 
       - name: Create nightly tag
         id: tag
