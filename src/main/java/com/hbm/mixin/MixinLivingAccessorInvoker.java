@@ -38,7 +38,7 @@ public interface MixinLivingAccessorInvoker {
 
     @Accessor("HEALTH")
     static DataParameter<Float> getHealthKey() {
-            throw new AssertionError();
+        throw new AssertionError("Untransformed Mixin!");
     }
 }
 
