@@ -5,18 +5,18 @@ import com.hbm.interfaces.AutoRegister;
 import com.hbm.render.model.BakedModelTransforms;
 import com.hbm.render.util.NTMImmediate;
 import com.hbm.render.util.RenderMiscEffects;
+import com.hbm.util.RenderUtil;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.GlStateManager.DestFactor;
-import net.minecraft.client.renderer.GlStateManager.SourceFactor;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ResourceLocation;
 import org.lwjgl.opengl.GL11;
+
 @AutoRegister(item = "meteorite_sword_seared", constructorArgsString = "1.0F, 0.5F, 0.0F")
 @AutoRegister(item = "meteorite_sword_reforged", constructorArgsString = "0.5F, 1.0F, 1.0F")
 @AutoRegister(item = "meteorite_sword_hardened", constructorArgsString = "0.25F, 0.25F, 0.25F")
@@ -47,6 +47,12 @@ public class ItemRendererMeteorSword extends TEISRBase {
 
     @Override
     public void renderByItem(ItemStack stack) {
+        boolean prevBlend = RenderUtil.isBlendEnabled();
+        int prevSrc = RenderUtil.getBlendSrcFactor();
+        int prevDst = RenderUtil.getBlendDstFactor();
+        int prevSrcAlpha = RenderUtil.getBlendSrcAlphaFactor();
+        int prevDstAlpha = RenderUtil.getBlendDstAlphaFactor();
+
         GlStateManager.translate(0.5, 0.5, 0.5);
 
         Minecraft mc = Minecraft.getMinecraft();
@@ -97,9 +103,13 @@ public class ItemRendererMeteorSword extends TEISRBase {
 
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
         GlStateManager.depthMask(true);
-        GlStateManager.tryBlendFuncSeparate(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA, SourceFactor.ONE, DestFactor.ZERO);
-        GlStateManager.disableBlend();
         GlStateManager.enableLighting();
         GlStateManager.depthFunc(GL11.GL_LEQUAL);
+        GlStateManager.tryBlendFuncSeparate(prevSrc, prevDst, prevSrcAlpha, prevDstAlpha);
+        if (prevBlend) {
+            GlStateManager.enableBlend();
+        } else {
+            GlStateManager.disableBlend();
+        }
     }
 }

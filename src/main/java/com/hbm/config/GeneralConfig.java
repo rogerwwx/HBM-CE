@@ -19,6 +19,7 @@ public class GeneralConfig {
 	public static int packetThreadingCoreCount = 1;
 	public static int packetThreadingMaxCount = 2;
 	public static boolean packetThreadingErrorBypass = false;
+	public static boolean enableZeroCopyCompatibilityMode = false;
     public static boolean enableThreadedNodeSpaceUpdate = true;
 	public static boolean enableDebugMode = false;
 	public static boolean enableDebugWorldGen = false;
@@ -101,7 +102,6 @@ public class GeneralConfig {
 	}
 	public static int bedrockRate = 50;
 	public static boolean enableThreadedAtmospheres = true;
-	public static boolean enableHardcoreDarkness = false;
 
 	public static boolean enableLBSM = false;
 	public static boolean enableLBSMFullSchrab = true;
@@ -127,6 +127,7 @@ public class GeneralConfig {
 		packetThreadingMaxCount = config.get(CommonConfig.CATEGORY_GENERAL, "0.03_packetThreadingMaxCount", 2, "Maximum number of threads to create for packet threading. Must be greater than or equal to 0.02_packetThreadingCoreCount.").getInt(2);
 		packetThreadingErrorBypass = config.get(CommonConfig.CATEGORY_GENERAL, "0.04_packetThreadingErrorBypass", false, "Forces the bypassing of most packet threading errors, only enable this if directed to or if you know what you're doing.").getBoolean(false);
 		enableServerRecipeSync = config.get(CommonConfig.CATEGORY_GENERAL, "0.05_enableServerRecipeSync", true, "Syncs any recipes customised via JSON to clients connecting to the server.").getBoolean(true);
+		enableZeroCopyCompatibilityMode = config.get(CommonConfig.CATEGORY_GENERAL, "0.06_enableZeroCopyCompatibilityMode", false, "Routes non-NTM packets back through Forge's default networking path so mods with broken ByteBuf reference counting do not touch NTM's zero-copy hook.").getBoolean(false);
         enableThreadedNodeSpaceUpdate = config.get(CommonConfig.CATEGORY_GENERAL, "0.07_enableThreadedNodeSpaceUpdate", true, "Enables threaded updating of the nodespace. This can improve performance, but may cause issues with certain mods.").getBoolean(true);
 		enableBlockReplcement = config.get(CommonConfig.CATEGORY_GENERAL, "0.99_CE_01_enableBlockAutoReplacing", false, """
                 Enables automatic block replacement for missing blocks to avoid giant holes in the ground when they got removed. This may severely impact chunkloading performance,
@@ -234,7 +235,6 @@ public class GeneralConfig {
 		enableGuideBook = config.get(CommonConfig.CATEGORY_GENERAL, "1.38_enableGuideBook", true, "If enabled, gives players the guide book when joining the world for the first time").getBoolean(true);
         decoToIngotRate = CommonConfig.createConfigInt(config, CommonConfig.CATEGORY_GENERAL, "1.39_decoToIngotConversionRate", "Chance of successful turning a deco block into an ingot. Default is 25%", 25);
 		enableThreadedAtmospheres = CommonConfig.createConfigBool(config, CommonConfig.CATEGORY_GENERAL, "1.40_threadedAtmospheres", "If enabled, will run atmosphere blobbing in a separate thread for performance", true);
-		enableHardcoreDarkness = CommonConfig.createConfigBool(config, CommonConfig.CATEGORY_GENERAL, "1.41_hardcoreDarkness", "If enabled, sets night-time minimum fog to zero, to complement hardcore darkness mods", false);
 		enableKeybindOverlap = config.get(CommonConfig.CATEGORY_GENERAL, "1.42_enableKeybindOverlap", true, "If enabled, will handle keybinds that would otherwise be ignored due to overlapping.").getBoolean(true);
 		enableFluidContainersV2 = CommonConfig.createConfigBool(config, CommonConfig.CATEGORY_GENERAL, "1.99_CE_enableFluidContainersV2", "If enabled, 3 new enhanced version of base fluid barrels that supports partial fill and drain are added.", false);
 		leadSafeForgeContainerWhitelist = loadLeadSafeForgeContainerWhitelist(config);

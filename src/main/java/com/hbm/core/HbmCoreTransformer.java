@@ -12,9 +12,9 @@ public final class HbmCoreTransformer implements IClassTransformer {
             case GlStateManagerTransformer.TARGET ->
                     GlStateManagerTransformer.transform(name, transformedName, basicClass);
             case ContainerTransformer.TARGET ->
-                    HbmCorePlugin.isInventoryTrackerTransformerDisabled() ? basicClass : ContainerTransformer.transform(name, transformedName, basicClass);
+                    ContainerTransformer.transform(name, transformedName, basicClass);
             case InventoryPlayerTransformer.TARGET ->
-                    HbmCorePlugin.isInventoryTrackerTransformerDisabled() ? basicClass : InventoryPlayerTransformer.transform(name, transformedName, basicClass);
+                    InventoryPlayerTransformer.transform(name, transformedName, basicClass);
             case ForgeHooksTransformer.TARGET ->
                     ForgeHooksTransformer.transform(name, transformedName, basicClass);
             case PlayerInteractionManagerTransformer.TARGET ->

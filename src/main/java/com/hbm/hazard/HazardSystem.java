@@ -6,7 +6,6 @@ import com.hbm.capability.HbmLivingProps;
 import com.hbm.config.GeneralConfig;
 import com.hbm.config.RadiationConfig;
 import com.hbm.config.ServerConfig;
-import com.hbm.core.HbmCorePlugin;
 import com.hbm.hazard.modifier.IHazardModifier;
 import com.hbm.hazard.transformer.IHazardTransformer;
 import com.hbm.hazard.type.IHazardType;
@@ -121,9 +120,7 @@ public class HazardSystem {
         MinecraftServer server = FMLCommonHandler.instance().getMinecraftServerInstance();
         if (server == null) return CompletableFuture.completedFuture(null);
         tickCounter++;
-        boolean hazardTick = tickCounter % RadiationConfig.hazardRate == 0;
-        boolean compatibilityMode = HbmCorePlugin.isInventoryTrackerHookDisabled();
-        if (hazardTick) {
+        if (tickCounter % RadiationConfig.hazardRate == 0) {
             for (EntityPlayerMP player : server.getPlayerList().getPlayers()) {
                 if (player.isDead) continue;
                 PlayerHazardData phd = playerHazardDataMap.computeIfAbsent(player.getUniqueID(), uuid -> new PlayerHazardData(player));
@@ -137,29 +134,19 @@ public class HazardSystem {
         }
         CompletableFuture<Void> cur = scanFuture;
         if (!cur.isDone()) return cur;
+        if (playersToUpdate.isEmpty() && inventoryDeltas.isEmpty()) return CompletableFuture.completedFuture(null);
         final List<EntityPlayer> playersForFullScan = new ArrayList<>();
-        if (compatibilityMode) {
-            if (!hazardTick) return CompletableFuture.completedFuture(null);
-            for (EntityPlayerMP player : server.getPlayerList().getPlayers()) {
-                if (!player.isDead) playersForFullScan.add(player);
+        if (!playersToUpdate.isEmpty()) {
+            for (UUID uuid : playersToUpdate) {
+                EntityPlayer p = server.getPlayerList().getPlayerByUUID(uuid);
+                if (p != null && !p.isDead) playersForFullScan.add(p);
             }
             playersToUpdate.clear();
-        } else {
-            if (playersToUpdate.isEmpty() && inventoryDeltas.isEmpty()) return CompletableFuture.completedFuture(null);
-            if (!playersToUpdate.isEmpty()) {
-                for (UUID uuid : playersToUpdate) {
-                    EntityPlayer p = server.getPlayerList().getPlayerByUUID(uuid);
-                    if (p != null && !p.isDead) playersForFullScan.add(p);
-                }
-                playersToUpdate.clear();
-            }
         }
         final List<InventoryDelta> deltasForProcessing = new ArrayList<>();
         InventoryDelta delta;
         while ((delta = inventoryDeltas.poll()) != null) {
-            if (!compatibilityMode) {
-                deltasForProcessing.add(delta);
-            }
+            deltasForProcessing.add(delta);
         }
         if (playersForFullScan.isEmpty() && deltasForProcessing.isEmpty()) {
             return CompletableFuture.completedFuture(null);

@@ -6,8 +6,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import zone.rong.mixinbooter.IEarlyMixinLoader;
 
-import java.util.List;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 @IFMLLoadingPlugin.MCVersion("1.12.2")
@@ -17,11 +17,26 @@ public class HbmCorePlugin implements IFMLLoadingPlugin, IEarlyMixinLoader {
 
     static final Logger coreLogger = LogManager.getLogger("HBM CoreMod");
     private static final Brand brand;
+    private static final BufferBuilderBackend bufferBuilderBackend;
+    private static final boolean optifinePresent;
     private static boolean runtimeDeobfEnabled = false;
     private static boolean hardCrash = true;
-    private static final int inventoryTrackerMode = parseInventoryTrackerMode();
 
     static {
+        optifinePresent = Launch.classLoader.getResource("optifine/OptiFineForgeTweaker.class") != null;
+        boolean nothiriumPresent = Launch.classLoader.getResource("meldexun/nothirium/mc/Nothirium.class") != null;
+        boolean neoniumPresent = Launch.classLoader.getResource("io/neox/neonium/Neonium.class") != null;
+
+        if (optifinePresent) {
+            bufferBuilderBackend = BufferBuilderBackend.OPTIFINE;
+        } else if (nothiriumPresent) {
+            bufferBuilderBackend = BufferBuilderBackend.NOTHIRIUM;
+        } else if (neoniumPresent) {
+            bufferBuilderBackend = BufferBuilderBackend.NEONIUM;
+        } else {
+            bufferBuilderBackend = BufferBuilderBackend.DEFAULT;
+        }
+
         if (Launch.classLoader.getResource("catserver/server/CatServer.class") != null) {
             brand = Brand.CAT_SERVER;
         } else if (Launch.classLoader.getResource("com/mohistmc/MohistMC.class") != null) {
@@ -55,12 +70,12 @@ public class HbmCorePlugin implements IFMLLoadingPlugin, IEarlyMixinLoader {
         return brand;
     }
 
-    public static boolean isInventoryTrackerHookDisabled() {
-        return inventoryTrackerMode >= 1;
+    public static boolean isOptifinePresent() {
+        return optifinePresent;
     }
 
-    public static boolean isInventoryTrackerTransformerDisabled() {
-        return inventoryTrackerMode >= 2;
+    public static BufferBuilderBackend getBufferBuilderBackend() {
+        return bufferBuilderBackend;
     }
 
     @Override
@@ -86,20 +101,34 @@ public class HbmCorePlugin implements IFMLLoadingPlugin, IEarlyMixinLoader {
             hardCrash = false;
             coreLogger.info("Crash suppressed with -Dhbm.core.disablecrash");
         }
-        if (inventoryTrackerMode > 0) {
-            coreLogger.warn("Inventory tracker debug mode {} enabled via -D{}={}", inventoryTrackerMode,
-                    "hbm.debug.inventoryTracker", inventoryTrackerMode);
-            if (inventoryTrackerMode >= 2) {
-                coreLogger.warn("Inventory tracker transformers are disabled.");
-            } else {
-                coreLogger.warn("Inventory tracker hooks are disabled; HazardSystem will use compatibility rescans.");
-            }
-        }
     }
 
     @Override
     public String getAccessTransformerClass() {
         return null;
+    }
+
+    @Override
+    public List<String> getMixinConfigs() {
+        return Arrays.asList(
+                "mixins.living.json",
+                "mixins.render.json",
+                "hbm.common.mixin.json",
+                bufferBuilderBackend.mixinConfig
+        );
+    }
+
+    public enum BufferBuilderBackend {
+        DEFAULT("hbm.default.mixin.json"),
+        OPTIFINE("hbm.optifine.mixin.json"),
+        NOTHIRIUM("hbm.nothirium.mixin.json"),
+        NEONIUM("hbm.neonium.mixin.json");
+
+        private final String mixinConfig;
+
+        BufferBuilderBackend(String mixinConfig) {
+            this.mixinConfig = mixinConfig;
+        }
     }
 
     public enum Brand {
@@ -108,33 +137,5 @@ public class HbmCorePlugin implements IFMLLoadingPlugin, IEarlyMixinLoader {
         public boolean isHybrid() {
             return this == CAT_SERVER || this == MOHIST || this == MAGMA;
         }
-    }
-
-    private static int parseInventoryTrackerMode() {
-        String prop = System.getProperty("hbm.debug.inventoryTracker");
-        if (prop == null) return 0;
-        boolean invalid;
-        int mode = 0;
-        try {
-            mode = Integer.parseInt(prop.trim());
-            invalid = mode > 2 || mode < 0;
-        } catch (NumberFormatException ignored) {
-            invalid = true;
-        }
-        if (invalid) {
-            coreLogger.warn("Invalid value for -D{}={}; expected 0, 1, or 2. Falling back to 0.",
-                    "hbm.debug.inventoryTracker", prop);
-            return 0;
-        }
-        return mode;
-    }
-    //Mixin
-    @Override
-    public List<String> getMixinConfigs() {
-        return Arrays.asList(
-                "mixins.living.json",
-                "mixins.render.json",
-                "hbm.default.mixin.json"
-        );
     }
 }
