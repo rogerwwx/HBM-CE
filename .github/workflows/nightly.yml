@@ -17,6 +17,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # -------------------------------
+      # 🔥 安全的 RFG 缓存（不会污染）
+      # -------------------------------
+      - name: Cache RFG sources
+        uses: actions/cache@v4
+        with:
+          path: build/rfg
+          key: rfg-${{ runner.os }}-mc1.12.2-${{ hashFiles('**/*.gradle*', 'gradle.properties', 'src/main/resources/hbm_at.cfg', 'patches/**', 'buildscript.properties', 'gradle-wrapper.properties') }}
+          restore-keys: |
+            rfg-${{ runner.os }}-mc1.12.2-
+
       - name: Read modVersion from gradle.properties
         id: ver
         run: |
@@ -97,7 +108,6 @@ jobs:
             esac
             cp "$file" "$OUT_DIR/$compat_name"
           done
-      
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
