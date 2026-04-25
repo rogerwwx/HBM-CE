@@ -7,35 +7,47 @@
 >   - For changelog updates, verify actual diffs instead of trusting commit subjects; summarize the net result as if the
 > changes were squashed into one commit. That is, fold follow-up fixes into the original feature/change entry where
 > appropriate, and omit anything that was fully reverted before release.
+>   - Avoid explaining technical details in the changelog; the target audience is end-users, not developers.
 >   - SUBSTANTIAL CHANGES are for changes that could substantially impact backward compatibility, e.g. fluid id
 > shifting. The major version number must be bumped.  
 >   - Breaking Changes are for casual breakages like the removal of a block(minor version bump), or a significant API
 > change(major API bump).  
 >   - Changes, New Features correspond to a minor bump.  
 >   - Fixes/Performance/Misc correspond to a minor or patch bump.
-> - Previous public release: 2.2.0.0
-> - Next release: at least 2.2.1.0
+> - Previous public release: 2.4.0.0
+> - Next release: at least 2.5.0.0
 
 ### SUBSTANTIAL CHANGES
-
 ### Breaking Changes
-
+- Dropped unmaintained translation files. Supported languages are now: English, German, French, Italian, Japanese, Polish, Russian, Simplified Chinese, Ukrainian.
 ### Fixes
-- Fixed impact overworld provider rebinding clashing with OTG / other mods' custom provider
-- Fixed RBMK Display facing/render
-- Fixed RBMK columns' extreme placing / removing lag due to improper quads caching
-- Mitigated duct and cable placing / removing lag due to eager net destruction and reconstruction
-- Fixed potential CME when switching door states
-
+- Fixed T-51 texture loading
+- Fixed jetpack rendering not following the player's body orientation while elytra-flying
+- Fixed industrial fans and turret biometric whitelists desyncing between client and server
+- Fixed sawmill recipe (#1424)
+- Fixed NTM tools being unable to mine bobbleheads
+- Fixed gun shader rendering under Optifine
+- Fixed turbofans applying player motion on the client even when the engine wasn't running
+- Fixed the control panel Function node's "Edit Body" button doing nothing
+- Fixed multiblock placement being blocked when the player's head merely clipped the build area, and fixed large flare-tower blocks suffocating players and allowing hostile mob spawns
+- Fixed decoration blocks (CRT, toaster, satellite-dish pole, tape recorder, misc. deco) losing their stored state when pushed/pulled by block-movers
+- Fixed control-panel composite data values retaining stale entries after reload
+- Fixed crash with low-radius contaminating drops
+- Fixed crash and incredible log spam when a node queries a te in a not-yet-loaded chunk during world load
 ### Changes
-- JEI recipe lookup for `fluid_icon` items is now forwarded to their Forge fluid mirror
-
+- On-screen info messages now render in a stable, deterministic order instead of being reordered by timing
 ### New Features
-
+- Ported recent upstream additions from X5671, including:
+  - New Redstone-over-Radio Pager item
+  - New Redstone-over-Radio Indicator Lights and Lever panel blocks (screwdriver-configurable), with matching manual pages
+  - Paintable fluid ducts, exhaust pipes, and pneumatic tubes now document paint and port configuration in their tooltips
+  - New lever click and electrical spark sound effects
+  - Removed the legacy Plasma block
+- Added OpenComputers integration for the RBMK Gauge, Graph, KeyPad, and Numitron
 ### Performance
-- Moved Tau/Vortex particles, chemical projectiles, black-hole effects, and RBMK console/display overlays onto
-`NTMImmediate` / fast-buffer rendering paths, reducing legacy Tessellator overhead and aligning them with the newer
-client rendering utilities
-- Reworked rebar concrete-fill rendering into a dedicated client renderer. The render-limit client config is removed.
-
+- Reduced per-tick work and network traffic. For developers: this is a substantial API change for TileEntityLoadedBase! You are now required to override (de)serializeInitial instead of vanilla updateTag methods for the correct first sync on chunk load. 
+- Sawmills now cache their recipe lookup
+- Made rendering slightly less CPU intensive
 ### Misc
+- Some localization changes
+- Reduced jar size by ~10MiB by removing unused assets

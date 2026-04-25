@@ -16,6 +16,7 @@ import com.hbm.lib.HBMSoundHandler;
 import com.hbm.lib.Library;
 import com.hbm.main.MainRegistry;
 import com.hbm.sound.AudioWrapper;
+import com.hbm.tileentity.IConnectionAnchors;
 import com.hbm.tileentity.IBufPacketReceiver;
 import com.hbm.tileentity.IFluidCopiable;
 import com.hbm.tileentity.TileEntityLoadedBase;
@@ -38,7 +39,7 @@ import org.jetbrains.annotations.Nullable;
 
 @AutoRegister
 public class TileEntityMachineHephaestus extends TileEntityLoadedBase implements ITickable, IBufPacketReceiver, IFluidStandardTransceiver,
-        IFluidCopiable {
+        IFluidCopiable, IConnectionAnchors {
 
     private final int[] heat = new int[10];
     public FluidTankNTM input;
@@ -53,8 +54,8 @@ public class TileEntityMachineHephaestus extends TileEntityLoadedBase implements
     private AxisAlignedBB bb = null;
 
     public TileEntityMachineHephaestus() {
-        this.input = new FluidTankNTM(Fluids.OIL, 24_000);
-        this.output = new FluidTankNTM(Fluids.HOTOIL, 24_000);
+        this.input = new FluidTankNTM(Fluids.OIL, 24_000).withOwner(this);
+        this.output = new FluidTankNTM(Fluids.HOTOIL, 24_000).withOwner(this);
     }
 
     @Override
@@ -220,7 +221,7 @@ public class TileEntityMachineHephaestus extends TileEntityLoadedBase implements
         }
     }
 
-    private DirPos[] getConPos() {
+    public DirPos[] getConPos() {
 
         int xCoord = pos.getX(), yCoord = pos.getY(), zCoord = pos.getZ();
         return new DirPos[]{new DirPos(xCoord + 2, yCoord, zCoord, Library.POS_X), new DirPos(xCoord - 2, yCoord, zCoord, Library.NEG_X),

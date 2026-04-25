@@ -41,7 +41,7 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 
 @AutoRegister
-public class TileEntityHeatBoiler extends TileEntityLoadedBase implements ITickable, IFluidStandardTransceiver, IBufPacketReceiver, IConfigurableMachine, IFluidCopiable, IPersistentNBT {
+public class TileEntityHeatBoiler extends TileEntityLoadedBase implements ITickable, IFluidStandardTransceiver, IBufPacketReceiver, IConfigurableMachine, IFluidCopiable, IPersistentNBT, IConnectionAnchors {
 
     public Fluid[] types = new Fluid[2];
     public FluidTankNTM[] tanks;
@@ -62,8 +62,8 @@ public class TileEntityHeatBoiler extends TileEntityLoadedBase implements ITicka
         super();
         tanks = new FluidTankNTM[2];
         tanksSync = new FluidTankNTM[2];
-        this.tanks[0] = new FluidTankNTM(Fluids.WATER, 16_000);
-        this.tanks[1] = new FluidTankNTM(Fluids.STEAM, 16_000 * 100);
+        this.tanks[0] = new FluidTankNTM(Fluids.WATER, 16_000).withOwner(this);
+        this.tanks[1] = new FluidTankNTM(Fluids.STEAM, 16_000 * 100).withOwner(this);
 
         types[0] = FluidRegistry.WATER;
         types[1] = Fluids.STEAM.getFF();
@@ -127,7 +127,7 @@ public class TileEntityHeatBoiler extends TileEntityLoadedBase implements ITicka
         }
     }
 
-    protected DirPos[] getConPos() {
+    public DirPos[] getConPos() {
         ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - BlockDummyable.offset).getRotation(ForgeDirection.UP);
         return new DirPos[] {
                 new DirPos(pos.getX() + dir.offsetX * 2, pos.getY(), pos.getZ() + dir.offsetZ * 2, dir),

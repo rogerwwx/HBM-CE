@@ -27,6 +27,7 @@ import net.minecraft.client.renderer.block.statemap.StateMapperBase;
 import net.minecraft.client.renderer.texture.TextureMap;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityLiving.SpawnPlacementType;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
@@ -96,6 +97,10 @@ public abstract class BlockDummyable extends BlockContainer implements ICustomBl
         return 512;
     }
 
+    protected boolean isSameMultiblock(Block other) {
+        return other == this;
+    }
+
     private long findCoreSerialized(IBlockAccess world, BlockPos pos, BlockPos.MutableBlockPos scratch) {
         return findCoreSerialized(world, pos.getX(), pos.getY(), pos.getZ(), scratch);
     }
@@ -104,7 +109,7 @@ public abstract class BlockDummyable extends BlockContainer implements ICustomBl
         for (int steps = 0, max = getMaxCoreSearchSteps(); steps < max; steps++) {
             scratch.setPos(x, y, z);
             IBlockState state = world.getBlockState(scratch);
-            if (state.getBlock() != this) return NO_CORE;
+            if (!isSameMultiblock(state.getBlock())) return NO_CORE;
             int meta = state.getValue(META);
             if (meta >= 12) return Library.blockPosToLong(x, y, z);
             if (meta >= extra) meta -= extra;
@@ -160,7 +165,7 @@ public abstract class BlockDummyable extends BlockContainer implements ICustomBl
 
         ForgeDirection dir = ForgeDirection.getOrientation(metadata).getOpposite();
         BlockPos other = pos.add(dir.offsetX, dir.offsetY, dir.offsetZ);
-        if (world.getBlockState(other).getBlock() != this) {
+        if (!isSameMultiblock(world.getBlockState(other).getBlock())) {
             world.setBlockToAir(pos);
         }
     }
@@ -177,7 +182,7 @@ public abstract class BlockDummyable extends BlockContainer implements ICustomBl
 
         ForgeDirection dir = ForgeDirection.getOrientation(metadata).getOpposite();
         BlockPos other = pos.add(dir.offsetX, dir.offsetY, dir.offsetZ);
-        if (world.getBlockState(other).getBlock() != this) {
+        if (!isSameMultiblock(world.getBlockState(other).getBlock())) {
             world.setBlockToAir(pos);
         }
     }
@@ -450,6 +455,7 @@ public abstract class BlockDummyable extends BlockContainer implements ICustomBl
 	}
 	
 	public abstract int[] getDimensions();
+
 	public abstract int getOffset();
 	
 	public int getHeightOffset() {
@@ -490,6 +496,17 @@ public abstract class BlockDummyable extends BlockContainer implements ICustomBl
                     coreZ - dZ + 0.5), 0, 0, 0, 1.0F);
         ICustomBlockHighlight.cleanup();
     }
+
+	@Override
+	public boolean isFullCube(IBlockState state) {
+		return false;
+	}
+
+	/// crappers spawning on large machines pmo
+	@Override
+	public boolean canCreatureSpawn(IBlockState state,IBlockAccess world,BlockPos pos,SpawnPlacementType type) {
+		return false;
+	}
 
 	@Override
 	public @NotNull AxisAlignedBB getBoundingBox(@NotNull IBlockState state, @NotNull IBlockAccess source, @NotNull BlockPos pos) {

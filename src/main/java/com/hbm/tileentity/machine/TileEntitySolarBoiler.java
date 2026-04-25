@@ -34,8 +34,8 @@ public class TileEntitySolarBoiler extends TileEntityLoadedBase implements IBufP
     public TileEntitySolarBoiler() {
         super();
         tanks = new FluidTankNTM[2];
-        tanks[0] = new FluidTankNTM(Fluids.WATER, 16000);
-        tanks[1] = new FluidTankNTM(Fluids.STEAM, 1600000);
+        tanks[0] = new FluidTankNTM(Fluids.WATER, 16000).withOwner(this);
+        tanks[1] = new FluidTankNTM(Fluids.STEAM, 1600000).withOwner(this);
     }
 
     @Override

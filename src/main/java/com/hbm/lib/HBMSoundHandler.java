@@ -9,6 +9,7 @@ import net.minecraftforge.fml.common.registry.ForgeRegistries;
 import java.util.ArrayList;
 import java.util.List;
 
+//TODO: rename to NTMSounds
 public final class HBMSoundHandler {
 
     public static List<SoundEvent> ALL_SOUNDS = new ArrayList<>();
@@ -24,6 +25,9 @@ public final class HBMSoundHandler {
     public static SoundEvent rbmkLid;
     public static SoundEvent syringeUse;
     public static SoundEvent sparkShoot;
+    public static SoundEvent leverStart;
+    public static SoundEvent leverStop;
+    public static SoundEvent spark;
     public static SoundEvent b92Reload;
     public static SoundEvent techBleep;
     public static SoundEvent techBoop;
@@ -312,6 +316,8 @@ public final class HBMSoundHandler {
     public static SoundEvent lockon;
     public static SoundEvent boltOpen;
     public static SoundEvent boltClose;
+    public static SoundEvent grenadeTech;
+    public static SoundEvent grenadeNuka;
     public static SoundEvent shredderCycle;
     public static SoundEvent rifleCock;
     public static SoundEvent screw;
@@ -424,6 +430,9 @@ public final class HBMSoundHandler {
         rbmkLid = register("block.rbmkLid");
         syringeUse = register("item.syringe");
         sparkShoot = register("weapon.sparkShoot");
+        leverStart = register("block.leverStart");
+        leverStop = register("block.leverStop");
+        spark = register("block.spark");
         b92Reload = register("weapon.b92Reload");
         techBleep = register("item.techBleep");
         techBoop = register("item.techBoop");
@@ -706,6 +715,8 @@ public final class HBMSoundHandler {
         lockon = register("weapon.fire.lockon");
         boltOpen = register("weapon.reload.boltOpen");
         boltClose = register("weapon.reload.boltClose");
+        grenadeTech = register("weapon.reload.grenadeTech");
+        grenadeNuka = register("weapon.reload.grenadeNuka");
         shredderCycle = register("weapon.fire.shredderCycle");
         rifleCock = register("weapon.reload.rifleCock");
         screw = register("weapon.reload.screw");

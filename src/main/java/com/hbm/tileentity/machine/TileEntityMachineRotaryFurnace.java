@@ -26,6 +26,7 @@ import com.hbm.main.MainRegistry;
 import com.hbm.modules.ModuleBurnTime;
 import com.hbm.packet.toclient.AuxParticlePacketNT;
 import com.hbm.tileentity.IConfigurableMachine;
+import com.hbm.tileentity.IConnectionAnchors;
 import com.hbm.tileentity.IFluidCopiable;
 import com.hbm.tileentity.IGUIProvider;
 import com.hbm.util.CrucibleUtil;
@@ -51,7 +52,7 @@ import java.io.IOException;
 import java.util.Random;
 
 @AutoRegister
-public class TileEntityMachineRotaryFurnace extends TileEntityMachinePolluting implements IFluidStandardTransceiver, IGUIProvider, IFluidCopiable, IConfigurableMachine, ITickable {
+public class TileEntityMachineRotaryFurnace extends TileEntityMachinePolluting implements IFluidStandardTransceiver, IGUIProvider, IFluidCopiable, IConfigurableMachine, ITickable, IConnectionAnchors {
 
     public FluidTankNTM[] tanks;
     public boolean isProgressing;
@@ -82,9 +83,9 @@ public class TileEntityMachineRotaryFurnace extends TileEntityMachinePolluting i
     public TileEntityMachineRotaryFurnace() {
         super(5, 50, true, false);
         tanks = new FluidTankNTM[3];
-        tanks[0] = new FluidTankNTM(Fluids.NONE, 16_000);
-        tanks[1] = new FluidTankNTM(Fluids.STEAM, 12_000);
-        tanks[2] = new FluidTankNTM(Fluids.SPENTSTEAM, 120);
+        tanks[0] = new FluidTankNTM(Fluids.NONE, 16_000).withOwner(this);
+        tanks[1] = new FluidTankNTM(Fluids.STEAM, 12_000).withOwner(this);
+        tanks[2] = new FluidTankNTM(Fluids.SPENTSTEAM, 120).withOwner(this);
     }
 
     @Override
@@ -322,6 +323,19 @@ public class TileEntityMachineRotaryFurnace extends TileEntityMachinePolluting i
                 new DirPos(pos.getX() + dir.offsetX + rot.offsetX * 3, pos.getY(), pos.getZ() + dir.offsetZ + rot.offsetZ * 3, rot),
                 new DirPos(pos.getX() - dir.offsetX + rot.offsetX * 3, pos.getY(), pos.getZ() - dir.offsetZ + rot.offsetZ * 3, rot)
         };
+    }
+
+    @Override
+    public DirPos[] getConPos() {
+        ForgeDirection dir = ForgeDirection.getOrientation(this.getBlockMetadata() - 10);
+        ForgeDirection rot = dir.getRotation(ForgeDirection.DOWN);
+        DirPos[] steam = getSteamPos();
+        DirPos[] fluid = getFluidPos();
+        DirPos[] result = new DirPos[steam.length + fluid.length + 1];
+        System.arraycopy(steam, 0, result, 0, steam.length);
+        System.arraycopy(fluid, 0, result, steam.length, fluid.length);
+        result[steam.length + fluid.length] = new DirPos(pos.getX() + rot.offsetX, pos.getY() + 5, pos.getZ() + rot.offsetZ, Library.POS_Y);
+        return result;
     }
 
     public boolean canProcess(RotaryFurnaceRecipe recipe) {

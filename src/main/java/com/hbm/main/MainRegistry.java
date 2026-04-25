@@ -387,7 +387,6 @@ public class MainRegistry {
     @EventHandler
     public void serverStopping(FMLServerStoppingEvent evt) {
         RadiationSystemNT.onServerStopping();
-        ChunkUtil.onServerStopping();
         RecipesCommon.onServerStopping();
         ModEventHandler.RBMK_COL_HEIGHT_MAP.clear();
     }
@@ -411,6 +410,7 @@ public class MainRegistry {
         PhasedEventHandler.onServerStopped();
         PhasedStructureRegistry.onServerStopped();
         BombForkJoinPool.onServerStopped();
+        ChunkUtil.onServerStopped();
     }
 
     @EventHandler
