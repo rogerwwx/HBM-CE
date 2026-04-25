@@ -155,11 +155,12 @@ public final class VAORenderCallsitePlugin implements Plugin {
         }
     }
 
-    /** Pattern: {@code new HFRWavefrontObject(new ResourceLocation(MODID, "path")).asVBO()}. */
+    /** Pattern: {@code new HFRWavefrontObject(new ResourceLocation(MODID, "path")).asVBO()} or {@code .asColoredVAO()}. */
     private static String extractObjPath(JCExpression init) {
         if (!(init instanceof JCMethodInvocation outer)) return null;
         if (!(outer.meth instanceof JCFieldAccess asVboSelect)) return null;
-        if (!"asVBO".equals(asVboSelect.name.toString())) return null;
+        String factoryName = asVboSelect.name.toString();
+        if (!"asVBO".equals(factoryName) && !"asColoredVAO".equals(factoryName)) return null;
         if (!(asVboSelect.selected instanceof JCNewClass newHfr)) return null;
         if (!HFR_TYPE_SIMPLE.equals(simpleNameOf(newHfr.clazz.toString()))) return null;
         if (newHfr.args.isEmpty()) return null;

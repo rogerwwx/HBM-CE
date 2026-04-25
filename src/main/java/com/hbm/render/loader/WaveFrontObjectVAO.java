@@ -7,7 +7,6 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import org.lwjgl.BufferUtils;
 
 import java.nio.ByteBuffer;
-import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -18,18 +17,28 @@ public class WaveFrontObjectVAO implements IModelCustomNamed {
 
     public static final List<WaveFrontObjectVAO> allVBOs = new ArrayList<>();
     private static final int FLOATS_PER_VERTEX = 9; // pos3 + uv3 + normal3
-    private static final int STRIDE = FLOATS_PER_VERTEX * Float.BYTES;
+    private static final int BASE_STRIDE = FLOATS_PER_VERTEX * Float.BYTES;
+    private static final int COLOR_OFFSET = BASE_STRIDE;
+    private static final int COLOR_BYTES = 4;
     private static final int MAX_INDEXED_VERTICES = 1 << 16;
     public static boolean uploaded = false;
 
     final List<VBOBufferData> groups = new ArrayList<>();
     private final Object2ObjectOpenHashMap<String, VBOBufferData> groupsByName = new Object2ObjectOpenHashMap<>();
+    private final boolean colored;
+    private final int stride;
 
     public WaveFrontObjectVAO(HFRWavefrontObject obj) {
+        this(obj, false);
+    }
+
+    public WaveFrontObjectVAO(HFRWavefrontObject obj, boolean colored) {
         if (uploaded) throw new UnsupportedOperationException(
                 "Cannot load new models after uploadModels() has been called. " +
                         "Move your model to ResourceManager's static initializer!"
         );
+        this.colored = colored;
+        this.stride = colored ? BASE_STRIDE + COLOR_BYTES : BASE_STRIDE;
         load(obj);
         allVBOs.add(this);
     }
@@ -53,7 +62,7 @@ public class WaveFrontObjectVAO implements IModelCustomNamed {
         }
     }
 
-    private static void buildGroupBuffers(GroupObject g, VBOBufferData data) {
+    private void buildGroupBuffers(GroupObject g, VBOBufferData data) {
         int maxVerts = 0;
         int triangleCount = 0;
         for (Face face : g.faces) {
@@ -62,7 +71,7 @@ public class WaveFrontObjectVAO implements IModelCustomNamed {
             if (n >= 3) triangleCount += n - 2;
         }
 
-        float[] vertexData = new float[maxVerts * FLOATS_PER_VERTEX];
+        ByteBuffer vBuf = BufferUtils.createByteBuffer(maxVerts * stride);
         short[] indices = new short[triangleCount * 3];
         Object2IntOpenHashMap<VertexKey> lookup = new Object2IntOpenHashMap<>(maxVerts * 2);
         lookup.defaultReturnValue(-1);
@@ -86,23 +95,23 @@ public class WaveFrontObjectVAO implements IModelCustomNamed {
                     w = tex.w;
                 }
 
-                probe.set(vert.x, vert.y, vert.z, u, v, w, normal.x, normal.y, normal.z);
+                probe.set(vert.x, vert.y, vert.z, u, v, w, normal.x, normal.y, normal.z, colored ? vert.color : 0);
                 int idx = lookup.getInt(probe);
                 if (idx < 0) {
                     if (vertexCount >= MAX_INDEXED_VERTICES) {
                         throw new IllegalStateException("Group '" + g.name + "' exceeds 16-bit index capacity");
                     }
                     idx = vertexCount++;
-                    int dst = idx * FLOATS_PER_VERTEX;
-                    vertexData[dst] = vert.x;
-                    vertexData[dst + 1] = vert.y;
-                    vertexData[dst + 2] = vert.z;
-                    vertexData[dst + 3] = u;
-                    vertexData[dst + 4] = v;
-                    vertexData[dst + 5] = w;
-                    vertexData[dst + 6] = normal.x;
-                    vertexData[dst + 7] = normal.y;
-                    vertexData[dst + 8] = normal.z;
+                    vBuf.putFloat(vert.x).putFloat(vert.y).putFloat(vert.z);
+                    vBuf.putFloat(u).putFloat(v).putFloat(w);
+                    vBuf.putFloat(normal.x).putFloat(normal.y).putFloat(normal.z);
+                    if (colored) {
+                        int c = vert.color;
+                        vBuf.put((byte) ((c >>> 16) & 0xFF));
+                        vBuf.put((byte) ((c >>>  8) & 0xFF));
+                        vBuf.put((byte) ( c         & 0xFF));
+                        vBuf.put((byte) ((c >>> 24) & 0xFF));
+                    }
                     lookup.put(probe.clone(), idx);
                 }
                 faceIdx[i] = idx;
@@ -115,9 +124,6 @@ public class WaveFrontObjectVAO implements IModelCustomNamed {
             }
         }
 
-        int usedFloats = vertexCount * FLOATS_PER_VERTEX;
-        FloatBuffer vBuf = BufferUtils.createFloatBuffer(usedFloats);
-        vBuf.put(vertexData, 0, usedFloats);
         vBuf.flip();
 
         ByteBuffer iBuf = BufferUtils.createByteBuffer(indexCursor * Short.BYTES);
@@ -148,21 +154,26 @@ public class WaveFrontObjectVAO implements IModelCustomNamed {
         }
     }
 
-    private static void uploadGroupVao(VBOBufferData data) {
+    private void uploadGroupVao(VBOBufferData data) {
         data.vaoHandle = GLCompat.genVertexArrays();
         GLCompat.bindVertexArray(data.vaoHandle);
 
         GLCompat.bindBuffer(GLCompat.GL_ARRAY_BUFFER, data.vboHandle);
         GLCompat.bindBuffer(GLCompat.GL_ELEMENT_ARRAY_BUFFER, data.eboHandle);
 
-        glVertexPointer(3, GL_FLOAT, STRIDE, 0L);
+        glVertexPointer(3, GL_FLOAT, stride, 0L);
         glEnableClientState(GL_VERTEX_ARRAY);
 
-        glTexCoordPointer(3, GL_FLOAT, STRIDE, 3L * Float.BYTES);
+        glTexCoordPointer(3, GL_FLOAT, stride, 3L * Float.BYTES);
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
-        glNormalPointer(GL_FLOAT, STRIDE, 6L * Float.BYTES);
+        glNormalPointer(GL_FLOAT, stride, 6L * Float.BYTES);
         glEnableClientState(GL_NORMAL_ARRAY);
+
+        if (colored) {
+            glColorPointer(4, GL_UNSIGNED_BYTE, stride, COLOR_OFFSET);
+            glEnableClientState(GL_COLOR_ARRAY);
+        }
 
         GLCompat.bindVertexArray(0);
         GLCompat.bindBuffer(GLCompat.GL_ARRAY_BUFFER, 0);
@@ -254,10 +265,10 @@ public class WaveFrontObjectVAO implements IModelCustomNamed {
 
     @SuppressCheckedExceptions
     private static final class VertexKey implements Cloneable {
-        int px, py, pz, u, v, w, nx, ny, nz;
+        int px, py, pz, u, v, w, nx, ny, nz, color;
         int hash;
 
-        void set(float px, float py, float pz, float u, float v, float w, float nx, float ny, float nz) {
+        void set(float px, float py, float pz, float u, float v, float w, float nx, float ny, float nz, int color) {
             this.px = Float.floatToRawIntBits(px);
             this.py = Float.floatToRawIntBits(py);
             this.pz = Float.floatToRawIntBits(pz);
@@ -267,6 +278,7 @@ public class WaveFrontObjectVAO implements IModelCustomNamed {
             this.nx = Float.floatToRawIntBits(nx);
             this.ny = Float.floatToRawIntBits(ny);
             this.nz = Float.floatToRawIntBits(nz);
+            this.color = color;
             int h = 1;
             h = 31 * h + this.px;
             h = 31 * h + this.py;
@@ -277,6 +289,7 @@ public class WaveFrontObjectVAO implements IModelCustomNamed {
             h = 31 * h + this.nx;
             h = 31 * h + this.ny;
             h = 31 * h + this.nz;
+            h = 31 * h + this.color;
             this.hash = h;
         }
 
@@ -294,7 +307,7 @@ public class WaveFrontObjectVAO implements IModelCustomNamed {
         public boolean equals(Object o) {
             if (!(o instanceof VertexKey)) return false;
             VertexKey k = (VertexKey) o;
-            return px == k.px && py == k.py && pz == k.pz && u == k.u && v == k.v && w == k.w && nx == k.nx && ny == k.ny && nz == k.nz;
+            return px == k.px && py == k.py && pz == k.pz && u == k.u && v == k.v && w == k.w && nx == k.nx && ny == k.ny && nz == k.nz && color == k.color;
         }
     }
 }
