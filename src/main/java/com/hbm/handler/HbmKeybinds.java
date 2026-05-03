@@ -49,6 +49,7 @@ public class HbmKeybinds {
 	public static KeyBinding abilityCycle = new KeyBinding(category + ".ability", -99, category);
 	public static KeyBinding abilityAlt = new KeyBinding(category + ".abilityAlt", Keyboard.KEY_LMENU, category);
 	public static KeyBinding copyToolAlt = new KeyBinding(category + ".copyToolAlt", Keyboard.KEY_LMENU, category);
+	public static KeyBinding copyToolCtrl = new KeyBinding(category + ".copyToolCtrl", Keyboard.KEY_LCONTROL, category);
 	public static KeyBinding gunSecondaryKey = new KeyBinding(category + ".gunSecondary", -99, category);
 	public static KeyBinding gunTertiaryKey = new KeyBinding(category + ".gunTertitary", -98, category);
 	
@@ -71,6 +72,7 @@ public class HbmKeybinds {
 		ClientRegistry.registerKeyBinding(abilityCycle);
 		ClientRegistry.registerKeyBinding(abilityAlt);
 		ClientRegistry.registerKeyBinding(copyToolAlt);
+		ClientRegistry.registerKeyBinding(copyToolCtrl);
 		ClientRegistry.registerKeyBinding(qmaw);
 	}
 
@@ -145,6 +147,7 @@ public class HbmKeybinds {
 		ABILITY_CYCLE,
 		ABILITY_ALT,
 		TOOL_ALT,
+		TOOL_CTRL,
 		GUN_PRIMARY,
 		GUN_SECONDARY,
 		GUN_TERTIARY;

@@ -8,6 +8,7 @@ import com.hbm.blocks.ModBlocks;
 import com.hbm.blocks.bomb.DigammaMatter;
 import com.hbm.blocks.fluid.FluidFogHandler;
 import com.hbm.blocks.generic.BMPowerBox;
+import com.hbm.blocks.generic.BlockFissure;
 import com.hbm.blocks.generic.BlockModDoor;
 import com.hbm.blocks.generic.TrappedBrick;
 import com.hbm.blocks.machine.BlockSeal;
@@ -49,7 +50,6 @@ import com.hbm.render.anim.sedna.BusAnimationSedna;
 import com.hbm.render.anim.sedna.BusAnimationSequenceSedna;
 import com.hbm.render.anim.sedna.HbmAnimationsSedna;
 import com.hbm.render.entity.ElectricityRenderer;
-import com.hbm.render.entity.RenderBoat;
 import com.hbm.render.entity.RenderMetaSensitiveItem;
 import com.hbm.render.item.ItemRenderMissile;
 import com.hbm.render.item.ItemRenderMissileGeneric;
@@ -59,7 +59,6 @@ import com.hbm.render.item.weapon.ItemRenderGunAnim;
 import com.hbm.render.item.weapon.sedna.*;
 import com.hbm.render.misc.MissilePart;
 import com.hbm.render.modelrenderer.EgonBackpackRenderer;
-import com.hbm.render.tileentity.ItemRendererProviderRegistry;
 import com.hbm.render.util.RenderInfoSystemLegacy;
 import com.hbm.render.util.RenderOverhead;
 import com.hbm.sound.AudioWrapper;
@@ -220,6 +219,8 @@ public class ClientProxy extends ServerProxy {
         ModelLoader.setCustomStateMapper(ModBlocks.schrabidic_block, new StateMap.Builder().ignore(BlockFluidClassic.LEVEL).build());
         ModelLoader.setCustomStateMapper(ModBlocks.corium_block, new StateMap.Builder().ignore(BlockFluidClassic.LEVEL).build());
         ModelLoader.setCustomStateMapper(ModBlocks.volcanic_lava_block, new StateMap.Builder().ignore(BlockFluidClassic.LEVEL).build());
+        ModelLoader.setCustomStateMapper(ModBlocks.rad_lava_block, new StateMap.Builder().ignore(BlockFluidClassic.LEVEL).build());
+        ModelLoader.setCustomStateMapper(ModBlocks.ore_volcano, new StateMap.Builder().ignore(BlockFissure.CRATER).build());
         ModelLoader.setCustomStateMapper(ModBlocks.sulfuric_acid_block, new StateMap.Builder().ignore(BlockFluidClassic.LEVEL).build());
 
         ModelLoader.setCustomStateMapper(ModBlocks.seal_controller, new StateMap.Builder().ignore(BlockSeal.ACTIVATED).build());
@@ -227,6 +228,7 @@ public class ClientProxy extends ServerProxy {
         ModelLoader.setCustomStateMapper(ModBlocks.brick_jungle_trap, new StateMap.Builder().ignore(TrappedBrick.TYPE).build());
         ModelLoader.setCustomStateMapper(ModBlocks.stone_porous, new StateMap.Builder().ignore(BlockStone.VARIANT).build());
         ModelLoader.setCustomStateMapper(ModBlocks.volcano_core, new StateMap.Builder().ignore(BlockDummyable.META).build());
+        ModelLoader.setCustomStateMapper(ModBlocks.volcano_rad_core, new StateMap.Builder().ignore(BlockDummyable.META).build());
         ModelLoader.setCustomStateMapper(ModBlocks.bm_power_box, new StateMap.Builder().ignore(BMPowerBox.FACING, BMPowerBox.IS_ON).build());
         ModelLoader.setCustomStateMapper(ModBlocks.floodlight, new StateMap.Builder().ignore(com.hbm.blocks.machine.Floodlight.META).build());
         ModelLoader.setCustomStateMapper(ModBlocks.spotlight_beam, new StateMap.Builder().ignore(com.hbm.blocks.machine.SpotlightBeam.META).build());
@@ -1904,6 +1906,7 @@ public class ClientProxy extends ServerProxy {
             case ABILITY_CYCLE -> HbmKeybinds.abilityCycle.isKeyDown();
             case ABILITY_ALT -> HbmKeybinds.abilityAlt.isKeyDown();
             case TOOL_ALT -> HbmKeybinds.copyToolAlt.isKeyDown();
+            case TOOL_CTRL -> HbmKeybinds.copyToolCtrl.isKeyDown();
             case GUN_PRIMARY -> Mouse.isButtonDown(0);
             case GUN_SECONDARY -> HbmKeybinds.gunSecondaryKey.isKeyDown();
             case GUN_TERTIARY -> HbmKeybinds.gunTertiaryKey.isKeyDown();
@@ -1968,14 +1971,7 @@ public class ClientProxy extends ServerProxy {
         OBJLoader.INSTANCE.addDomain(Tags.MODID);
         ModelLoaderRegistry.registerLoader(DynamicPlaceholderModelLoader.INSTANCE);
 
-        AutoRegistry.preInitClient();
         AutoRegistry.registerRenderInfo();
-        NTMClientRegistry.bindTeisrs(ItemRendererProviderRegistry.getTileEntityProviders());
-        NTMClientRegistry.bindTeisrs(ItemRendererProviderRegistry.getItemProviders());
-
-        // IItemRendererProvider is not applicable to Render<T extends Entity>
-        NTMClientRegistry.bindTeisr(Item.getItemFromBlock(ModBlocks.boat), new RenderBoat.BoatItemRenderer());
-        registerMissileItems(null);
 
         ClientHttpHandler.preinit();
     }

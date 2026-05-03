@@ -2,9 +2,13 @@ package com.hbm.tileentity.network;
 
 import com.hbm.api.fluidmk2.FluidNode;
 import com.hbm.api.fluidmk2.IFluidPipeMK2;
+import com.hbm.blocks.network.IBlockFluidDuct;
+import com.hbm.capability.HbmCapability;
+import com.hbm.handler.HbmKeybinds;
 import com.hbm.interfaces.AutoRegister;
 import com.hbm.inventory.fluid.FluidType;
 import com.hbm.inventory.fluid.Fluids;
+import com.hbm.inventory.fluid.tank.FluidTankNTM;
 import com.hbm.lib.ForgeDirection;
 import com.hbm.lib.Library;
 import com.hbm.tileentity.IConnectionAnchors;
@@ -13,6 +17,7 @@ import com.hbm.tileentity.TileEntityLoadedBase;
 import com.hbm.uninos.UniNodespace;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.block.state.IBlockState;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
@@ -180,5 +185,30 @@ public class TileEntityPipeBaseNT extends TileEntityLoadedBase implements IFluid
         super.writeToNBT(nbt);
         nbt.setInteger("type", this.type.getID());
         return nbt;
+    }
+
+    @Override
+    public int[] getFluidIDToCopy() {
+        return new int[]{ type.getID() };
+    }
+
+    @Override
+    public FluidTankNTM getTankToPaste() {
+        return null;
+    }
+
+    @Override
+    public void pasteSettings(NBTTagCompound nbt, int index, World world, EntityPlayer player, int x, int y, int z) {
+        int[] ids = nbt.getIntArray("fluidID");
+        if(ids.length == 0) return;
+
+        FluidType fluid = Fluids.fromID(index < ids.length ? ids[index] : 0);
+
+        if(HbmCapability.getData(player).getKeyPressed(HbmKeybinds.EnumKeybind.TOOL_CTRL)
+                && world.getBlockState(pos).getBlock() instanceof IBlockFluidDuct duct) {
+            duct.changeTypeRecursively(world, pos, getType(), fluid, 64);
+        } else {
+            this.setType(fluid);
+        }
     }
 }
