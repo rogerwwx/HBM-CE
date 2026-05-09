@@ -1158,6 +1158,7 @@ death.attack.boil=%1$s was boiled alive by %2$s
 death.attack.boxcar=%1$s was smushed by a falling boxcar. Oh well
 death.attack.broadcast=%1$s got their brain melted
 death.attack.building=%1$s was hit by a falling building
+death.attack.bolter=%1$s fucking bolt
 death.attack.cheater=%1$s's intestines turned into oats. (???)
 death.attack.chopperBullet=%1$s was rekt by %2$s
 death.attack.cloud=%1$s melted like a popsicle in the sun
